@@ -12,7 +12,7 @@ export default defineConfig({
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /csp/ },
     { name: "phone-320", use: { ...devices["Pixel 5"], viewport: { width: 320, height: 640 } }, grep: /reflow|target size/, testIgnore: /csp/ },
-    // The security headers (vercel.json) are tested against the real production build, because the dev server uses inline scripts.
+    // The security headers (firebase.json) are tested against the real production build, because the dev server uses inline scripts.
     { name: "csp", testMatch: /csp\.spec\.js/, use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${CSP_PORT}`, permissions: ["camera"], launchOptions: { args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] } } },
   ],
   webServer: [

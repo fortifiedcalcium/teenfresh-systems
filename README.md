@@ -27,8 +27,8 @@ The app targets **WCAG 2.2 AA** with the Teenfresh palette (brand colours as sur
 **Authentication → Providers → Email**: enable, and keep **Confirm email** on (sign-up sends a verification link).
 
 **Authentication → URL Configuration**
-- *Site URL*: your production URL (e.g. `https://your-app.vercel.app`)
-- *Redirect URLs*: add `http://localhost:5173/**` and `https://your-app.vercel.app/**`
+- *Site URL*: your production URL (e.g. `https://teenfresh-events.web.app`)
+- *Redirect URLs*: add `http://localhost:5173/**` and `https://teenfresh-events.web.app/**`
 
 **Google sign-in**
 1. Google Cloud Console → *APIs & Services → OAuth consent screen* (configure) → *Credentials → Create credentials → OAuth client ID → Web application*.
@@ -62,7 +62,7 @@ supabase secrets set MAIL_PROVIDER=resend \
   MAIL_FROM=tickets@your-verified-domain.com \
   MAIL_FROM_NAME=Teenfresh \
   MAIL_REPLY_TO=teenfreshph@gmail.com \
-  PUBLIC_SITE_URL=https://your-app.vercel.app
+  PUBLIC_SITE_URL=https://teenfresh-events.web.app
 
 supabase functions deploy send-confirmation-email
 supabase functions deploy send-bulk-email
@@ -73,12 +73,17 @@ supabase functions deploy send-payment-email
 - **Gmail/SMTP instead:** `MAIL_PROVIDER=smtp SMTP_HOST=smtp.gmail.com SMTP_PORT=465 SMTP_USER=you@gmail.com SMTP_PASS=<app password>` (Gmail free accounts allow roughly 100 to 500 emails/day).
 - `PUBLIC_SITE_URL` turns relative image paths (`/banners/ivemon.png`, `/email/logo.png`) into absolute URLs, which email clients require. Without it, images will not load in emails.
 
-## 6. Deploy to Vercel
-Push to GitHub → Vercel → **Import** → framework *Vite* → add env vars `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` → Deploy. `vercel.json` already rewrites all routes to `index.html`. Then put the Vercel URL in Supabase *Site URL / Redirect URLs* and in `PUBLIC_SITE_URL`.
+## 6. Deploy to Firebase Hosting
+The site is hosted on Firebase Hosting (project and site `teenfresh-events`, address https://teenfresh-events.web.app). The app reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from your `.env` when it is built, so there is nothing to set in a dashboard.
+```bash
+firebase login                 # once
+npm run deploy                 # builds (the contrast check runs first) and publishes to teenfresh-events
+```
+`firebase.json` serves `dist/`, sends every route to `index.html` (single-page app) and sets the security headers. Deploys are manual; to deploy on every push to GitHub, run `firebase init hosting:github` once (it adds a GitHub Actions workflow). A custom domain (for example `events.yourdomain.com`) is added under Firebase console > Hosting > Add custom domain.
 
 ## Security headers
-`vercel.json` sends a strict Content-Security-Policy (scripts only from the site itself, no inline or eval scripts, connections only to your Supabase project, no framing), plus `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, a `Permissions-Policy` that allows only this site to use the camera (for the QR scanner), and long caching for the fingerprinted `assets/`.
-`npm run test:e2e` runs the production build with these exact headers enforced in a browser (`e2e/csp.spec.js`) and fails on any violation, including the camera scanner, the receipt viewer and the email preview. If you add a new external service (an analytics script, another image host, a payment widget), add its domain to the right directive in `vercel.json` first, or the browser will block it.
+`firebase.json` sends a strict Content-Security-Policy (scripts only from the site itself, no inline or eval scripts, connections only to your Supabase project, no framing), plus `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, a `Permissions-Policy` that allows only this site to use the camera (for the QR scanner), HTTPS-only (HSTS), and long caching for the fingerprinted `assets/` (HTML is always revalidated so a new deploy shows up at once).
+`npm run test:e2e` runs the production build with these exact headers enforced in a browser (`e2e/csp.spec.js`) and fails on any violation, including the camera scanner, the receipt viewer and the email preview. If you add a new external service (an analytics script, another image host, a payment widget), add its domain to the right directive in `firebase.json` first, or the browser will block it.
 
 ## How a registration works
 1. The attendee completes four steps: **event info and terms**, **participant's information**, **payment** (GCash number with a Copy button, QR image, sender name, amount, reference number, receipt file) and **review**. Unsent progress is kept in the browser tab only (never the receipt file).

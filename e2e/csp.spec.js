@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import { test as base, expect } from "./fixtures.js";
 
-// Runs the REAL production build with the REAL headers from vercel.json enforced, and fails on any CSP violation.
+// Runs the REAL production build with the REAL headers from firebase.json enforced, and fails on any CSP violation.
 // (The only change: https://*.supabase.co becomes the local fake Supabase, so the mocked API is reachable.)
-const cfg = JSON.parse(fs.readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
-const all = cfg.headers.find((h) => h.source === "/(.*)").headers;
+const cfg = JSON.parse(fs.readFileSync(new URL("../firebase.json", import.meta.url), "utf8")).hosting;
+const all = cfg.headers.find((h) => h.source === "**").headers;
 const header = (k) => all.find((h) => h.key === k).value;
 const CSP = header("Content-Security-Policy").replaceAll("https://*.supabase.co", "http://localhost:54321").replaceAll("wss://*.supabase.co", "ws://localhost:54321").replace("; upgrade-insecure-requests", "");
 
@@ -27,7 +27,7 @@ const test = base.extend({
 });
 
 test.describe("security headers", () => {
-  test("vercel.json sets the headers, and the policy has no unsafe-eval, no unsafe-inline scripts and no wildcard sources", () => {
+  test("firebase.json sets the headers, and the policy has no unsafe-eval, no unsafe-inline scripts and no wildcard sources", () => {
     expect(CSP).toContain("script-src 'self';");
     for (const bad of ["'unsafe-eval'", "script-src 'self' 'unsafe-inline'", "default-src *", " * ", "data: https:"]) expect(header("Content-Security-Policy"), bad).not.toContain(bad);
     expect(header("Content-Security-Policy")).toContain("frame-ancestors 'none'");
@@ -37,8 +37,12 @@ test.describe("security headers", () => {
     expect(header("X-Content-Type-Options")).toBe("nosniff");
     expect(header("Permissions-Policy")).toContain("camera=(self)");
     expect(header("Permissions-Policy")).toContain("microphone=()");
-    const assets = cfg.headers.find((h) => h.source === "/assets/(.*)");
-    expect(assets.headers[0].value).toContain("immutable");
+    expect(header("Strict-Transport-Security")).toContain("max-age=63072000");
+    expect(header("Cache-Control")).toBe("no-cache");                                          // HTML is always revalidated
+    const assets = cfg.headers.find((h) => h.source === "/assets/**");
+    expect(assets.headers[0].value).toContain("immutable");                                   // fingerprinted files are cached for a year
+    // hosting itself: the built app is served from dist, every route falls back to index.html, on the teenfresh-events site
+    expect(cfg).toMatchObject({ site: "teenfresh-events", public: "dist", rewrites: [{ source: "**", destination: "/index.html" }] });
   });
 
   test("public pages work under the policy", async ({ page, as, violations }) => {

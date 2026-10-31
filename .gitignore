@@ -9,3 +9,4 @@ supabase/functions/.env
 playwright-report
 test-results
 dist-csp
+.firebase

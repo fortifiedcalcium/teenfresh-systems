@@ -12,7 +12,8 @@
     "test:e2e": "playwright test",
     "lighthouse": "lhci collect && lhci assert",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "deploy": "npm run build && firebase deploy --only hosting"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.1",
