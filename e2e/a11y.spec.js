@@ -72,7 +72,7 @@ test.describe("axe: wcag2a / wcag2aa / wcag21aa / wcag22aa on every route", () =
     await page.getByLabel(/^Name of Sender/).fill("Juan D.");
     await page.getByLabel(/^Amount Paid/).fill("100");
     await page.getByLabel(/^Reference Number/).fill("1234567890123");
-    await page.locator("#receipt").setInputFiles({ name: "receipt.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==", "base64") });
+    await page.locator("#receipt").setInputFiles({ name: "receipt.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGOUi2plwAaYsIoOWgkAyk8BDTx0sOwAAAAASUVORK5CYII=", "base64") });
     await expect(page.getByAltText("Preview of your receipt")).toBeVisible();
     v = await scan(page); expect(v, "step 3 with a receipt\n" + formatViolations(v)).toEqual([]);
     await page.getByRole("button", { name: "Review registration" }).click();

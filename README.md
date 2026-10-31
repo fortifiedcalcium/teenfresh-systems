@@ -76,6 +76,10 @@ supabase functions deploy send-payment-email
 ## 6. Deploy to Vercel
 Push to GitHub → Vercel → **Import** → framework *Vite* → add env vars `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` → Deploy. `vercel.json` already rewrites all routes to `index.html`. Then put the Vercel URL in Supabase *Site URL / Redirect URLs* and in `PUBLIC_SITE_URL`.
 
+## Security headers
+`vercel.json` sends a strict Content-Security-Policy (scripts only from the site itself, no inline or eval scripts, connections only to your Supabase project, no framing), plus `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, a `Permissions-Policy` that allows only this site to use the camera (for the QR scanner), and long caching for the fingerprinted `assets/`.
+`npm run test:e2e` runs the production build with these exact headers enforced in a browser (`e2e/csp.spec.js`) and fails on any violation, including the camera scanner, the receipt viewer and the email preview. If you add a new external service (an analytics script, another image host, a payment widget), add its domain to the right directive in `vercel.json` first, or the browser will block it.
+
 ## How a registration works
 1. The attendee completes four steps: **event info and terms**, **participant's information**, **payment** (GCash number with a Copy button, QR image, sender name, amount, reference number, receipt file) and **review**. Unsent progress is kept in the browser tab only (never the receipt file).
 2. Submitting creates a `pending_verification` registration and a `pending` payment. It holds a slot (pending forms count toward capacity) but has **no ticket number yet**. Free events (fee 0) skip the payment step and are confirmed immediately.

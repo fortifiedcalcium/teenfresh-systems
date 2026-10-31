@@ -22,7 +22,7 @@ const TABLES = {
   event_availability: [{ event_id: "e1", registered: 93 }, { event_id: "e2", registered: 100 }, { event_id: "e3", registered: 10 }],
   registrations: [{ ...reg, facebook_url: "https://www.facebook.com/juan", payment: { status: "verified", amount_paid: 100, reference_number: "1234567890123" }, payments: { id: "p1", status: "verified", review_note: null, amount_due: null, amount_paid: 100, reference_number: "1234567890123", sender_name: "Juan D." }, payment_id: "p1", events: { title: ev.title, event_date: future, venue: ev.venue, registration_fee: 100 } }, { ...reg, id: "r2", user_id: "u3", name: "Maria Santos", ticket_number: "IVEMON-000002", checked_in_at: future, checker: { full_name: "Admin", email: "admin@example.com" } }, { ...reg, id: "r3", user_id: "u1", name: "Maria Santos", x_username: "maria", ticket_number: null, status: "pending_verification", payment_id: "p3", payment: { status: "underpaid", amount_paid: 95, reference_number: "9876543210987" }, payments: { id: "p3", status: "underpaid", review_note: "A transaction fee was deducted", amount_due: 5, amount_paid: 95, reference_number: "9876543210987", sender_name: "Maria S." } }],
   registration_email_status: [{ registration_id: "r1", event_id: "e1", status: "sent", error: null, sent_at: future }],
-  email_templates: [{ subject: "Confirmation email - IVEMON", html_body: "<p>Hello {{Name}}</p>{{Terms}}", text_body: "Hello {{Name}}\n\n{{Terms}}" }],
+  email_templates: [{ event_id: "e1", kind: "confirmation", subject: "Confirmation email - IVEMON", html_body: "<p>Hello {{Name}}</p>{{Terms}}", text_body: "Hello {{Name}}\n\n{{Terms}}" }],
   email_logs: [{ id: 1, registration_id: "r1", recipient: "juan@example.com", kind: "confirmation", status: "failed", error: "Resend 403", sent_at: future, registrations: { event_id: "e1", ticket_number: "IVEMON-000001", name: "Juan Dela Cruz" } }],
   attendance_logs: [{ id: 1, ticket_number_scanned: "IVEMON-000001", result: "success", scanned_at: future, registrations: { name: "Juan Dela Cruz", event_id: "e1" }, scanner: { full_name: "Admin", email: "admin@example.com" } }],
 };
@@ -46,8 +46,8 @@ async function mockSupabase(page, { role }) {
     if (url.pathname.startsWith("/auth/v1/user")) return json(user ?? { message: "no" }, user ? 200 : 401);
     if (url.pathname.startsWith("/functions/v1/")) return json({ results: [{ id: "r1", status: "sent" }] });
     // storage: receipts upload, signed URLs and the receipt image itself
-    if (url.pathname.startsWith("/storage/v1/object/sign/")) return json({ signedURL: url.pathname.replace("/storage/v1", "") + "?token=t" });
-    if (url.pathname.startsWith("/storage/v1/object/") && req.method() === "GET") return route.fulfill({ status: 200, headers: { ...CORS, "content-type": "image/png" }, body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==", "base64") });
+    if (url.pathname.startsWith("/storage/v1/object/sign/") && req.method() === "POST") return json({ signedURL: url.pathname.replace("/storage/v1", "") + "?token=t" });   // createSignedUrl
+    if (url.pathname.startsWith("/storage/v1/object/") && req.method() === "GET") return route.fulfill({ status: 200, headers: { ...CORS, "content-type": "image/png" }, body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGOUi2plwAaYsIoOWgkAyk8BDTx0sOwAAAAASUVORK5CYII=", "base64") });
     if (url.pathname.startsWith("/storage/v1/object/")) return json({ Key: url.pathname.split("/object/")[1] });
     if (url.pathname.startsWith("/rest/v1/rpc/")) {
       const name = url.pathname.split("/").pop();

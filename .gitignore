@@ -8,3 +8,4 @@ supabase/functions/.env
 .lighthouseci
 playwright-report
 test-results
+dist-csp
