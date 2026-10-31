@@ -8,6 +8,7 @@ import Alert from "../../components/Alert.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import TermsEditor from "../../components/TermsEditor.jsx";
 import MediaTab from "./MediaTab.jsx";
+import KitsTab from "./KitsTab.jsx";
 import { Empty } from "../../components/Spinner.jsx";
 import { fmtDateTime } from "../../lib/availability.js";
 import { peso } from "../../lib/payment.js";
@@ -89,7 +90,7 @@ export default function Events() {
     if (err) return setError(err.message);
     toast("Event saved", "success");
     reloadEvents();
-    if (form.id) setForm(toForm(data)); else { setForm(toForm(data)); setTab("media"); }   // a new event goes straight to its images
+    if (form.id) setForm(toForm(data)); else { setForm(toForm(data)); setTab("kits"); }   // a new event goes straight to its kits and images
   };
 
   const toggleOpen = async (e) => {
@@ -129,10 +130,10 @@ export default function Events() {
       {form && (
         <Modal title={form.id ? "Edit event" : "New event"} onClose={() => setForm(null)} wide>
           <div role="tablist" aria-label="Event sections" className="mb-4 flex gap-2">
-            {[["details", "Details"], ["media", "Media"]].map(([k, l]) => (
-              <button key={k} role="tab" id={`tab-${k}`} aria-selected={tab === k} aria-controls={`panel-${k}`} className={tab === k ? "btn-primary" : "btn-secondary"} disabled={k === "media" && !form.id} onClick={() => setTab(k)}>{l}</button>
+            {[["details", "Details"], ["kits", "Kits"], ["media", "Media"]].map(([k, l]) => (
+              <button key={k} role="tab" id={`tab-${k}`} aria-selected={tab === k} aria-controls={`panel-${k}`} className={tab === k ? "btn-primary" : "btn-secondary"} disabled={k !== "details" && !form.id} onClick={() => setTab(k)}>{l}</button>
             ))}
-            {!form.id && <p className="self-center text-sm text-ink-muted">Save the event first to add images.</p>}
+            {!form.id && <p className="self-center text-sm text-ink-muted">Save the event first to add kits and images.</p>}
           </div>
 
           {tab === "details" && (
@@ -159,7 +160,7 @@ export default function Events() {
 
               <fieldset className="space-y-4"><legend className="text-lg font-bold">Fee and payment (GCash)</legend>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field id="fee" label="Registration fee (PHP)" hint="0 = free event: no payment step, tickets are issued immediately"><input type="number" min="0" step="0.01" className="input" value={form.registration_fee} onChange={set("registration_fee")} /></Field>
+                  <Field id="fee" label="Registration fee (PHP)" hint="Used only when the event has no kits (see the Kits tab). 0 = free event: no payment step, tickets are issued immediately"><input type="number" min="0" step="0.01" className="input" value={form.registration_fee} onChange={set("registration_fee")} /></Field>
                   <Field id="fee_note" label="Fee note" hint="Shown after the fee, for example: exclusive of food and drinks"><input className="input" value={form.fee_note} onChange={set("fee_note")} /></Field>
                   <Field id="pay_name" label="GCash account name (masked)" hint="Store it already masked, for example BR**N CA**O S."><input className="input" value={form.payment_account_name} onChange={set("payment_account_name")} /></Field>
                   <Field id="pay_number" label="GCash number"><input className="input" inputMode="numeric" value={form.payment_account_number} onChange={set("payment_account_number")} /></Field>
@@ -181,6 +182,7 @@ export default function Events() {
             </form>
             </div>
           )}
+          {tab === "kits" && current && <div id="panel-kits" role="tabpanel" aria-labelledby="tab-kits"><KitsTab event={current} /></div>}
           {tab === "media" && current && <div id="panel-media" role="tabpanel" aria-labelledby="tab-media"><MediaTab event={current} /></div>}
         </Modal>
       )}

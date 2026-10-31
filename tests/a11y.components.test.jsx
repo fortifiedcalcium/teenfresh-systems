@@ -19,7 +19,7 @@ import TicketCard from "../src/components/TicketCard.jsx";
 import Badge from "../src/components/Badge.jsx";
 import Alert from "../src/components/Alert.jsx";
 import Field from "../src/components/Field.jsx";
-import ErrorSummary from "../src/components/ErrorSummary.jsx";
+import ErrorSummary, { useErrorFocus } from "../src/components/ErrorSummary.jsx";
 import PasswordInput from "../src/components/PasswordInput.jsx";
 import AvailabilityBar from "../src/components/AvailabilityBar.jsx";
 import AttendeeLayout from "../src/layouts/AttendeeLayout.jsx";
@@ -125,15 +125,28 @@ describe("shared components have no axe violations", () => {
     expect(await check(container)).toHaveNoViolations();
   });
 
-  it("Field + ErrorSummary link errors to inputs (3.3.1 / 3.3.2)", async () => {
-    const { container } = wrap(<form><ErrorSummary submitCount={1} errors={{ email: { message: "Enter a valid email" } }} labels={{ email: "Email" }} />
-      <Field id="email" label="Email" required error="Enter a valid email" hint="We email your ticket"><input type="email" autoComplete="email" /></Field>
-      <Field id="pw" label="Password" required><PasswordInput autoComplete="new-password" /></Field></form>);
+  it("Field + ErrorSummary link errors to inputs (3.3.1 / 3.3.2); the summary appears and takes focus only after a failed submit", async () => {
+    const user = userEvent.setup();
+    function Host() {
+      const [signal, bump] = useErrorFocus();
+      const [show, setShow] = React.useState(false);
+      return <form onSubmit={(e) => e.preventDefault()}>
+        <ErrorSummary errors={{ email: { message: "Enter a valid email" } }} labels={{ email: "Email" }} focusSignal={signal} />
+        <Field id="email" label="Email" required error="Enter a valid email" hint="We email your ticket"><input type="email" autoComplete="email" /></Field>
+        <Field id="pw" label="Password" required><PasswordInput autoComplete="new-password" /></Field>
+        <button type="button" onClick={() => { setShow(true); bump(); }}>Submit</button>{show && null}
+      </form>;
+    }
+    const { container } = wrap(<Host />);
+    expect(screen.queryByRole("alert", { name: /problem/ })).toBeNull();                       // errors alone do not show the summary
     const input = screen.getByLabelText(/Email \(required\)/);
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input).toHaveAttribute("aria-required", "true");
     expect(input).toHaveAccessibleDescription(/Enter a valid email/);
-    expect(document.getElementById("error-summary-title").closest("[role=alert]")).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Submit" }));                          // a failed submit
+    const summary = await screen.findByRole("alert", { name: /1 problem/ });
+    await waitFor(() => expect(summary).toHaveFocus());
+    expect(summary).toHaveTextContent("Email: Enter a valid email");
     expect(screen.getByRole("button", { name: "Show password" })).toHaveAttribute("aria-pressed", "false");
     expect(await check(container)).toHaveNoViolations();
   });

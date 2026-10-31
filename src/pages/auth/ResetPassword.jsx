@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "../../context/AuthContext.jsx";
 import Field from "../../components/Field.jsx";
 import PasswordInput from "../../components/PasswordInput.jsx";
-import ErrorSummary from "../../components/ErrorSummary.jsx";
+import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import AuthShell from "./AuthShell.jsx";
 
@@ -12,6 +12,7 @@ export default function ResetPassword() {
   const { session, loading, updatePassword } = useAuth();
   const nav = useNavigate();
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting, submitCount } } = useForm({ shouldFocusError: false });
+  const [focusSignal, bumpFocus] = useErrorFocus();
   const [error, setError] = useState("");
 
   const onSubmit = async ({ password }) => {
@@ -27,8 +28,8 @@ export default function ResetPassword() {
 
   return (
     <AuthShell title="Choose a new password">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <ErrorSummary errors={errors} submitCount={submitCount} extra={error} labels={{ password: "New password", confirm: "Confirm new password" }} />
+      <form onSubmit={handleSubmit(onSubmit, bumpFocus)} className="space-y-4" noValidate>
+        <ErrorSummary errors={errors} submitCount={submitCount} focusSignal={focusSignal} extra={error} labels={{ password: "New password", confirm: "Confirm new password" }} />
         <div>
           <p id="pw-rules" className="mb-1 text-sm font-semibold">Password rules</p>
           <ul className="mb-2 list-disc pl-5 text-sm text-ink-muted"><li>At least 8 characters</li></ul>

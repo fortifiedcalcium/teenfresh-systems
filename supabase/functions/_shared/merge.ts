@@ -2,7 +2,7 @@
 
 export const MERGE_FIELDS = [
   "Name", "X/Twitter Username", "Ticket Number", "Event Title", "Event Subtitle", "Event Date", "Venue",
-  "Registration Fee", "Terms", "Contact Links", "Banner", "Banner URL", "Logo URL", "Facebook Icon URL", "X Icon URL", "Site URL",
+  "Registration Fee", "Kit", "Quantity", "Unit Price", "Total Amount", "Terms", "Contact Links", "Banner", "Banner URL", "Logo URL", "Facebook Icon URL", "X Icon URL", "Site URL",
   "Reference Number", "Amount Paid", "Amount Due", "Reason",
 ] as const;
 
@@ -141,7 +141,7 @@ export const absoluteUrl = (url: string | null | undefined, site: string): strin
 };
 
 export interface MergeSource {
-  reg: { name?: string; x_username?: string; ticket_number?: string | null };
+  reg: { name?: string; x_username?: string; ticket_number?: string | null; kit_name?: string | null; kit_quantity?: number | null; kit_unit_price?: number | string | null; total_amount?: number | string | null };
   event: {
     title?: string; subtitle?: string | null; event_date?: string; venue?: string | null; banner_url?: string | null;
     registration_fee?: number | string | null; terms_html?: string | null; terms_intro?: string | null; terms_items?: string[] | null; contact_links?: unknown;
@@ -175,6 +175,10 @@ export function buildValues({ reg, event, site = "", bannerUrl, bannerAlt, extra
     "Event Date": formatEventDate(event.event_date),
     "Venue": event.venue ?? "",
     "Registration Fee": money(event.registration_fee),
+    "Kit": reg.kit_name ?? "",
+    "Quantity": reg.kit_quantity ? String(reg.kit_quantity) : "",
+    "Unit Price": money(reg.kit_unit_price),
+    "Total Amount": money(reg.total_amount),
     "Terms": terms,
     "Contact Links": mode === "html" ? contactLinksHtml(event.contact_links) : contactLinksText(event.contact_links),
     "Banner": mode === "html" && banner
@@ -202,5 +206,5 @@ export function renderEmail(tpl: Template, src: MergeSource) {
   };
 }
 
-export const SAMPLE_REG = { name: "Juan Dela Cruz", x_username: "juandelacruz", ticket_number: "TEST-000000" };
+export const SAMPLE_REG = { name: "Juan Dela Cruz", x_username: "juandelacruz", ticket_number: "TEST-000000", kit_name: "Event kit", kit_quantity: 2, kit_unit_price: 100, total_amount: 200 };
 export const SAMPLE_EXTRA = { reason: "The reference number on the receipt does not match.", amount_paid: 95, amount_due: 5, reference_number: "1234567890123" };

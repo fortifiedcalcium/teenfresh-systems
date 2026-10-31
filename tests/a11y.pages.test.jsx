@@ -25,6 +25,7 @@ import Dashboard from "../src/pages/admin/Dashboard.jsx";
 import Events from "../src/pages/admin/Events.jsx";
 import Attendees from "../src/pages/admin/Attendees.jsx";
 import Payments from "../src/pages/admin/Payments.jsx";
+import KitsTab from "../src/pages/admin/KitsTab.jsx";
 import Scanner from "../src/pages/admin/Scanner.jsx";
 import Tracker from "../src/pages/admin/Tracker.jsx";
 import EmailTemplates from "../src/pages/admin/EmailTemplates.jsx";
@@ -41,7 +42,10 @@ const ev = {
 };
 const reg = { id: "r1", event_id: "e1", user_id: "u1", name: "Juan Dela Cruz", x_username: "juan", email: "juan@example.com", facebook_url: "https://www.facebook.com/juan", contact_number: "+639171234567", notes: null, ticket_number: "IVEMON-000001", status: "confirmed", payment_id: "p1", checked_in_at: null, kit_claimed: false, receipt_verified: false, created_at: future, checker: null, payment: { status: "verified", amount_paid: 100, reference_number: "1234567890123" }, payments: { id: "p1", status: "verified", review_note: null, amount_due: null, amount_paid: 100, reference_number: "1234567890123", sender_name: "Juan D." }, events: { title: ev.title, event_date: future, venue: "Psicom Blue Club", registration_fee: 100 } };
 const payment = (over = {}) => ({ id: "p1", event_id: "e1", user_id: "u1", sender_name: "Juan D.", amount_paid: 100, reference_number: "1234567890123", receipt_path: "u1/receipt.png", receipt_history: [], reference_history: [], status: "pending", amount_due: null, review_note: null, resubmission_count: 0, created_at: future,
-  sender_profile: { email: "juan@example.com", full_name: "Juan" }, registrations: [{ id: "r1", name: "Juan Dela Cruz", x_username: "juan", facebook_url: "https://www.facebook.com/juan", status: "pending_verification", ticket_number: null }], ...over });
+  sender_profile: { email: "juan@example.com", full_name: "Juan" }, registrations: [{ id: "r1", name: "Juan Dela Cruz", x_username: "juan", facebook_url: "https://www.facebook.com/juan", status: "pending_verification", ticket_number: null, kit_name: "Event kit", kit_quantity: 1, total_amount: 100 }], ...over });
+
+const kitA = { id: "ka", event_id: "e1", name: "Standard kit", description: "(1) Cupsleeve, (1) Trading Card", unit_price: 100, max_per_order: 5, active: true };
+const kitB = { id: "kb", event_id: "e1", name: "Deluxe kit", description: "Everything in Standard plus a poster", unit_price: 250.5, max_per_order: 2, active: true };
 
 beforeEach(() => {
   sessionStorage.clear();   // the registration form saves unsent progress there
@@ -222,9 +226,29 @@ describe("attendee pages", () => {
     expect(fixtures.current.fnCalls ?? []).toHaveLength(0);                           // acknowledgment emails are off by default
   });
 
+  it("EventRegister: typing in a field never loses focus to the error summary (regression: focus was stolen after one character)", async () => {
+    asUser();
+    fixtures.current.payments = [];
+    const user = userEvent.setup();
+    page("/events/:id/register", <EventRegister />, "/events/e1/register");
+    await screen.findByRole("heading", { level: 1, name: "Register" });
+    await fillStep1(user);                                                              // a successful submit: the form is now in "re-validate as you type" mode
+    await screen.findByRole("heading", { level: 2, name: "Participant's information" });
+    const fb = screen.getByLabelText(/^Facebook Profile Link/);
+    await user.click(fb);
+    await user.keyboard("fb.com/TeenfreshPH");                                          // the first characters are an invalid link, so errors appear and disappear while typing
+    expect(fb).toHaveValue("fb.com/TeenfreshPH");
+    expect(fb).toHaveFocus();
+    const phone = screen.getByLabelText(/^Contact Number/);
+    await user.click(phone);
+    await user.keyboard("0917123");
+    expect(phone).toHaveValue("0917123"); expect(phone).toHaveFocus();
+    expect(screen.queryByRole("alert", { name: /problem/ })).toBeNull();               // nothing was "submitted", so no summary yet
+  });
+
   it("EventRegister: one earlier payment can be reused, which locks the fields and needs no new receipt", async () => {
     asUser();
-    fixtures.current.payments = [{ id: "pay1", sender_name: "Juan D.", amount_paid: 200, reference_number: "5550001112223", status: "pending", registrations: [{ id: "r1", status: "pending_verification" }] }];
+    fixtures.current.payments = [{ id: "pay1", sender_name: "Juan D.", amount_paid: 200, reference_number: "5550001112223", status: "pending", registrations: [{ id: "r1", status: "pending_verification", total_amount: 100 }] }];
     fixtures.current.rpc = { submit_registration: { registration_id: "r2", payment_id: "pay1", status: "pending_verification", ticket_number: null } };
     const user = userEvent.setup();
     const { container } = page("/events/:id/register", <EventRegister />, "/events/e1/register");
@@ -234,7 +258,7 @@ describe("attendee pages", () => {
     await fillStep2(user);
     await screen.findByRole("heading", { level: 2, name: "Payment" });
     const select = screen.getByLabelText("Use the payment details from one of my earlier forms");
-    expect(select).toHaveTextContent("1 form left");
+    expect(select).toHaveTextContent("₱100.00 left");
     await user.selectOptions(select, "pay1");
     expect(screen.getByLabelText(/^Name of Sender/)).toHaveAttribute("readonly");
     expect(screen.getByLabelText(/^Amount Paid/)).toHaveValue("200");
@@ -259,6 +283,143 @@ describe("attendee pages", () => {
     await user.click(screen.getByRole("button", { name: "Review registration" }));
     await user.click(await screen.findByRole("button", { name: "Submit registration" }));
     expect(await screen.findByText(/already registered for this event/)).toBeInTheDocument();
+  });
+
+  it("EventRegister with kits: choose a kit and a quantity, see the total, pay at least that, and send the order", async () => {
+    asUser();
+    fixtures.current.payments = [];
+    fixtures.current.event_kits = [kitA, kitB];
+    fixtures.current.rpc = { submit_registration: { registration_id: "rnew", payment_id: "pnew", status: "pending_verification", ticket_number: null, kit_name: "Deluxe kit", kit_quantity: 2, total_amount: 501 } };
+    const user = userEvent.setup({ applyAccept: false });
+    const { container } = page("/events/:id/register", <EventRegister />, "/events/e1/register");
+    await screen.findByRole("heading", { level: 1, name: "Register" });
+    expect(screen.getByText(/Standard kit: ₱100.00 each \(up to 5 per form\)/)).toBeInTheDocument();   // the header lists the kits as text
+    expect(screen.getAllByRole("listitem").some((li) => /Kit and quantity/.test(li.textContent))).toBe(true);   // the extra step is in the progress list
+    await fillStep1(user); await screen.findByRole("heading", { level: 2, name: "Participant's information" }); await fillStep2(user);
+
+    // the kit step
+    const h = await screen.findByRole("heading", { level: 2, name: "Kit and quantity" });
+    await waitFor(() => expect(h).toHaveFocus());
+    expect(screen.getByRole("radio", { name: /Standard kit/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Deluxe kit/ })).toBeInTheDocument();
+    expect(screen.getByText("₱250.50 each")).toBeInTheDocument();
+    expect(screen.getByText("Up to 2 per form")).toBeInTheDocument();
+    expect(screen.getByText(/^(Total to pay|Choose a kit and a quantity)/)).toHaveTextContent("Choose a kit and a quantity to see the total.");
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: "Next" }));                          // nothing chosen yet
+    const summary = await screen.findByRole("alert", { name: /problem/ });
+    await waitFor(() => expect(summary).toHaveFocus());
+    expect(summary).toHaveTextContent(/Kit: Choose a kit/);
+    expect(await check(container)).toHaveNoViolations();
+
+    await user.click(screen.getByRole("radio", { name: /Deluxe kit/ }));
+    expect(screen.getByLabelText(/^Quantity/)).toHaveAccessibleDescription("Up to 2 of this kit per form.");
+    expect(screen.getByText(/^(Total to pay|Choose a kit and a quantity)/)).toHaveTextContent("Total to pay: 1 × ₱250.50 = ₱250.50");
+    await user.click(screen.getByRole("button", { name: "Increase quantity" }));
+    expect(screen.getByLabelText(/^Quantity/)).toHaveValue(2);
+    expect(screen.getByText(/^(Total to pay|Choose a kit and a quantity)/)).toHaveTextContent("Total to pay: 2 × ₱250.50 = ₱501.00");
+    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeDisabled();       // at this kit's limit of 2
+    await user.clear(screen.getByLabelText(/^Quantity/)); await user.type(screen.getByLabelText(/^Quantity/), "3");
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findAllByText(/up to 2 of this kit per form/)).not.toHaveLength(0);   // the limit is named in the error
+    await user.clear(screen.getByLabelText(/^Quantity/)); await user.type(screen.getByLabelText(/^Quantity/), "2");
+    await user.click(screen.getByRole("radio", { name: /Standard kit/ }));                   // switching kits keeps a valid quantity and re-prices
+    expect(screen.getByText(/^(Total to pay|Choose a kit and a quantity)/)).toHaveTextContent("Total to pay: 2 × ₱100.00 = ₱200.00");
+    await user.click(screen.getByRole("radio", { name: /Deluxe kit/ }));
+    await user.click(screen.getByRole("button", { name: "Next" }));
+
+    // payment: the amount to pay is the order's total
+    await screen.findByRole("heading", { level: 2, name: "Payment" });
+    expect(screen.getByText("Amount to pay:")).toBeInTheDocument();
+    expect(screen.getByText(/₱501.00 \(2 × Deluxe kit at ₱250.50\)/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Amount Paid/)).toHaveAccessibleDescription(/At least ₱501.00 \(2 × ₱250.50\)/);
+    await user.type(screen.getByLabelText(/^Name of Sender/), "Juan D.");
+    await user.type(screen.getByLabelText(/^Amount Paid/), "500");
+    await user.type(screen.getByLabelText(/^Reference Number/), "1234567890123");
+    await user.upload(container.querySelector("#receipt"), new File(["r"], "gcash.png", { type: "image/png" }));
+    await user.click(screen.getByRole("button", { name: "Review registration" }));
+    expect((await screen.findAllByText(/at least 501.00 PHP/)).length).toBeGreaterThan(0);   // 500 is not enough for 2 x 250.50
+    await user.clear(screen.getByLabelText(/^Amount Paid/)); await user.type(screen.getByLabelText(/^Amount Paid/), "501");
+    await user.click(screen.getByRole("button", { name: "Review registration" }));
+
+    // review shows the order, and Edit goes back to it
+    const reviewH = await screen.findByRole("heading", { level: 2, name: "Review and submit" });
+    await waitFor(() => expect(reviewH).toHaveFocus());
+    const kitSection = screen.getByRole("region", { name: "Kit and quantity" });
+    expect(kitSection).toHaveTextContent("Deluxe kit"); expect(kitSection).toHaveTextContent("Quantity2"); expect(kitSection).toHaveTextContent("₱250.50"); expect(kitSection).toHaveTextContent("₱501.00");
+    expect(screen.getAllByRole("button", { name: /^Edit / }).length).toBe(4);
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: "Submit registration" }));
+    await screen.findByRole("heading", { level: 1, name: "Registration received" });
+    const call = fixtures.current.rpcCalls.find((c) => c.name === "submit_registration").args;
+    expect(call).toMatchObject({ p_kit_id: "kb", p_quantity: 2, p_amount: 501 });             // the browser sends the choice, never a price for the kit
+    expect(Object.keys(call)).not.toContain("p_unit_price"); expect(Object.keys(call)).not.toContain("p_total");
+  });
+
+  it("EventRegister with a single kit: it is selected for you, and a payment is reused only when its balance covers the order", async () => {
+    asUser();
+    fixtures.current.event_kits = [kitA];
+    fixtures.current.payments = [
+      { id: "small", sender_name: "Small P.", amount_paid: 300, reference_number: "1110001112223", status: "pending", registrations: [{ id: "r1", status: "pending_verification", total_amount: 200 }] },   // 100 left
+      { id: "big", sender_name: "Big P.", amount_paid: 1000, reference_number: "2220001112223", status: "verified", registrations: [{ id: "r2", status: "confirmed", total_amount: 100 }] },       // 900 left
+    ];
+    const user = userEvent.setup();
+    page("/events/:id/register", <EventRegister />, "/events/e1/register");
+    await screen.findByRole("heading", { level: 1, name: "Register" });
+    await fillStep1(user); await screen.findByRole("heading", { level: 2, name: "Participant's information" }); await fillStep2(user);
+    await screen.findByRole("heading", { level: 2, name: "Kit and quantity" });
+    expect(screen.getByRole("radio", { name: /Standard kit/ })).toBeChecked();               // nothing to choose with one kit
+    await user.clear(screen.getByLabelText(/^Quantity/)); await user.type(screen.getByLabelText(/^Quantity/), "3");   // 300
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await screen.findByRole("heading", { level: 2, name: "Payment" });
+    const select = screen.getByLabelText("Use the payment details from one of my earlier forms");
+    expect(select).toHaveTextContent("Big P."); expect(select).not.toHaveTextContent("Small P.");   // only 100 left on the small one, the order needs 300
+    expect(select).toHaveTextContent("₱900.00 left");
+    expect(screen.getByLabelText(/earlier forms/)).toHaveAccessibleDescription(/This form costs ₱300.00/);
+  });
+
+  it("Kits tab: add, validate and save kits", async () => {
+    asUser(true);
+    fixtures.current.event_kits = [{ ...kitA }];
+    const user = userEvent.setup();
+    const { container } = render(shell(<MemoryRouter><KitsTab event={ev} /></MemoryRouter>));
+    expect(await screen.findByDisplayValue("Standard kit")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Price per kit/)).toHaveValue("100");
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: "+ Add a kit" }));
+    await user.click(screen.getByRole("button", { name: "Save kits" }));
+    const summary = await screen.findByRole("alert", { name: /problems/ });
+    expect(summary).toHaveTextContent(/Kit 2: Enter the kit's name/); expect(summary).toHaveTextContent(/Kit 2: Enter a price above 0/);
+    expect(fixtures.current.writes ?? []).toHaveLength(0);                                    // nothing is saved while there are errors
+    expect(await check(container)).toHaveNoViolations();
+    const fieldsets = screen.getAllByRole("group");
+    const second = within(fieldsets[1]);
+    await user.type(second.getByLabelText(/^Name/), "Deluxe kit");
+    await user.type(second.getByLabelText(/^Price per kit/), "0");
+    await user.click(screen.getByRole("button", { name: "Save kits" }));
+    expect(await screen.findAllByText(/price above 0/)).not.toHaveLength(0);                  // 0 is not a price
+    await user.clear(second.getByLabelText(/^Price per kit/)); await user.type(second.getByLabelText(/^Price per kit/), "250.5");
+    await user.clear(second.getByLabelText(/^Most one form/)); await user.type(second.getByLabelText(/^Most one form/), "2");
+    await user.clear(within(fieldsets[0]).getByLabelText(/^Price per kit/)); await user.type(within(fieldsets[0]).getByLabelText(/^Price per kit/), "120");
+    await user.click(screen.getByRole("button", { name: "Save kits" }));
+    await waitFor(() => expect((fixtures.current.writes || []).length).toBe(2));
+    const [upd, ins] = fixtures.current.writes;
+    expect(upd).toMatchObject({ table: "event_kits", op: "update" });
+    expect(upd.args[0]).toMatchObject({ name: "Standard kit", unit_price: 120, max_per_order: 5, sort_order: 0 });
+    expect(ins).toMatchObject({ table: "event_kits", op: "insert" });
+    expect(ins.args[0]).toMatchObject({ event_id: "e1", name: "Deluxe kit", unit_price: 250.5, max_per_order: 2, active: true, sort_order: 1 });
+  });
+
+  it("Kits tab: removing a kit deletes it on save", async () => {
+    asUser(true);
+    fixtures.current.event_kits = [{ ...kitA }, { ...kitB }];
+    const user = userEvent.setup();
+    render(shell(<MemoryRouter><KitsTab event={ev} /></MemoryRouter>));
+    await screen.findByDisplayValue("Deluxe kit");
+    await user.click(screen.getByRole("button", { name: /Remove kit 2, Deluxe kit/ }));
+    expect(screen.queryByDisplayValue("Deluxe kit")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Save kits" }));
+    await waitFor(() => expect(fixtures.current.writes.some((w) => w.op === "delete" && w.table === "event_kits")).toBe(true));
   });
 
   it("EventRegister: after the deadline, when sold out, or when closed the form is replaced by a clear message", async () => {
@@ -441,6 +602,98 @@ describe("admin pages", () => {
     await user.click(within(dialog).getByRole("button", { name: "Send for review" }));
     await waitFor(() => expect(fixtures.current.rpcCalls.find((c) => c.name === "resubmit_payment")?.args).toMatchObject({ p_payment_id: "pb", p_amount: 100, p_reference: "9990001112223" }));
     expect(fixtures.current.rpcCalls.find((c) => c.name === "resubmit_payment").args.p_receipt_path).toMatch(/^u1\/[0-9a-f-]{36}\.pdf$/);
+  });
+
+  it("Events: the editor has a Kits tab", async () => {
+    asUser(true);
+    fixtures.current.event_kits = [{ ...kitA }];
+    const user = userEvent.setup();
+    const { container } = admin(<Events />); await settled("Events");
+    await user.click(screen.getByRole("button", { name: /Edit IVEMON: ODD PLATINUM/ }));
+    const dialog = screen.getByRole("dialog", { name: "Edit event" });
+    expect(within(dialog).getByLabelText(/Registration fee \(PHP\)/)).toHaveAccessibleDescription(/Used only when the event has no kits/);
+    await user.click(within(dialog).getByRole("tab", { name: "Kits" }));
+    expect(await within(dialog).findByDisplayValue("Standard kit")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "+ Add a kit" })).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+  });
+
+  it("Dashboard: kits ordered, by kit, confirmed and pending", async () => {
+    asUser(true);
+    fixtures.current.registrations = [
+      { id: "a", status: "confirmed", created_at: future, checked_in_at: null, kit_name: "Standard kit", kit_quantity: 2 },
+      { id: "b", status: "confirmed", created_at: future, checked_in_at: null, kit_name: "Standard kit", kit_quantity: 1 },
+      { id: "c", status: "pending_verification", created_at: future, checked_in_at: null, kit_name: "Standard kit", kit_quantity: 3 },
+      { id: "d", status: "pending_verification", created_at: future, checked_in_at: null, kit_name: "Deluxe kit", kit_quantity: 2 },
+      { id: "e", status: "rejected", created_at: future, checked_in_at: null, kit_name: "Deluxe kit", kit_quantity: 9 },
+    ];
+    const { container } = admin(<Dashboard />); await settled("Dashboard");
+    const table = await screen.findByRole("table", { name: /Kits ordered/ });
+    const rows = within(table).getAllByRole("row").slice(1).map((r) => [...r.children].map((c) => c.textContent));
+    expect(rows).toEqual([["Deluxe kit", "0", "2", "2"], ["Standard kit", "3", "3", "6"]]);   // rejected orders are not counted
+    expect(await check(container)).toHaveNoViolations();
+  });
+
+  it("Attendees: kit, quantity and total columns", async () => {
+    asUser(true);
+    fixtures.current.registrations = [{ ...reg, kit_name: "Deluxe kit", kit_quantity: 2, kit_unit_price: 250.5, total_amount: 501 }];
+    const user = userEvent.setup();
+    admin(<Attendees />); await settled("Attendees");
+    await screen.findByRole("table", { name: /Attendees/ });
+    expect(screen.getByRole("columnheader", { name: /Kit/ })).toBeInTheDocument();
+    expect(screen.getByText("Deluxe kit × 2")).toBeInTheDocument();
+    expect(screen.getByText("₱501.00")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /View Juan Dela Cruz/ }));
+    expect(within(screen.getByRole("dialog")).getByText("Deluxe kit × 2 at ₱250.50")).toBeInTheDocument();
+  });
+
+  it("Scanner: the kit and quantity are shown (and announced) so the right kit is handed over", async () => {
+    fixtures.current.rpc = { check_in_attendee: { result: "success", name: "Juan Dela Cruz", x_username: "juan", ticket_number: "IVEMONOP-000001", registration_id: "r1", kit_name: "Deluxe kit", kit_quantity: 2, kit_claimed: false, receipt_verified: false } };
+    const user = userEvent.setup();
+    const { container } = admin(<Scanner />); await settled("QR Scanner");
+    await user.type(screen.getByLabelText("Ticket number"), "ivemonop-000001{enter}");
+    await screen.findByRole("heading", { name: "Valid ticket" });
+    expect(screen.getByText("Kit: Deluxe kit × 2")).toBeInTheDocument();
+    expect(container.querySelector('[aria-live="assertive"]')).toHaveTextContent("Kit: Deluxe kit, quantity 2.");
+    expect(await check(container)).toHaveNoViolations();
+  });
+
+  it("Payments: the expected amount is the total of the ordered kits, and each form shows its kit", async () => {
+    asUser(true);
+    fixtures.current.payments = [payment({ amount_paid: 400, registrations: [
+      { id: "r1", name: "Juan Dela Cruz", x_username: "juan", facebook_url: null, status: "pending_verification", ticket_number: null, kit_name: "Standard kit", kit_quantity: 2, total_amount: 200 },
+      { id: "r2", name: "Maria Santos", x_username: "maria", facebook_url: null, status: "pending_verification", ticket_number: null, kit_name: "Deluxe kit", kit_quantity: 1, total_amount: 250.5 }] })];
+    const user = userEvent.setup();
+    const { container } = admin(<Payments />); await settled("Payments");
+    expect(await screen.findByText(/₱400.00 \/ ₱450.50 \(short\)/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Review payment of Juan D./ }));
+    const dialog = screen.getByRole("dialog", { name: /Payment of ₱400.00/ });
+    expect(within(dialog).getByText("Expected (2 forms)")).toBeInTheDocument();
+    expect(within(dialog).getByText("₱450.50")).toBeInTheDocument();
+    expect(within(dialog).getByText("Standard kit × 2 = ₱200.00")).toBeInTheDocument();
+    expect(within(dialog).getByText("Deluxe kit × 1 = ₱250.50")).toBeInTheDocument();
+    expect(within(dialog).getByText(/lower than expected \(₱450.50\)/)).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+  });
+
+  it("My registrations: the order is shown, and the resubmit minimum is the forms' total", async () => {
+    asUser();
+    fixtures.current.registrations = [
+      { ...reg, id: "a", ticket_number: null, status: "pending_verification", kit_name: "Standard kit", kit_quantity: 2, total_amount: 200, payment_id: "pb", payments: { id: "pb", status: "underpaid", review_note: "Short", amount_due: 5, amount_paid: 195, reference_number: "999", sender_name: "Maria S." } },
+      { ...reg, id: "b", name: "Pedro", ticket_number: null, status: "pending_verification", kit_name: "Deluxe kit", kit_quantity: 1, total_amount: 250.5, payment_id: "pb", payments: { id: "pb", status: "underpaid", review_note: "Short", amount_due: 5, amount_paid: 195, reference_number: "999", sender_name: "Maria S." } },
+    ];
+    const user = userEvent.setup();
+    page("/my-registrations", <MyRegistrations />);
+    expect(await screen.findByText("Standard kit × 2 · ₱200.00")).toBeInTheDocument();
+    expect(screen.getByText("Deluxe kit × 1 · ₱250.50")).toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: /Send the missing amount/ })[0]);
+    const dialog = screen.getByRole("dialog", { name: "Send the missing amount" });
+    expect(within(dialog).getByText(/at least ₱450.50, what the forms on this payment add up to/)).toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText(/^Total Amount Paid/), "300");
+    await user.type(within(dialog).getByLabelText(/^Reference Number/), "9990001112223");
+    await user.upload(dialog.querySelector("#resub-receipt"), new File(["r"], "r.png", { type: "image/png" }));
+    await user.click(within(dialog).getByRole("button", { name: "Send for review" }));
+    expect((await within(dialog).findAllByText(/at least 450.50 PHP/)).length).toBeGreaterThan(0);
   });
 
   it("Attendees (table and detail dialog)", async () => {

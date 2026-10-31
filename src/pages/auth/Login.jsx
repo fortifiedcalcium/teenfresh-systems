@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "../../context/AuthContext.jsx";
 import Field from "../../components/Field.jsx";
 import PasswordInput from "../../components/PasswordInput.jsx";
-import ErrorSummary from "../../components/ErrorSummary.jsx";
+import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import Alert from "../../components/Alert.jsx";
 import AuthShell, { GoogleButton } from "./AuthShell.jsx";
 
@@ -16,6 +16,7 @@ export default function Login() {
   const nav = useNavigate();
   const from = useLocation().state?.from || "/";
   const { register, handleSubmit, formState: { errors, isSubmitting, submitCount } } = useForm({ shouldFocusError: false });
+  const [focusSignal, bumpFocus] = useErrorFocus();
   const [error, setError] = useState("");
 
   useEffect(() => { rememberDestination(from); }, [from]);
@@ -31,8 +32,8 @@ export default function Login() {
   return (
     <AuthShell title="Sign in" subtitle="Sign in to register for events and see your tickets.">
       {sessionEnded && <Alert tone="warn" className="mb-4">Your session ended. Please sign in again to continue.</Alert>}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <ErrorSummary errors={errors} submitCount={submitCount} extra={error} labels={{ email: "Email", password: "Password" }} />
+      <form onSubmit={handleSubmit(onSubmit, bumpFocus)} className="space-y-4" noValidate>
+        <ErrorSummary errors={errors} submitCount={submitCount} focusSignal={focusSignal} extra={error} labels={{ email: "Email", password: "Password" }} />
         <Field id="email" label="Email" required error={errors.email?.message}>
           <input type="email" autoComplete="username" className="input" {...register("email", { required: "Enter your email address" })} />
         </Field>

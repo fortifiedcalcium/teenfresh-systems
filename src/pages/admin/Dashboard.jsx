@@ -47,7 +47,7 @@ export default function Dashboard() {
   const load = useCallback(async () => {
     if (!event) return;
     const [all, rec, pays] = await Promise.all([
-      fetchAll(() => supabase.from("registrations").select("id,status,created_at,checked_in_at").eq("event_id", event.id).order("created_at").order("id")),
+      fetchAll(() => supabase.from("registrations").select("id,status,created_at,checked_in_at,kit_name,kit_quantity").eq("event_id", event.id).order("created_at").order("id")),
       supabase.from("registrations").select("id,name,x_username,ticket_number,checked_in_at,checker:profiles!registrations_checked_in_by_fkey(full_name,email)").eq("event_id", event.id).not("checked_in_at", "is", null).order("checked_in_at", { ascending: false }).limit(8),
       fetchAll(() => supabase.from("payments").select("id,amount_paid").eq("event_id", event.id).eq("status", "verified").order("id")),
     ]);
@@ -70,6 +70,9 @@ export default function Dashboard() {
     const pending = rows.filter((r) => r.status === "pending_verification");
     const rejected = rows.filter((r) => r.status === "rejected");
     const used = confirmed.length + pending.length;   // pending forms hold a slot too
+    // kits to prepare: quantity ordered per kit, split into confirmed and still-pending orders
+    const kitMap = new Map();
+    [...confirmed.map((r) => [r, "confirmed"]), ...pending.map((r) => [r, "pending"])].forEach(([r, k]) => { if (!r.kit_name) return; const e = kitMap.get(r.kit_name) || { name: r.kit_name, confirmed: 0, pending: 0 }; e[k] += r.kit_quantity || 1; kitMap.set(r.kit_name, e); });
     const checked = confirmed.filter((r) => r.checked_in_at);
     const byDay = new Map();
     for (let i = 13; i >= 0; i--) { const d = new Date(Date.now() - i * 86400000); byDay.set(d.toISOString().slice(0, 10), 0); }
@@ -79,6 +82,7 @@ export default function Dashboard() {
     return {
       registered: used, confirmed: confirmed.length, pending: pending.length, rejected: rejected.length, checked: checked.length, remaining: Math.max(event.capacity - used, 0),
       rate: confirmed.length ? Math.round((checked.length / confirmed.length) * 100) : 0,
+      kits: [...kitMap.values()].sort((a, b) => a.name.localeCompare(b.name)),
       days: [...byDay].map(([k, v]) => ({ label: k.slice(5), value: v })),
       hours: [...byHour].map(([k, v]) => ({ label: k, value: v })),
     };
@@ -107,6 +111,20 @@ export default function Dashboard() {
         <section className="card p-4" aria-labelledby="c1"><h2 id="c1" className="mb-3 text-lg">Registrations, last 14 days</h2><Bars data={m.days} title="Registrations per day, last 14 days" fill="bg-link" /></section>
         <section className="card p-4" aria-labelledby="c2"><h2 id="c2" className="mb-3 text-lg">Check-ins by hour</h2>{m.hours.length ? <Bars data={m.hours} title="Check-ins per hour" fill="bg-brand-blue" /> : <p className="py-10 text-center text-ink-muted">No check-ins yet.</p>}</section>
       </div>
+      {m.kits.length > 0 && (
+        <section className="card p-4" aria-labelledby="kits-h">
+          <h2 id="kits-h" className="mb-3 text-lg">Kits ordered</h2>
+          {/* a scrollable region must be keyboard-focusable (axe: scrollable-region-focusable), so tabIndex is intentional */}
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+          <div role="region" aria-label="Kits ordered (scrollable)" tabIndex={0} className="relative overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <caption className="sr-only">Kits ordered, by kit</caption>
+              <thead><tr><th scope="col" className="th">Kit</th><th scope="col" className="th">Confirmed</th><th scope="col" className="th">Pending verification</th><th scope="col" className="th">Total</th></tr></thead>
+              <tbody className="divide-y divide-brand-sky">{m.kits.map((k) => <tr key={k.name}><th scope="row" className="td text-left font-semibold">{k.name}</th><td className="td">{k.confirmed}</td><td className="td">{k.pending}</td><td className="td font-bold">{k.confirmed + k.pending}</td></tr>)}</tbody>
+            </table>
+          </div>
+        </section>
+      )}
       <section className="card p-4" aria-labelledby="rc">
         <h2 id="rc" className="mb-3 flex items-center gap-2 text-lg">Recent check-ins <Badge tone="ok">Live updates</Badge></h2>
         {recent.length === 0 ? <p className="text-ink-muted">No check-ins yet.</p> : (

@@ -4,9 +4,9 @@ import AvailabilityBar from "./AvailabilityBar.jsx";
 import Badge from "./Badge.jsx";
 import EventImage from "./EventImage.jsx";
 import { eventStatus, fmtDate, fmtDeadline, fmtTimeRange, STATUS_TONE } from "../lib/availability.js";
-import { peso } from "../lib/payment.js";
+import { peso, priceRange } from "../lib/payment.js";
 
-export default function EventCard({ event, registered, bannerImage, onChanged }) {
+export default function EventCard({ event, registered, bannerImage, onChanged, kits = [] }) {
   const st = eventStatus(event, registered);
   const explainId = `explain-${event.id}`;
   const fee = Number(event.registration_fee);
@@ -24,7 +24,7 @@ export default function EventCard({ event, registered, bannerImage, onChanged })
           <div className="flex gap-2"><dt className="font-semibold">Date:</dt><dd>{fmtDate(event.event_date)}</dd></div>
           <div className="flex gap-2"><dt className="font-semibold">Time:</dt><dd>{fmtTimeRange(event.event_date, event.ends_at)}</dd></div>
           {event.venue && <div className="flex gap-2"><dt className="font-semibold">Venue:</dt><dd>{event.venue}</dd></div>}
-          <div className="flex gap-2"><dt className="font-semibold">Fee:</dt><dd>{fee > 0 ? `${peso(fee)}${event.fee_note ? ` (${event.fee_note})` : ""}` : event.price_info || "Free"}</dd></div>
+          <div className="flex gap-2"><dt className="font-semibold">{kits.length ? "Kits:" : "Fee:"}</dt><dd>{kits.length ? `${priceRange(kits)} each${event.fee_note ? ` (${event.fee_note})` : ""}` : fee > 0 ? `${peso(fee)}${event.fee_note ? ` (${event.fee_note})` : ""}` : event.price_info || "Free"}</dd></div>
           {event.registration_deadline && <div className="flex gap-2"><dt className="font-semibold">Registration closes:</dt><dd>{fmtDeadline(event.registration_deadline)}</dd></div>}
         </dl>
         <div className="mt-auto space-y-2">

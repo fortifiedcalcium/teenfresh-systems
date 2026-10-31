@@ -12,6 +12,7 @@ function builder(table) {
         return (res, rej) => Promise.resolve({ data, error: null, count: rows.length }).then(res, rej);
       }
       if (prop === "maybeSingle" || prop === "single") return () => { st.single = true; return p; };
+      if (["insert", "update", "delete", "upsert"].includes(prop)) return (...args) => { (fixtures.current.writes ||= []).push({ table, op: prop, args }); return p; };   // so tests can see what was saved
       return () => p;
     },
     apply: () => p,

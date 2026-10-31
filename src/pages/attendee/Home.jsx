@@ -9,6 +9,7 @@ export default function Home() {
   const [events, setEvents] = useState(null);
   const [counts, setCounts] = useState({}); // event_id -> registered
   const [banners, setBanners] = useState({}); // event_id -> banner image row
+  const [kits, setKits] = useState({}); // event_id -> its active kits
   const [error, setError] = useState("");
   const announce = useAnnounce();
   const eventsRef = useRef([]);
@@ -17,11 +18,13 @@ export default function Home() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [ev, av, im] = await Promise.all([
+      const [ev, av, im, kt] = await Promise.all([
         supabase.from("events").select("*").order("event_date"),
         supabase.from("event_availability").select("event_id,registered"),
         supabase.from("event_images").select("*").eq("slot", "banner"),
+        supabase.from("event_kits").select("event_id,unit_price").eq("active", true),
       ]);
+      if (alive) setKits((kt.data || []).reduce((m, k) => ({ ...m, [k.event_id]: [...(m[k.event_id] || []), k] }), {}));
       if (alive) setBanners(Object.fromEntries((im.data || []).map((r) => [r.event_id, r])));
       if (!alive) return;
       if (ev.error || av.error) { setError("We could not load the events. Check your connection and refresh the page."); setEvents([]); return; }
@@ -57,7 +60,7 @@ export default function Home() {
         <Empty>No events yet. Check back soon!</Empty>
       ) : (
         <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((e) => <li key={e.id} className="flex"><div className="flex w-full flex-col"><EventCard event={e} registered={counts[e.id] ?? 0} bannerImage={banners[e.id]} /></div></li>)}
+          {events.map((e) => <li key={e.id} className="flex"><div className="flex w-full flex-col"><EventCard event={e} registered={counts[e.id] ?? 0} bannerImage={banners[e.id]} kits={kits[e.id] || []} /></div></li>)}
         </ul>
       )}
     </div>

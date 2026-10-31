@@ -18,6 +18,8 @@ import { useToast } from "../../components/Toast.jsx";
 const TONE = { pending: "warn", verified: "ok", underpaid: "warn", rejected: "bad" };
 const LABEL = { pending: "Pending", verified: "Verified", underpaid: "Underpaid", rejected: "Rejected" };
 const activeForms = (p) => (p.registrations || []).filter((r) => r.status === "pending_verification" || r.status === "confirmed");
+/** what the forms on a payment add up to (quantity x price of each ordered kit), in pesos */
+const expectedOf = (p) => Math.round(activeForms(p).reduce((a, r) => a + Math.round(Number(r.total_amount || 0) * 100), 0)) / 100;
 
 /** A receipt from the private bucket, shown through a short-lived signed URL */
 function Receipt({ path, label }) {
@@ -42,11 +44,10 @@ function Receipt({ path, label }) {
   );
 }
 
-function ReviewDialog({ payment, event, onClose, onChanged }) {
+function ReviewDialog({ payment, onClose, onChanged }) {
   const toast = useToast();
-  const fee = Number(event.registration_fee);
   const forms = activeForms(payment);
-  const expected = fee * forms.length;
+  const expected = expectedOf(payment);
   const paid = Number(payment.amount_paid);
   const short = paid < expected;
   const [action, setAction] = useState(null);       // null | verified | underpaid | rejected
@@ -105,12 +106,12 @@ function ReviewDialog({ payment, event, onClose, onChanged }) {
           <h3 id="det-h" className="text-lg">Details</h3>
           <dl className="space-y-1 text-sm">
             {[["Status", <Badge key="s" tone={TONE[payment.status]}>{LABEL[payment.status]}</Badge>], ["Sender", payment.sender_name], ["Submitted by", payment.sender_profile ? `${payment.sender_profile.full_name || ""} ${payment.sender_profile.email}` : "—"],
-              ["Amount paid", peso(paid)], [`Expected (${forms.length} × ${peso(fee)})`, peso(expected)], ["Reference", <span key="r" className="font-mono">{payment.reference_number}</span>], ["Submitted", fmtDateTime(payment.created_at)],
+              ["Amount paid", peso(paid)], [`Expected (${forms.length} form${forms.length === 1 ? "" : "s"})`, peso(expected)], ["Reference", <span key="r" className="font-mono">{payment.reference_number}</span>], ["Submitted", fmtDateTime(payment.created_at)],
               ...(payment.amount_due ? [["Amount due", peso(payment.amount_due)]] : []), ...(payment.review_note ? [["Note", payment.review_note]] : []), ...(payment.resubmission_count ? [["Resubmitted", `${payment.resubmission_count} time(s)`]] : [])]
               .map(([k, v]) => <div key={k} className="flex flex-wrap justify-between gap-2"><dt className="font-semibold">{k}</dt><dd className="text-right">{v}</dd></div>)}
           </dl>
           <div><p className="font-semibold">Linked forms</p>
-            <ul className="mt-1 space-y-1 text-sm">{(payment.registrations || []).map((r) => <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-brand-sky p-2"><span>{r.name} <span className="text-ink-muted">@{r.x_username}</span>{r.facebook_url && <> · <a href={r.facebook_url} target="_blank" rel="noopener noreferrer">Facebook{" "}<span className="sr-only">of {r.name} (opens in a new tab)</span></a></>}</span><span className="flex gap-2"><Badge tone={r.status === "confirmed" ? "ok" : r.status === "pending_verification" ? "warn" : "bad"}>{r.status.replace("_", " ")}</Badge>{r.ticket_number && <span className="font-mono">{r.ticket_number}</span>}</span></li>)}</ul>
+            <ul className="mt-1 space-y-1 text-sm">{(payment.registrations || []).map((r) => <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-brand-sky p-2"><span>{r.name} <span className="text-ink-muted">@{r.x_username}</span>{r.kit_name && <span className="block text-ink-muted">{r.kit_name} × {r.kit_quantity} = {peso(r.total_amount)}</span>}{r.facebook_url && <> · <a href={r.facebook_url} target="_blank" rel="noopener noreferrer">Facebook{" "}<span className="sr-only">of {r.name} (opens in a new tab)</span></a></>}</span><span className="flex gap-2"><Badge tone={r.status === "confirmed" ? "ok" : r.status === "pending_verification" ? "warn" : "bad"}>{r.status.replace("_", " ")}</Badge>{r.ticket_number && <span className="font-mono">{r.ticket_number}</span>}</span></li>)}</ul>
           </div>
           {short && reviewable && <Alert tone="warn">The amount paid ({peso(paid)}) is lower than expected ({peso(expected)}). Convenience or transaction fees are not covered by the kit price.</Alert>}
           {paid > expected && expected > 0 && <Alert tone="info">The amount is higher than expected ({peso(expected)}). It may cover more forms the person has not submitted yet.</Alert>}
@@ -156,7 +157,7 @@ export default function Payments() {
   const load = useCallback(async () => {
     if (!event) return;
     const data = await fetchAll(() => supabase.from("payments")
-      .select("*, sender_profile:profiles!payments_user_id_fkey(email,full_name), registrations(id,name,x_username,facebook_url,status,ticket_number)")
+      .select("*, sender_profile:profiles!payments_user_id_fkey(email,full_name), registrations(id,name,x_username,facebook_url,status,ticket_number,kit_name,kit_quantity,total_amount)")
       .eq("event_id", event.id).order("created_at").order("id"));
     setRows(data);
     setSel((s) => (s ? data.find((p) => p.id === s.id) || null : s));
@@ -176,10 +177,9 @@ export default function Payments() {
   const counts = useMemo(() => Object.fromEntries(["pending", "underpaid", "verified", "rejected"].map((s) => [s, (rows || []).filter((p) => p.status === s).length])), [rows]);
 
   if (!event) return <Empty>Create an event first.</Empty>;
-  const fee = Number(event.registration_fee);
   const cols = [
     { key: "sender_name", label: "Sender", render: (p) => <>{p.sender_name}<br /><span className="text-xs font-normal text-ink-muted">{p.sender_profile?.email}</span></> },
-    { key: "amount_paid", label: "Paid / expected", sortValue: (p) => Number(p.amount_paid), render: (p) => { const exp = fee * activeForms(p).length; return <span className={Number(p.amount_paid) < exp ? "font-bold text-danger" : ""}>{peso(p.amount_paid)} / {peso(exp)}{Number(p.amount_paid) < exp ? " (short)" : ""}</span>; } },
+    { key: "amount_paid", label: "Paid / expected", sortValue: (p) => Number(p.amount_paid), render: (p) => { const exp = expectedOf(p); return <span className={Number(p.amount_paid) < exp ? "font-bold text-danger" : ""}>{peso(p.amount_paid)} / {peso(exp)}{Number(p.amount_paid) < exp ? " (short)" : ""}</span>; } },
     { key: "reference_number", label: "Reference", className: "font-mono" },
     { key: "forms", label: "Forms", sortValue: (p) => (p.registrations || []).length, render: (p) => <ul>{(p.registrations || []).map((r) => <li key={r.id}>{r.name} <span className="text-ink-muted">@{r.x_username}</span></li>)}</ul> },
     { key: "created_at", label: "Submitted", className: "whitespace-nowrap", render: (p) => fmtDateTime(p.created_at) },
@@ -200,7 +200,7 @@ export default function Payments() {
       </div>
       <p role="status" className="text-sm font-semibold">{rows ? `${shown.length} payment${shown.length === 1 ? "" : "s"} found` : "Loading payments…"}</p>
       <DataTable caption="Payments" columns={cols} rows={shown} loading={rows === null} empty={status === "pending" ? "No payments are waiting for review." : "No payments match."} initialSort={{ key: "created_at", dir: "asc" }} />
-      {sel && <ReviewDialog payment={sel} event={event} onClose={() => setSel(null)} onChanged={() => { setSel(null); load(); }} />}
+      {sel && <ReviewDialog payment={sel} onClose={() => setSel(null)} onChanged={() => { setSel(null); load(); }} />}
     </div>
   );
 }

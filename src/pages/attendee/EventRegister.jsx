@@ -8,9 +8,9 @@ import { callFunction, friendlyError } from "../../lib/api.js";
 import { stepSchemaFor, isUnusualReferenceLength } from "../../lib/validation.js";
 import { eventStatus } from "../../lib/availability.js";
 import { fetchEventImages } from "../../lib/eventImages.js";
-import { normalizeFacebook, normalizePhone, normalizeReference, normalizeX, parseAmount, peso, receiptPath, reusablePayments, coverageLeft, validateReceiptFile, formatBytes } from "../../lib/payment.js";
+import { normalizeFacebook, normalizePhone, normalizeReference, normalizeX, orderTotal, parseAmount, peso, receiptPath, reusablePayments, balanceLeft, validateReceiptFile, formatBytes } from "../../lib/payment.js";
 import Field from "../../components/Field.jsx";
-import ErrorSummary from "../../components/ErrorSummary.jsx";
+import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
 import SafeHtml from "../../components/SafeHtml.jsx";
@@ -18,6 +18,7 @@ import EventImage from "../../components/EventImage.jsx";
 import EventHeader from "../../components/EventHeader.jsx";
 import CopyButton from "../../components/CopyButton.jsx";
 import FileUpload from "../../components/FileUpload.jsx";
+import KitOrder from "../../components/KitOrder.jsx";
 import Stepper from "../../components/Stepper.jsx";
 import TicketCard from "../../components/TicketCard.jsx";
 import { contactLinkList } from "../../components/ContactLinks.jsx";
@@ -26,8 +27,8 @@ import { Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import { useAnnounce } from "../../a11y.jsx";
 
-const DEFAULTS = { email: "", agree: false, name: "", x_username: "", facebook_url: "", contact_number: "", reuse_payment_id: "", sender_name: "", amount_paid: "", reference_number: "", notes: "" };
-const FIELD_LABELS = { email: "Email", agree: "Confirmation", name: "Name", x_username: "X/Twitter username", facebook_url: "Facebook profile link", contact_number: "Contact number", sender_name: "Name of sender", amount_paid: "Amount paid", reference_number: "Reference number", receipt: "Payment receipt", notes: "Notes" };
+const DEFAULTS = { email: "", agree: false, name: "", x_username: "", facebook_url: "", contact_number: "", kit_id: "", quantity: "1", reuse_payment_id: "", sender_name: "", amount_paid: "", reference_number: "", notes: "" };
+const FIELD_LABELS = { email: "Email", agree: "Confirmation", name: "Name", x_username: "X/Twitter username", facebook_url: "Facebook profile link", contact_number: "Contact number", kit_id: "Kit", quantity: "Quantity", sender_name: "Name of sender", amount_paid: "Amount paid", reference_number: "Reference number", receipt: "Payment receipt", notes: "Notes" };
 const FIELD_IDS = { agree: "agree", receipt: "receipt" };
 
 // Unsent progress lives in sessionStorage (this tab only). The receipt file is never stored.
@@ -45,6 +46,7 @@ export default function EventRegister() {
   const [registered, setRegistered] = useState(0);
   const [images, setImages] = useState({});
   const [payments, setPayments] = useState([]);
+  const [kits, setKits] = useState([]);
   const draft = useMemo(() => loadDraft(id), [id]);
   const [stepKey, setStepKey] = useState(draft?.step || "info");
   const [file, setFile] = useState(null);
@@ -53,28 +55,33 @@ export default function EventRegister() {
   const [serverError, setServerError] = useState("");
   const [done, setDone] = useState(null);
   const [emailState, setEmailState] = useState("idle");
+  const [focusSignal, bumpFocus] = useErrorFocus();
   const headingRef = useRef(null);
   const doneRef = useRef(null);
   const feeRef = useRef(0);
+  const kitsRef = useRef([]);
   const stepRef = useRef(stepKey);
   stepRef.current = stepKey;
 
   const form = useForm({
     shouldFocusError: false, // the error summary takes focus instead
     defaultValues: { ...DEFAULTS, email: user?.email || "", ...(draft?.values || {}) },
-    resolver: (values, ctx, opts) => zodResolver(stepSchemaFor(stepRef.current, feeRef.current))(values, ctx, opts),
+    // each step is checked against the kits and the order total as they are right now
+    resolver: (values, ctx, opts) => zodResolver(stepSchemaFor(stepRef.current, { kits: kitsRef.current, total: orderTotal(values, kitsRef.current, feeRef.current).total }))(values, ctx, opts),
   });
   const { register, handleSubmit, getValues, setValue, watch, reset, formState: { errors, submitCount } } = form;
 
   const loadAll = useCallback(async () => {
-    const [ev, av, pay, imgs] = await Promise.all([
+    const [ev, av, pay, imgs, kt] = await Promise.all([
       supabase.from("events").select("*").eq("id", id).maybeSingle(),
       supabase.from("event_availability").select("registered").eq("event_id", id).maybeSingle(),
-      supabase.from("payments").select("id,sender_name,amount_paid,reference_number,status,registrations(id,status)").eq("event_id", id).eq("user_id", user.id).order("created_at"),
+      supabase.from("payments").select("id,sender_name,amount_paid,reference_number,status,registrations(id,status,total_amount)").eq("event_id", id).eq("user_id", user.id).order("created_at"),
       fetchEventImages(id),
+      supabase.from("event_kits").select("*").eq("event_id", id).eq("active", true).order("sort_order").order("created_at"),
     ]);
     feeRef.current = Number(ev.data?.registration_fee || 0);
-    setEvent(ev.data ?? null); setRegistered(av.data?.registered ?? 0); setPayments(pay.data || []); setImages(imgs);
+    kitsRef.current = kt.data || [];
+    setEvent(ev.data ?? null); setRegistered(av.data?.registered ?? 0); setPayments(pay.data || []); setImages(imgs); setKits(kt.data || []);
   }, [id, user.id]);
 
   useEffect(() => {
@@ -89,11 +96,18 @@ export default function EventRegister() {
   useEffect(() => { const sub = watch((values) => saveDraft(id, values, stepRef.current)); return () => sub.unsubscribe(); }, [watch, id]);
 
   const fee = Number(event?.registration_fee || 0);
-  const paid = fee > 0;
+  const kitMode = kits.length > 0;                       // the event offers kit options (otherwise: one flat fee, quantity 1)
+  const kitId = watch("kit_id"), quantityValue = watch("quantity");
+  const order = orderTotal({ kit_id: kitId, quantity: quantityValue }, kits, fee);
+  const total = order.total;
+  const paid = kitMode || fee > 0;                       // is there a payment step at all
   const steps = useMemo(() => [
     { key: "info", label: "Event info and terms" }, { key: "participant", label: "Participant's information" },
+    ...(kitMode ? [{ key: "kit", label: "Kit and quantity" }] : []),
     ...(paid ? [{ key: "payment", label: "Payment" }] : []), { key: "review", label: "Review and submit" },
-  ], [paid]);
+  ], [paid, kitMode]);
+  // with a single kit there is nothing to choose: select it
+  useEffect(() => { if (kits.length === 1 && !getValues("kit_id")) setValue("kit_id", kits[0].id); }, [kits, setValue, getValues]);
   const stepIndex = Math.max(0, steps.findIndex((s) => s.key === stepKey));
   const current = steps[stepIndex].key;
 
@@ -107,7 +121,9 @@ export default function EventRegister() {
   const back = () => go(steps[Math.max(stepIndex - 1, 0)].key);
 
   const reuseId = watch("reuse_payment_id");
-  const reusable = useMemo(() => reusablePayments(payments, fee), [payments, fee]);
+  const reusable = useMemo(() => reusablePayments(payments, total), [payments, total]);
+  // changing the order can make an earlier payment too small: stop using it
+  useEffect(() => { if (reuseId && !reusable.some((p) => p.id === reuseId)) { setValue("reuse_payment_id", ""); setValue("sender_name", ""); setValue("amount_paid", ""); setValue("reference_number", ""); } }, [reusable, reuseId, setValue]);
   const reusedPayment = payments.find((p) => p.id === reuseId);
   const chooseReuse = (value) => {
     setValue("reuse_payment_id", value);
@@ -122,7 +138,7 @@ export default function EventRegister() {
     setReceiptError(problem || "");
     return !problem;
   };
-  const onNext = handleSubmit(() => { if (checkReceipt()) next(); }, () => { checkReceipt(); });
+  const onNext = handleSubmit(() => { if (checkReceipt()) next(); else bumpFocus(); }, () => { checkReceipt(); bumpFocus(); });
 
   const refNumber = watch("reference_number");
   const notesLength = (watch("notes") || "").length;
@@ -141,6 +157,7 @@ export default function EventRegister() {
       p_notes: v.notes || null, p_agreed: v.agree, p_payment_id: v.reuse_payment_id || null,
       p_sender_name: v.reuse_payment_id ? null : v.sender_name, p_amount: v.reuse_payment_id ? null : parseAmount(v.amount_paid),
       p_reference: v.reuse_payment_id ? null : v.reference_number, p_receipt_path: path,
+      p_kit_id: kitMode ? v.kit_id : null, p_quantity: kitMode ? Number(v.quantity) : 1,
     });
     setSubmitting(false);
     if (error) { setServerError(friendlyError(error)); return; }
@@ -189,7 +206,7 @@ export default function EventRegister() {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
         <h1 className="text-2xl">Register</h1>
-        <EventHeader event={event} st={st} />
+        <EventHeader event={event} st={st} kits={kits} />
         <Alert tone="bad"><strong>{st.label}.</strong> {st.reason} <Link to="/">Back to events</Link></Alert>
       </div>
     );
@@ -200,6 +217,7 @@ export default function EventRegister() {
     ["info", "Event info and terms", [["Email", v.email], ["Terms and Conditions", "Agreed"]]],
     ["participant", "Participant's information", [["Name", v.name], ["X/Twitter Username", "@" + normalizeX(v.x_username)], ["Facebook Profile Link", normalizeFacebook(v.facebook_url) || v.facebook_url], ["Contact Number", normalizePhone(v.contact_number) || v.contact_number]]],
   ];
+  if (kitMode) reviewSections.push(["kit", "Kit and quantity", [["Kit", order.kit?.name || "Not chosen"], ["Quantity", order.qty ?? v.quantity], ["Price per kit", peso(order.unit)], ["Total to pay", peso(total)]]]);
   if (paid) {
     reviewSections.push(["payment", "Payment", reusedPayment
       ? [["Using the payment of", `${reusedPayment.sender_name}, ${peso(reusedPayment.amount_paid)}`], ["Reference Number", reusedPayment.reference_number], ["Notes", v.notes || "None"]]
@@ -209,12 +227,12 @@ export default function EventRegister() {
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <h1 className="text-2xl">Register</h1>
-      <EventHeader event={event} st={st} />
+      <EventHeader event={event} st={st} kits={kits} />
       <Stepper steps={steps} current={stepIndex} />
 
       <form onSubmit={(e) => e.preventDefault()} className="card space-y-5 p-5" noValidate aria-labelledby="step-heading">
         <h2 id="step-heading" ref={headingRef} tabIndex={-1} className="text-xl">{steps[stepIndex].label}</h2>
-        {current !== "review" && <ErrorSummary errors={{ ...errors, ...(receiptError ? { receipt: { message: receiptError } } : {}) }} labels={FIELD_LABELS} submitCount={submitCount} fieldIds={FIELD_IDS} />}
+        {current !== "review" && <ErrorSummary key={current} errors={{ ...errors, ...(receiptError ? { receipt: { message: receiptError } } : {}) }} labels={FIELD_LABELS} submitCount={submitCount} focusSignal={focusSignal} fieldIds={FIELD_IDS} />}
 
         {/* ---------------------------------------------------- step 1 */}
         {current === "info" && (
@@ -270,7 +288,12 @@ export default function EventRegister() {
           </>
         )}
 
-        {/* ---------------------------------------------------- step 3 */}
+        {/* ---------------------------------------------------- kit and quantity */}
+        {current === "kit" && (
+          <KitOrder kits={kits} register={register} errors={errors} kitId={kitId} quantity={quantityValue} onQuantity={(q) => setValue("quantity", q, { shouldValidate: submitCount > 0 })} order={order} />
+        )}
+
+        {/* ---------------------------------------------------- payment */}
         {current === "payment" && (
           <>
             <p className="text-sm text-ink-muted">For any other questions and concerns, you may send it on the confirmation email afterwards.</p>
@@ -280,7 +303,7 @@ export default function EventRegister() {
                 <dl className="mt-2 space-y-2 text-sm">
                   <div className="flex flex-wrap gap-2"><dt className="font-semibold">G Cash:</dt><dd>{event.payment_account_name}</dd></div>
                   <div className="flex flex-wrap items-center gap-3"><dt className="font-semibold">Account number:</dt><dd className="font-mono text-lg font-bold">{event.payment_account_number}</dd>{event.payment_account_number && <dd><CopyButton text={event.payment_account_number} /></dd>}</div>
-                  <div className="flex flex-wrap gap-2"><dt className="font-semibold">Registration Fee:</dt><dd>{fee}php (Exclusive of food and drinks)</dd></div>
+                  <div className="flex flex-wrap gap-2"><dt className="font-semibold">{kitMode ? "Amount to pay" : "Registration Fee"}:</dt><dd>{kitMode ? `${peso(total)}${order.qty ? ` (${order.qty} × ${order.kit.name} at ${peso(order.unit)})` : ""}` : `${fee}php (Exclusive of food and drinks)`}</dd></div>
                 </dl>
               ) : <Alert tone="warn" className="mt-2">The payment details are not available yet. Please check back soon.</Alert>}
               <p className="mt-3 text-sm">Kindly avoid using the &quot;Money Protect&quot; feature to avoid inconveniences and cancellation of your slot.</p>
@@ -296,14 +319,14 @@ export default function EventRegister() {
                 <label htmlFor="reuse" className="label">Use the payment details from one of my earlier forms</label>
                 <select id="reuse" className="input" value={reuseId || ""} onChange={(e) => chooseReuse(e.target.value)} aria-describedby="reuse-hint">
                   <option value="">No, I made a new payment</option>
-                  {reusable.map((p) => <option key={p.id} value={p.id}>{p.sender_name}, {peso(p.amount_paid)}, ref …{p.reference_number.slice(-4)} ({coverageLeft(p, fee)} form{coverageLeft(p, fee) === 1 ? "" : "s"} left)</option>)}
+                  {reusable.map((p) => <option key={p.id} value={p.id}>{p.sender_name}, {peso(p.amount_paid)}, ref …{p.reference_number.slice(-4)} ({peso(balanceLeft(p))} left)</option>)}
                 </select>
-                <p id="reuse-hint" className="hint">One payment can cover one form for every {peso(fee)} paid. Choosing one fills in and locks the fields below.</p>
+                <p id="reuse-hint" className="hint">A payment can cover several forms until its balance is used up. This form costs {peso(total)}. Choosing one fills in and locks the fields below.</p>
               </div>
             )}
 
             <Field id="sender_name" label="Name of Sender" required error={errors.sender_name?.message}><input className="input" readOnly={!!reuseId} {...register("sender_name")} /></Field>
-            <Field id="amount_paid" label="Amount Paid" required hint={`At least ${peso(fee)}. Convenience or transaction fees are not covered. Send enough so that the kit price is complete.`} error={errors.amount_paid?.message}>
+            <Field id="amount_paid" label="Amount Paid" required hint={`At least ${peso(total)}${kitMode && order.qty ? ` (${order.qty} × ${peso(order.unit)})` : ""}. Convenience or transaction fees are not covered. Send enough so that the kit price is complete.`} error={errors.amount_paid?.message}>
               <input className="input" inputMode="decimal" readOnly={!!reuseId} {...register("amount_paid")} />
             </Field>
             <Field id="reference_number" label="Reference Number" required hint="Digits only, from your GCash receipt" error={errors.reference_number?.message}>

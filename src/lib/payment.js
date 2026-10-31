@@ -48,15 +48,38 @@ export function validateReceiptFile(file) {
   return null;
 }
 
-/** One payment can cover floor(paid / fee) forms. Cancelled and rejected forms do not use coverage. */
-export function coverageLeft(payment, fee) {
-  if (!fee || fee <= 0) return 0;
-  const used = (payment.registrations || []).filter((r) => r.status === "pending_verification" || r.status === "confirmed").length;
-  return Math.floor(Number(payment.amount_paid) / fee) - used;
+const activeForm = (r) => r.status === "pending_verification" || r.status === "confirmed";
+const cents = (n) => Math.round(Number(n || 0) * 100);
+
+/** What is left of a payment: the amount paid minus the totals of the forms already attached to it
+ *  (cancelled and rejected forms do not use any of it). Same rule as submit_registration. */
+export function balanceLeft(payment) {
+  const used = (payment.registrations || []).filter(activeForm).reduce((a, r) => a + cents(r.total_amount), 0);
+  return (cents(payment.amount_paid) - used) / 100;
 }
 
-/** Payments that a new form may still be attached to (pending or verified, with coverage left) */
-export const reusablePayments = (payments, fee) => (payments || []).filter((p) => (p.status === "pending" || p.status === "verified") && coverageLeft(p, fee) >= 1);
+/** Payments a new form of `total` pesos may still be attached to (pending or verified, with enough left) */
+export const reusablePayments = (payments, total) => (payments || []).filter((p) => (p.status === "pending" || p.status === "verified") && total > 0 && cents(balanceLeft(p)) >= cents(total));
+
+/** What the form orders and what it costs. With kit options the price comes from the chosen kit; without any,
+ *  the event has one flat fee and a quantity of 1. The database repeats this calculation and never trusts the browser. */
+export function orderTotal(values, kits, fee) {
+  if (kits && kits.length) {
+    const kit = kits.find((k) => k.id === values.kit_id) || null;
+    const qty = Number.parseInt(values.quantity, 10);
+    const ok = kit && Number.isInteger(qty) && qty >= 1 && qty <= kit.max_per_order;
+    return { kit, qty: ok ? qty : null, unit: kit ? Number(kit.unit_price) : 0, total: ok ? cents(Number(kit.unit_price) * qty) / 100 : 0 };
+  }
+  return { kit: null, qty: 1, unit: Number(fee || 0), total: Number(fee || 0) };
+}
+
+/** "₱100.00" for one price, "₱100.00 to ₱250.00" for several, "" for none */
+export function priceRange(kits) {
+  const prices = (kits || []).map((k) => Number(k.unit_price));
+  if (!prices.length) return "";
+  const lo = Math.min(...prices), hi = Math.max(...prices);
+  return lo === hi ? peso(lo) : `${peso(lo)} to ${peso(hi)}`;
+}
 
 /** Receipt files are stored under <user id>/<random uuid>.<ext>: the original name is never used */
 export const receiptPath = (userId, file) => `${userId}/${crypto.randomUUID()}.${RECEIPT_TYPES[file.type]}`;

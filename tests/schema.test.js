@@ -55,12 +55,12 @@ const mkEvent = async ({ capacity = 10, fee = 100, deadlineDays = 5, open = true
 const rcpt = (user) => `${ids[user]}/${randomUUID()}.jpg`;
 const defaults = (user, ev, o = {}) => ({
   name: "Juan Dela Cruz", x: "@" + user + "_x", email: user + "@example.com", fb: "fb.com/TeenfreshPH", phone: "09171234567", notes: null, agreed: true,
-  payment_id: null, sender: "Juan D.", amount: 100, ref: String(Math.floor(1e12 + Math.random() * 9e12)), receipt: rcpt(user), ...o,
+  payment_id: null, sender: "Juan D.", amount: 100, ref: String(Math.floor(1e12 + Math.random() * 9e12)), receipt: rcpt(user), kit: null, qty: 1, ...o,
 });
 const submit = async (user, ev, o = {}) => {
   const a = defaults(user, ev, o);
-  const r = await db.query("select public.submit_registration($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) as r",
-    [ev, a.name, a.x, a.email, a.fb, a.phone, a.notes, a.agreed, a.payment_id, a.payment_id ? null : a.sender, a.payment_id ? null : a.amount, a.payment_id ? null : a.ref, a.payment_id ? null : a.receipt]);
+  const r = await db.query("select public.submit_registration($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) as r",
+    [ev, a.name, a.x, a.email, a.fb, a.phone, a.notes, a.agreed, a.payment_id, a.payment_id ? null : a.sender, a.payment_id ? null : a.amount, a.payment_id ? null : a.ref, a.payment_id ? null : a.receipt, a.kit, a.qty]);
   return r.rows[0].r;
 };
 const review = async (admin, paymentId, decision, reason = null, override = false, due = null) => {
@@ -74,6 +74,7 @@ beforeAll(async () => {
   await db.exec(STUBS);
   await db.exec(read("schema.sql"));
   await db.exec(read("002_registration_payments.sql"));
+  await db.exec(read("003_kits.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -223,17 +224,17 @@ describe("capacity", () => {
 });
 
 describe("shared payments", () => {
-  it("coverage = floor(paid / fee): two forms on 200 PHP, the third is refused, other users cannot use it", async () => {
+  it("a payment covers forms until its balance is used up: two forms on 200 PHP, the third is refused, other users cannot use it", async () => {
     const ev = await mkEvent();
     await asUser("dave");
     const first = await submit("dave", ev, { x: "share_1", amount: 200 });
     const second = await submit("dave", ev, { x: "share_2", payment_id: first.payment_id });
     expect(second.payment_id).toBe(first.payment_id);
-    await fails(submit("dave", ev, { x: "share_3", payment_id: first.payment_id }), "PAYMENT_COVERAGE_EXCEEDED");
+    await fails(submit("dave", ev, { x: "share_3", payment_id: first.payment_id }), "PAYMENT_BALANCE_TOO_LOW");
     await asUser("erin");
     await fails(submit("erin", ev, { x: "share_4", payment_id: first.payment_id }), "INVALID_PAYMENT");
   });
-  it("a cancelled form frees its coverage", async () => {
+  it("a cancelled form frees its share of the payment", async () => {
     const ev = await mkEvent();
     await asUser("frank");
     const a = await submit("frank", ev, { x: "cov_1", amount: 100 });
@@ -273,10 +274,10 @@ describe("review_payment", () => {
     await fails(db.query("select public.review_payment($1,'verified')", [a.payment_id]), "ALREADY_REVIEWED");
   });
 
-  it("refuses to verify an amount below fee x forms unless the admin overrides with a reason", async () => {
+  it("refuses to verify an amount below the forms' total unless the admin overrides with a reason", async () => {
     const ev = await mkEvent();
     await asUser("ivy"); const a = await submit("ivy", ev, { x: "ovr_1" });
-    await asSuper(); await db.query("update public.events set registration_fee = 150 where id = $1", [ev]);
+    await asSuper(); await db.query("update public.payments set amount_paid = 80 where id = $1", [a.payment_id]);   // the money received is short of the 100 ordered
     await fails(review("admin", a.payment_id, "verified"), "INSUFFICIENT_AMOUNT");
     await fails(review("admin", a.payment_id, "verified", null, true), "OVERRIDE_REASON_REQUIRED");
     const out = await review("admin", a.payment_id, "verified", "Paid the rest in cash", true);
@@ -436,5 +437,167 @@ describe("storage policies", () => {
     expect(b["payment-receipts"].allowed_mime_types.sort()).toEqual(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
     expect(b["event-media"]).toMatchObject({ public: true, file_size_limit: 5242880 });
     expect(b["event-media"].allowed_mime_types).not.toContain("application/pdf");
+  });
+});
+
+/* ======================================================================= kits, quantity and amount per kit */
+const mkKit = async (ev, { name = "Standard kit", price = 100, max = 5, active = true, description = null } = {}) => {
+  await asSuper();
+  return (await db.query("insert into public.event_kits (event_id, name, description, unit_price, max_per_order, active) values ($1,$2,$3,$4,$5,$6) returning id", [ev, name, description, price, max, active])).rows[0].id;
+};
+const regRow = async (id) => row("select kit_id, kit_name, kit_quantity, kit_unit_price, total_amount, status from public.registrations where id = $1", [id]);
+
+describe("kits: choosing a kit, a quantity, and paying quantity x price", () => {
+  it("the amount to pay is quantity x the kit's price, worked out by the database", async () => {
+    const ev = await mkEvent({ fee: 0 });                 // the flat fee is ignored once kits exist
+    const standard = await mkKit(ev, { name: "Standard kit", price: 100, max: 5, description: "Cupsleeve + card" });
+    const deluxe = await mkKit(ev, { name: "Deluxe kit", price: 250, max: 2 });
+    await asUser("alice");
+    const a = await submit("alice", ev, { x: "kit_a", kit: standard, qty: 3, amount: 300 });
+    expect(a.status).toBe("pending_verification");
+    expect(await regRow(a.registration_id)).toMatchObject({ kit_id: standard, kit_name: "Standard kit", kit_quantity: 3, status: "pending_verification" });
+    expect(Number((await regRow(a.registration_id)).kit_unit_price)).toBe(100);
+    expect(Number((await regRow(a.registration_id)).total_amount)).toBe(300);
+    expect(a).toMatchObject({ kit_name: "Standard kit", kit_quantity: 3 }); expect(Number(a.total_amount)).toBe(300);
+    await asUser("bob");
+    const b = await submit("bob", ev, { x: "kit_b", kit: deluxe, qty: 2, amount: 500.5 });   // paying more than needed is allowed
+    expect(Number((await regRow(b.registration_id)).total_amount)).toBe(500);
+  });
+
+  it("refuses an amount below quantity x price, a missing, foreign, switched-off or unknown kit, and a bad quantity", async () => {
+    const ev = await mkEvent({ fee: 0 }), other = await mkEvent({ fee: 0 });
+    const kit = await mkKit(ev, { price: 100, max: 3 });
+    const foreign = await mkKit(other), off = await mkKit(ev, { name: "Retired kit", active: false });
+    await asUser("carol");
+    await fails(submit("carol", ev, { kit, qty: 2, amount: 199.99 }), "AMOUNT_TOO_LOW");       // 2 x 100 needs 200
+    await fails(submit("carol", ev, { kit: null, qty: 1 }), "INVALID_KIT");                      // an event with kits needs a choice
+    await fails(submit("carol", ev, { kit: foreign, qty: 1 }), "INVALID_KIT");                   // a kit of another event
+    await fails(submit("carol", ev, { kit: off, qty: 1 }), "INVALID_KIT");                       // switched off
+    await fails(submit("carol", ev, { kit: "00000000-0000-0000-0000-000000000000", qty: 1 }), "INVALID_KIT");
+    await fails(submit("carol", ev, { kit, qty: 0 }), "INVALID_QUANTITY");
+    await fails(submit("carol", ev, { kit, qty: -2 }), "INVALID_QUANTITY");
+    await fails(submit("carol", ev, { kit, qty: 4 }), "INVALID_QUANTITY");                       // above max_per_order (3)
+    await submit("carol", ev, { kit, qty: 3, amount: 300 });                                      // exactly the max is fine
+  });
+
+  it("what was ordered is kept on the registration: later price changes or a deleted kit never rewrite it", async () => {
+    const ev = await mkEvent({ fee: 0 });
+    const kit = await mkKit(ev, { name: "Standard kit", price: 100 });
+    await asUser("dave"); const a = await submit("dave", ev, { x: "snap_a", kit, qty: 2, amount: 200 });
+    await asSuper();
+    await db.query("update public.event_kits set unit_price = 400, name = 'Premium kit' where id = $1", [kit]);
+    expect(Number((await regRow(a.registration_id)).total_amount)).toBe(200);                     // unchanged
+    // the admin can still verify it: the expected amount is the 200 that was ordered, not the new price
+    const out = await review("admin", a.payment_id, "verified");
+    expect(out.registration_ids).toEqual([a.registration_id]);
+    await asSuper(); await db.query("delete from public.event_kits where id = $1", [kit]);
+    expect(await regRow(a.registration_id)).toMatchObject({ kit_id: null, kit_name: "Standard kit", kit_quantity: 2 });
+    expect(Number((await regRow(a.registration_id)).kit_unit_price)).toBe(100);
+  });
+
+  it("a shared payment is used up by balance: forms of different kits and quantities can share one transfer", async () => {
+    const ev = await mkEvent({ fee: 0 });
+    const a = await mkKit(ev, { name: "A", price: 100 }), b = await mkKit(ev, { name: "B", price: 250 });
+    await asUser("erin");
+    const first = await submit("erin", ev, { x: "bal_1", kit: a, qty: 1, amount: 350 });         // 350 paid, 100 used
+    const second = await submit("erin", ev, { x: "bal_2", kit: b, qty: 1, payment_id: first.payment_id });   // 250 used, 0 left
+    expect(second.payment_id).toBe(first.payment_id);
+    await fails(submit("erin", ev, { x: "bal_3", kit: a, qty: 1, payment_id: first.payment_id }), "PAYMENT_BALANCE_TOO_LOW");
+    await asUser("frank");
+    const p = await submit("frank", ev, { x: "bal_4", kit: a, qty: 2, amount: 300 });            // 300 paid, 200 used
+    await fails(submit("frank", ev, { x: "bal_5", kit: b, qty: 1, payment_id: p.payment_id }), "PAYMENT_BALANCE_TOO_LOW");   // 250 > 100 left
+    await submit("frank", ev, { x: "bal_6", kit: a, qty: 1, payment_id: p.payment_id });          // 100 <= 100 left
+    // verifying counts both forms: expected 300 = paid 300
+    const out = await review("admin", p.payment_id, "verified");
+    expect(out.registration_ids).toHaveLength(2);
+  });
+
+  it("a verified payment with balance left confirms a later kit order straight away", async () => {
+    const ev = await mkEvent({ fee: 0 });
+    const kit = await mkKit(ev, { price: 100 });
+    await asUser("gina"); const a = await submit("gina", ev, { x: "ver_x1", kit, qty: 1, amount: 300 });
+    await review("admin", a.payment_id, "verified");
+    await asUser("gina");
+    const b = await submit("gina", ev, { x: "ver_x2", kit, qty: 2, payment_id: a.payment_id });   // 200 of the 200 left
+    expect(b.status).toBe("confirmed"); expect(b.ticket_number).toMatch(/^T\d{3}-\d{6}$/);
+  });
+
+  it("resubmitting an underpaid payment needs at least the forms' total", async () => {
+    const ev = await mkEvent({ fee: 0 });
+    const kit = await mkKit(ev, { price: 100 });
+    await asUser("hank"); const a = await submit("hank", ev, { x: "res_k", kit, qty: 2, amount: 200 });
+    await review("admin", a.payment_id, "underpaid", "Fee deducted", false, 5);
+    await asUser("hank");
+    await fails(db.query("select public.resubmit_payment($1,'Juan D.',150,'7770001112223',$2)", [a.payment_id, rcpt("hank")]), "AMOUNT_TOO_LOW");   // 2 x 100 = 200
+    await db.query("select public.resubmit_payment($1,'Juan D.',205,'7770001112223',$2)", [a.payment_id, rcpt("hank")]);
+  });
+
+  it("events without kit options keep the single flat fee and refuse a quantity or kit", async () => {
+    const ev = await mkEvent({ fee: 100 }), anyKit = await mkKit(await mkEvent());
+    await asUser("ivy");
+    await fails(submit("ivy", ev, { qty: 2, amount: 200 }), "INVALID_QUANTITY");
+    await fails(submit("ivy", ev, { kit: anyKit, qty: 1 }), "INVALID_QUANTITY");
+    const r = await submit("ivy", ev, { x: "flat_1", amount: 100 });
+    expect(await regRow(r.registration_id)).toMatchObject({ kit_name: "Registration", kit_quantity: 1 });
+    expect(Number((await regRow(r.registration_id)).total_amount)).toBe(100);
+  });
+
+  it("the check-in result shows the kit and quantity, so it can be handed over at the door", async () => {
+    const ev = await mkEvent({ fee: 0 });
+    const kit = await mkKit(ev, { name: "Deluxe kit", price: 100 });
+    await asUser("jack"); const a = await submit("jack", ev, { x: "door_1", kit, qty: 3, amount: 300 });
+    const out = await review("admin", a.payment_id, "verified");
+    await asUser("admin");
+    expect((await db.query("select public.check_in_attendee($1) as r", [out.ticket_numbers[0]])).rows[0].r).toMatchObject({ result: "success", kit_name: "Deluxe kit", kit_quantity: 3 });
+    expect((await db.query("select public.check_in_attendee($1) as r", [out.ticket_numbers[0]])).rows[0].r).toMatchObject({ result: "duplicate", kit_name: "Deluxe kit", kit_quantity: 3 });
+  });
+
+  it("visitors see only active kits; admins see all; attendees cannot change prices", async () => {
+    const ev = await mkEvent({ fee: 0 });
+    const live = await mkKit(ev, { name: "Live kit" }); await mkKit(ev, { name: "Hidden kit", active: false });
+    await asUser(null);
+    expect((await db.query("select name from public.event_kits where event_id = $1", [ev])).rows.map((r) => r.name)).toEqual(["Live kit"]);
+    await asUser("kim");
+    expect((await db.query("select name from public.event_kits where event_id = $1", [ev])).rows).toHaveLength(1);
+    await db.exec(`update public.event_kits set unit_price = 1 where id = '${live}'`);               // no policy: 0 rows
+    await expect(db.exec(`insert into public.event_kits (event_id, name, unit_price) values ('${ev}', 'Free kit', 1)`)).rejects.toThrow(/row-level security/);
+    await asUser("admin");
+    expect((await db.query("select name from public.event_kits where event_id = $1 order by name", [ev])).rows.map((r) => r.name)).toEqual(["Hidden kit", "Live kit"]);
+    await db.exec(`update public.event_kits set unit_price = 120 where id = '${live}'`);
+    await asSuper();
+    expect(Number((await db.query("select unit_price from public.event_kits where id = $1", [live])).rows[0].unit_price)).toBe(120);
+    await expect(db.exec(`insert into public.event_kits (event_id, name, unit_price) values ('${ev}', 'Bad', 0)`)).rejects.toThrow();            // price must be above 0
+    await expect(db.exec(`insert into public.event_kits (event_id, name, unit_price, max_per_order) values ('${ev}', 'Bad', 5, 0)`)).rejects.toThrow();   // max at least 1
+  });
+
+  it("seeds one kit for ODD PLATINUM at the reference price", async () => {
+    await asSuper();
+    const k = (await db.query("select k.* from public.event_kits k join public.events e on e.id = k.event_id where e.title = 'IVEMON: ODD PLATINUM Cupsleeve Event'")).rows;
+    expect(k).toHaveLength(1);
+    expect(k[0]).toMatchObject({ name: "Event kit", max_per_order: 5, active: true });
+    expect(Number(k[0].unit_price)).toBe(100);
+    expect(k[0].description).toBe("(1) Cupsleeve, (1) Trading Card, (2) Mezastar Tags");
+  });
+});
+
+describe("upgrading a database that already has registrations (migration 003 on existing data)", () => {
+  it("keeps every existing registration: quantity 1 at the event's old fee", async () => {
+    const old = new PGlite();
+    await old.exec(STUBS); await old.exec(read("schema.sql")); await old.exec(read("002_registration_payments.sql"));
+    const u = (await old.query("insert into auth.users (email) values ('old@example.com') returning id")).rows[0].id;
+    const ev = (await old.query("insert into public.events (title, event_date, capacity, ticket_prefix, registration_fee) values ('Old', now() + interval '9 days', 10, 'OLD', 100) returning id")).rows[0].id;
+    const free = (await old.query("insert into public.events (title, event_date, capacity, ticket_prefix, registration_fee) values ('OldFree', now() + interval '9 days', 10, 'OLDF', 0) returning id")).rows[0].id;
+    for (const [e, x, st] of [[ev, "old_a", "confirmed"], [ev, "old_b", "pending_verification"], [ev, "old_c", "cancelled"], [free, "old_d", "confirmed"]]) {
+      await old.query("insert into public.registrations (event_id, user_id, name, x_username, email, ticket_number, status) values ($1,$2,'Old Person',$3,'o@x.io',$4,$5)", [e, u, x, st === "pending_verification" ? null : "OLD-" + x, st]);
+    }
+    await old.exec(read("003_kits.sql"));
+    const rows = (await old.query("select x_username, kit_name, kit_quantity, kit_unit_price, total_amount, status from public.registrations order by x_username")).rows;
+    expect(rows.map((r) => [r.x_username, r.kit_name, r.kit_quantity, Number(r.total_amount), r.status])).toEqual([
+      ["old_a", "Registration", 1, 100, "confirmed"], ["old_b", "Registration", 1, 100, "pending_verification"], ["old_c", "Registration", 1, 100, "cancelled"], ["old_d", null, 1, 0, "confirmed"],
+    ]);
+    expect(rows.every((r) => r.kit_unit_price !== undefined)).toBe(true);
+    // the old 13-argument function is gone and the new one exists with the kit arguments
+    const fn = (await old.query("select pronargs from pg_proc where proname = 'submit_registration'")).rows;
+    expect(fn.map((f) => f.pronargs)).toEqual([15]);
   });
 });

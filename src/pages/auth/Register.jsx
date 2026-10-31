@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "../../context/AuthContext.jsx";
 import Field from "../../components/Field.jsx";
 import PasswordInput from "../../components/PasswordInput.jsx";
-import ErrorSummary from "../../components/ErrorSummary.jsx";
+import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import AuthShell, { GoogleButton } from "./AuthShell.jsx";
 import { rememberDestination } from "./Login.jsx";
 
@@ -12,6 +12,7 @@ export default function Register() {
   const { signUp, signInWithGoogle } = useAuth();
   const from = useLocation().state?.from || "/";
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting, submitCount } } = useForm({ shouldFocusError: false });
+  const [focusSignal, bumpFocus] = useErrorFocus();
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
 
@@ -34,8 +35,8 @@ export default function Register() {
   }
   return (
     <AuthShell title="Create an account" subtitle="One account lets you register and keep your tickets.">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <ErrorSummary errors={errors} submitCount={submitCount} extra={error} labels={{ fullName: "Full name", email: "Email", password: "Password", confirm: "Confirm password" }} />
+      <form onSubmit={handleSubmit(onSubmit, bumpFocus)} className="space-y-4" noValidate>
+        <ErrorSummary errors={errors} submitCount={submitCount} focusSignal={focusSignal} extra={error} labels={{ fullName: "Full name", email: "Email", password: "Password", confirm: "Confirm password" }} />
         <Field id="fullName" label="Full name" required error={errors.fullName?.message}>
           <input autoComplete="name" className="input" {...register("fullName", { required: "Enter your full name" })} />
         </Field>

@@ -10,7 +10,7 @@ import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
 import Field from "../../components/Field.jsx";
-import ErrorSummary from "../../components/ErrorSummary.jsx";
+import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import FileUpload from "../../components/FileUpload.jsx";
 import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
@@ -29,22 +29,22 @@ function ResubmitDialog({ reg, onClose, onDone }) {
   const { user } = useAuth();
   const toast = useToast();
   const pay = reg.payments;
-  const fee = Number(reg.events?.registration_fee || 0);
-  const forms = reg.formsOnPayment || 1;
+  const payTotal = reg.payTotal || Number(reg.events?.registration_fee || 0);   // what the forms on this payment add up to
   const [file, setFile] = useState(null);
   const [receiptError, setReceiptError] = useState("");
   const [serverError, setServerError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [focusSignal, bumpFocus] = useErrorFocus();
   const { register, handleSubmit, formState: { errors, submitCount } } = useForm({
     shouldFocusError: false,
     defaultValues: { reuse_payment_id: "", sender_name: pay.sender_name || "", amount_paid: "", reference_number: "", notes: "" },
-    resolver: zodResolver(makeStep3Schema(fee * forms)),
+    resolver: zodResolver(makeStep3Schema(payTotal)),
   });
 
   const submit = handleSubmit(async (v) => {
     const problem = validateReceiptFile(file);
     setReceiptError(problem || "");
-    if (problem) return;
+    if (problem) { bumpFocus(); return; }
     setBusy(true); setServerError("");
     const path = receiptPath(user.id, file);
     const up = await supabase.storage.from("payment-receipts").upload(path, file, { contentType: file.type, upsert: false });
@@ -54,7 +54,7 @@ function ResubmitDialog({ reg, onClose, onDone }) {
     if (error) { setServerError(friendlyError(error)); return; }
     toast("Payment sent for review again.", "success");
     onDone();
-  }, () => { setReceiptError(validateReceiptFile(file) || ""); });
+  }, () => { setReceiptError(validateReceiptFile(file) || ""); bumpFocus(); });
 
   return (
     <Modal title={pay.status === "underpaid" ? "Send the missing amount" : "Resubmit your payment"} onClose={onClose} wide>
@@ -62,8 +62,8 @@ function ResubmitDialog({ reg, onClose, onDone }) {
         {pay.status === "underpaid"
           ? <Alert tone="warn">Remaining amount due: <strong>{peso(pay.amount_due)}</strong>. {pay.review_note} Send it by GCash, then enter the <strong>total you have paid</strong> (including the first payment) and attach the new receipt.</Alert>
           : <Alert tone="bad">Your payment was not verified. Reason: <strong>{pay.review_note}</strong>. Attach a correct receipt and enter the details of the payment.</Alert>}
-        <p className="text-sm text-ink-muted">The total must be at least {peso(fee * forms)} ({forms} form{forms === 1 ? "" : "s"} × {peso(fee)}).</p>
-        <ErrorSummary errors={{ ...errors, ...(receiptError ? { receipt: { message: receiptError } } : {}) }} labels={{ sender_name: "Name of sender", amount_paid: "Total amount paid", reference_number: "Reference number", receipt: "Payment receipt" }} submitCount={submitCount} fieldIds={{ receipt: "resub-receipt" }} />
+        <p className="text-sm text-ink-muted">The total must be at least {peso(payTotal)}, what the form{reg.formsOnPayment === 1 ? "" : "s"} on this payment add{reg.formsOnPayment === 1 ? "s" : ""} up to.</p>
+        <ErrorSummary errors={{ ...errors, ...(receiptError ? { receipt: { message: receiptError } } : {}) }} labels={{ sender_name: "Name of sender", amount_paid: "Total amount paid", reference_number: "Reference number", receipt: "Payment receipt" }} submitCount={submitCount} focusSignal={focusSignal} fieldIds={{ receipt: "resub-receipt" }} />
         <Field id="resub-sender" label="Name of Sender" required error={errors.sender_name?.message}><input className="input" {...register("sender_name")} /></Field>
         <Field id="resub-amount" label="Total Amount Paid" required error={errors.amount_paid?.message}><input className="input" inputMode="decimal" {...register("amount_paid")} /></Field>
         <Field id="resub-ref" label="Reference Number (of the new transfer)" required hint="Digits only" error={errors.reference_number?.message}><input className="input" inputMode="numeric" autoComplete="off" {...register("reference_number")} /></Field>
@@ -87,9 +87,9 @@ export default function MyRegistrations() {
     if (e) setError("Could not load your registrations.");
     const list = data || [];
     // how many of my forms share each payment (the resubmit minimum is fee x forms)
-    const per = {};
-    list.forEach((r) => { if (r.payment_id && r.status !== "cancelled") per[r.payment_id] = (per[r.payment_id] || 0) + 1; });
-    setRows(list.map((r) => ({ ...r, formsOnPayment: per[r.payment_id] || 1 })));
+    const count = {}, sum = {};
+    list.forEach((r) => { if (r.payment_id && r.status !== "cancelled") { count[r.payment_id] = (count[r.payment_id] || 0) + 1; sum[r.payment_id] = Math.round(((sum[r.payment_id] || 0) + Number(r.total_amount || 0)) * 100) / 100; } });
+    setRows(list.map((r) => ({ ...r, formsOnPayment: count[r.payment_id] || 1, payTotal: sum[r.payment_id] || 0 })));
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -111,6 +111,7 @@ export default function MyRegistrations() {
                     <h2 className="font-bold">{r.events?.title}</h2>
                     <p className="text-sm text-ink-muted">{fmtDateTime(r.events?.event_date)} · {r.events?.venue}</p>
                     <p className="text-sm">For <strong>{r.name}</strong> (@{r.x_username})</p>
+                    {r.kit_name && <p className="text-sm">{r.kit_name} × {r.kit_quantity}{Number(r.total_amount) > 0 ? ` · ${peso(r.total_amount)}` : ""}</p>}
                     {r.ticket_number && r.status === "confirmed" && <p className="mt-1 font-mono text-sm">{r.ticket_number}</p>}
                   </div>
                   <div className="flex items-center gap-2">

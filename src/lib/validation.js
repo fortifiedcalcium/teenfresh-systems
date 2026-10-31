@@ -24,8 +24,20 @@ export const step2Schema = z.object({
     .refine((v) => !v || normalizePhone(v) !== null, "Enter a Philippine mobile number, like 09171234567 or +639171234567"),
 });
 
-/** Payment step. `fee` is the event's registration fee; with a reused payment only the notes are checked. */
-export const makeStep3Schema = (fee) =>
+/** Kit step: a kit (when the event has kits) and a whole quantity from 1 up to that kit's limit. */
+export const makeKitSchema = (kits) =>
+  z.object({ kit_id: z.string(), quantity: z.string().trim() }).superRefine((v, ctx) => {
+    const issue = (path, message) => ctx.addIssue({ code: "custom", path: [path], message });
+    const kit = (kits || []).find((k) => k.id === v.kit_id);
+    if (!kit) return issue("kit_id", "Choose a kit");
+    if (!/^\d+$/.test(v.quantity)) return issue("quantity", "Enter how many kits as a whole number, like 1 or 2");
+    const qty = Number(v.quantity);
+    if (qty < 1) issue("quantity", "The quantity must be at least 1");
+    else if (qty > kit.max_per_order) issue("quantity", `You can order up to ${kit.max_per_order} of this kit per form`);
+  });
+
+/** Payment step. `total` is what this form costs (quantity x price, or the flat fee); with a reused payment only the notes are checked. */
+export const makeStep3Schema = (total) =>
   z.object({
     reuse_payment_id: z.string().optional(),
     sender_name: z.string().trim(),
@@ -40,11 +52,13 @@ export const makeStep3Schema = (fee) =>
     const amount = parseAmount(v.amount_paid);
     if (!v.amount_paid) issue("amount_paid", "Enter the amount you paid");
     else if (Number.isNaN(amount)) issue("amount_paid", "Enter the amount as a number with at most 2 decimals, like 100 or 100.00");
-    else if (amount < fee) issue("amount_paid", `The amount must be at least ${fee.toFixed(2)} PHP. Convenience or transaction fees are not covered by the kit price.`);
+    else if (amount < total) issue("amount_paid", `The amount must be at least ${total.toFixed(2)} PHP. Convenience or transaction fees are not covered by the kit price.`);
     if (!v.reference_number) issue("reference_number", "Enter the GCash reference number");
     else if (!isValidReference(v.reference_number)) issue("reference_number", "The reference number must be 8 to 20 digits, with no letters");
   });
 
-export const stepSchemaFor = (key, fee) => (key === "info" ? step1Schema : key === "participant" ? step2Schema : key === "payment" ? makeStep3Schema(fee) : z.object({}));
+/** `ctx` = { kits, total }: the event's kit options and what this form costs right now */
+export const stepSchemaFor = (key, ctx = {}) =>
+  key === "info" ? step1Schema : key === "participant" ? step2Schema : key === "kit" ? makeKitSchema(ctx.kits) : key === "payment" ? makeStep3Schema(ctx.total ?? 0) : z.object({});
 
 export { isUnusualReferenceLength };
