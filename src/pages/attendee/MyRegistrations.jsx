@@ -76,6 +76,7 @@ function ResubmitDialog({ reg, onClose, onDone }) {
 }
 
 export default function MyRegistrations() {
+  const { user } = useAuth();
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
   const [resubmit, setResubmit] = useState(null);
@@ -83,6 +84,9 @@ export default function MyRegistrations() {
   const load = useCallback(async () => {
     const { data, error: e } = await supabase.from("registrations")
       .select("*, events(title,event_date,venue,registration_fee), payments(id,status,review_note,amount_due,amount_paid,reference_number,sender_name)")
+      // "My" registrations: ask for my own rows explicitly. The database already hides other people's rows from attendees, but
+      // admins are allowed to read everything, so without this filter an admin saw every user's registrations on this page.
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (e) setError("Could not load your registrations.");
     const list = data || [];
@@ -90,7 +94,7 @@ export default function MyRegistrations() {
     const count = {}, sum = {};
     list.forEach((r) => { if (r.payment_id && r.status !== "cancelled") { count[r.payment_id] = (count[r.payment_id] || 0) + 1; sum[r.payment_id] = Math.round(((sum[r.payment_id] || 0) + Number(r.total_amount || 0)) * 100) / 100; } });
     setRows(list.map((r) => ({ ...r, formsOnPayment: count[r.payment_id] || 1, payTotal: sum[r.payment_id] || 0 })));
-  }, []);
+  }, [user.id]);
   useEffect(() => { load(); }, [load]);
 
   if (rows === null) return <Loading label="Loading your registrations…" className="p-12" />;

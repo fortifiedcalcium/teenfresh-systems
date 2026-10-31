@@ -6,9 +6,11 @@ import TicketCard from "../../components/TicketCard.jsx";
 import TermsBox from "../../components/TermsBox.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function MyTicket() {
   const { id } = useParams();
+  const { user } = useAuth();
   const toast = useToast();
   const [reg, setReg] = useState(undefined);
   const [event, setEvent] = useState(null);
@@ -17,11 +19,11 @@ export default function MyTicket() {
   useEffect(() => {
     (async () => {
       // RLS only returns the row if it belongs to the signed-in user
-      const { data } = await supabase.from("registrations").select("*").eq("id", id).maybeSingle();
+      const { data } = await supabase.from("registrations").select("*").eq("id", id).eq("user_id", user.id).maybeSingle();   // my own ticket (admins can read all rows, so ask for mine explicitly)
       setReg(data ?? null);
       if (data) setEvent((await supabase.from("events").select("*").eq("id", data.event_id).maybeSingle()).data);
     })();
-  }, [id]);
+  }, [id, user.id]);
 
   const resend = async () => {
     setSending(true);

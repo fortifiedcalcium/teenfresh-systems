@@ -569,6 +569,20 @@ describe("admin pages", () => {
     await waitFor(() => expect(fixtures.current.fnCalls.find((c) => c.name === "send-payment-email")?.body).toEqual({ kind: "payment_underpaid", payment_id: "p1" }));
   });
 
+  it("My registrations and My ticket ask only for the signed-in user's own rows, even for an admin (who may read everyone's)", async () => {
+    asUser(true);                                                                       // an ADMIN account: the database would let it read every registration
+    fixtures.current.registrations = [{ ...reg, id: "mine" }, { ...reg, id: "theirs", user_id: "someone-else", name: "Someone Else", ticket_number: "IVEMON-000999" }];
+    let r = page("/my-registrations", <MyRegistrations />);
+    await screen.findAllByText("Juan Dela Cruz", { exact: false });
+    expect(fixtures.current.eqs.filter((q) => q.table === "registrations")).toContainEqual({ table: "registrations", col: "user_id", val: "u1" });
+    r.unmount();
+    fixtures.current.eqs = [];
+    r = page("/my-ticket/:id", <MyTicket />, "/my-ticket/mine");
+    await screen.findByRole("heading", { level: 1, name: "My ticket" });
+    await waitFor(() => expect(fixtures.current.eqs).toContainEqual({ table: "registrations", col: "user_id", val: "u1" }));
+    expect(fixtures.current.eqs).toContainEqual({ table: "registrations", col: "id", val: "mine" });
+  });
+
   it("My registrations: statuses, and an underpaid payment can be fixed from a dialog", async () => {
     asUser();
     fixtures.current.registrations = [
