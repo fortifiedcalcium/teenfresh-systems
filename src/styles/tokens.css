@@ -1,0 +1,35 @@
+/* =====================================================================================
+   Single source of truth for colour. Nothing else in src/ may contain a hex value
+   (scripts/check-contrast.js enforces that and verifies every pairing below).
+
+   Brand colours (Teenfresh guidelines) are SURFACES ONLY: backgrounds, fills, bands.
+   Companion tokens carry text, borders, icons and focus rings (they pass WCAG on the surfaces).
+   ===================================================================================== */
+:root {
+  /* Teenfresh brand: primary */
+  --brand-cream: #f9e7b9;
+  --brand-blue:  #65a6d0;
+  --brand-coral: #ec9697;
+  /* Teenfresh brand: secondary */
+  --brand-ivory: #fcf7e3;
+  --brand-sky:   #c4d6ea;
+  --brand-blush: #f1d0d9;
+  --brand-mint:  #dfecde;
+
+  /* Accessible companions (derived; not part of the brand guide) */
+  --ink:         #17303f;  /* text, icons, focus ring, text on blue/coral fills */
+  --ink-muted:   #2b4c63;  /* secondary text (never on blue or coral) */
+  --link:        #1c5a85;  /* links, borders, progress fill, selected states */
+  --danger:      #8a1f2b;  /* errors, destructive, sold out / invalid */
+  --success:     #0b5d3b;  /* success, available / valid */
+  --warning-ink: #3d2c00;  /* few slots left / already checked in */
+  --white:       #ffffff;  /* inputs, modals, table rows */
+
+  /* Roles, so `prefers-contrast: more` can strengthen them in one place */
+  --border-ui: var(--link);
+  --border-soft: var(--brand-sky);
+}
+
+@media (prefers-contrast: more) {
+  :root { --border-ui: var(--ink); --border-soft: var(--ink); }
+}

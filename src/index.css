@@ -1,0 +1,88 @@
+@import "./styles/tokens.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-size: 100%; scroll-padding-top: 6rem; /* 2.4.11: sticky headers never hide the focused element */ }
+  body { @apply bg-brand-blush font-sans text-base text-ink antialiased; line-height: 1.5; }
+  h1, h2, h3, h4 { @apply font-bold text-ink; }
+  /* 1.4.1: links are always underlined, never distinguished by colour alone */
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link) { @apply text-link underline underline-offset-2; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):hover { text-decoration-thickness: 2px; }
+  /* 2.4.7: one visible focus indicator for everything interactive: 3px ink, 2px offset */
+  :focus { outline: none; }
+  :focus-visible, [tabindex="-1"]:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  /* Both light and dark surfaces: a white inner ring keeps the ink outline visible on the ink sidebar/buttons */
+  .on-ink :focus-visible { outline-color: var(--brand-ivory); }
+  [tabindex="-1"]:focus { outline: none; }
+  main:focus, h1:focus { outline: none; }
+  summary { cursor: pointer; }
+  code { @apply rounded bg-brand-sky px-1 text-ink; }
+  ::placeholder { color: var(--ink-muted); opacity: 1; }
+  table { border-collapse: collapse; }
+}
+
+@layer components {
+  .sr-only-focusable:not(:focus):not(:focus-within) { @apply sr-only; }
+  .skip-link { @apply absolute left-2 top-2 z-[100] rounded-lg border-2 border-ink bg-brand-cream px-4 py-2 font-semibold text-ink no-underline; transform: translateY(-200%); }
+  .skip-link:focus { transform: none; }
+
+  .btn { @apply inline-flex min-h-target min-w-target items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-bold no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60; }
+  /* brand-blue fill + ink label = 5.2:1; ink border keeps the shape visible (3:1) */
+  .btn-primary { @apply btn border-ink bg-brand-blue text-ink hover:bg-ink hover:text-brand-ivory active:bg-ink active:text-brand-ivory; }
+  .btn-secondary { @apply btn border-ink bg-brand-ivory text-ink hover:bg-brand-sky; }
+  .btn-danger { @apply btn border-danger bg-danger text-white hover:bg-ink hover:border-ink; }
+  .btn-primary:disabled:hover, .btn-primary[aria-disabled="true"]:hover { @apply bg-brand-blue text-ink; }
+
+  .input { @apply block min-h-target w-full rounded-lg border border-link bg-white px-3 py-2 text-base text-ink; }
+  .input[aria-invalid="true"] { @apply border-2 border-danger; }
+  .label { @apply mb-1 block text-sm font-semibold text-ink; }
+  .hint { @apply mt-1 text-xs text-ink-muted; }
+  .card { @apply rounded-xl border border-link bg-white; }
+
+  /* Badges always carry an icon AND text. The icon is CSS content with an empty alt so it is not read twice. */
+  .badge { @apply inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-transparent px-2.5 py-0.5 text-xs font-bold; }
+  .badge::before { content: "●" / ""; }
+  .badge-ok { @apply bg-brand-mint text-success; } .badge-ok::before { content: "✓" / ""; }
+  .badge-warn { @apply bg-brand-cream text-warning-ink; } .badge-warn::before { content: "!" / ""; font-weight: 800; }
+  .badge-bad { @apply bg-brand-blush text-danger; } .badge-bad::before { content: "✕" / ""; }
+  .badge-info { @apply bg-brand-sky text-ink; } .badge-info::before { content: "i" / ""; font-style: italic; }
+  .badge-neutral { @apply bg-brand-ivory text-ink border-link; } .badge-neutral::before { content: "–" / ""; }
+
+  .alert { @apply flex gap-3 rounded-lg border-l-4 border-y border-r p-3 text-sm; }
+  .alert::before { font-weight: 800; flex-shrink: 0; }
+  .alert-bad::before { content: "✕" / ""; } .alert-ok::before { content: "✓" / ""; } .alert-warn::before { content: "!" / ""; } .alert-info::before { content: "i" / ""; font-style: italic; }
+  .alert-bad { @apply border-danger bg-brand-blush text-danger; }
+  .alert-ok { @apply border-success bg-brand-mint text-success; }
+  .alert-warn { @apply border-warning-ink bg-brand-cream text-warning-ink; }
+  .alert-info { @apply border-link bg-brand-sky text-ink; }
+
+  .th { @apply px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-ink-muted; }
+  .td { @apply px-3 py-2 text-sm text-ink; }
+  .nav-link { @apply inline-flex min-h-target items-center rounded-lg px-3 py-2 text-sm font-semibold text-ink no-underline hover:bg-brand-sky; }
+  .nav-link[aria-current="page"] { @apply bg-ink text-brand-ivory hover:bg-ink; }
+  .chip { @apply min-h-target rounded-full border border-link bg-brand-sky px-3 py-1 text-xs font-semibold text-ink hover:bg-brand-cream; }
+  .overlay { background: color-mix(in srgb, var(--ink) 65%, transparent); }
+  /* the receipt / image pickers: a real (visually hidden) file input, with the label acting as its button */
+  .file-input:focus-visible + label { outline: 3px solid var(--ink); outline-offset: 2px; }
+  /* admin-edited rich text (the Terms): Tailwind's reset removes list styles, so restore them here */
+  .safe-html > * + * { margin-top: 0.75rem; }
+  .safe-html ol { list-style: decimal; padding-left: 1.5rem; } .safe-html ul { list-style: disc; padding-left: 1.5rem; }
+  .safe-html li + li { margin-top: 0.75rem; } .safe-html a { text-decoration: underline; }
+  .check { @apply h-6 w-6 shrink-0 rounded border border-link accent-[var(--link)]; }
+}
+
+/* Reduced motion (2.3.3): no animation or smooth scrolling */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Windows High Contrast / forced colours: state must not depend on background colour alone */
+@media (forced-colors: active) {
+  .badge, .alert, .card, .btn, .input { border: 2px solid CanvasText; }
+  .progress-fill { background: Highlight !important; forced-color-adjust: none; }
+  .progress-track { border: 1px solid CanvasText; }
+  .nav-link[aria-current="page"] { outline: 3px solid Highlight; }
+  .chart-bar { forced-color-adjust: none; background: Highlight !important; }
+}

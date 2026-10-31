@@ -1,0 +1,493 @@
+// @vitest-environment jsdom
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Outlet, Route, Routes } from "react-router-dom";
+import { check } from "./helpers/a11y.js";
+
+vi.mock("../src/lib/supabaseClient.js", async () => import("./helpers/mockSupabase.js"));
+vi.mock("../src/context/AuthContext.jsx", async () => { const m = await import("./helpers/mockSupabase.js"); return { useAuth: () => m.authState.current }; });
+
+import { LiveRegionProvider } from "../src/a11y.jsx";
+import { ToastProvider } from "../src/components/Toast.jsx";
+import { asGuest, asUser, fixtures } from "./helpers/mockSupabase.js";
+import Login from "../src/pages/auth/Login.jsx";
+import Register from "../src/pages/auth/Register.jsx";
+import ForgotPassword from "../src/pages/auth/ForgotPassword.jsx";
+import ResetPassword from "../src/pages/auth/ResetPassword.jsx";
+import Callback from "../src/pages/auth/Callback.jsx";
+import Home from "../src/pages/attendee/Home.jsx";
+import EventRegister from "../src/pages/attendee/EventRegister.jsx";
+import MyRegistrations from "../src/pages/attendee/MyRegistrations.jsx";
+import MyTicket from "../src/pages/attendee/MyTicket.jsx";
+import Dashboard from "../src/pages/admin/Dashboard.jsx";
+import Events from "../src/pages/admin/Events.jsx";
+import Attendees from "../src/pages/admin/Attendees.jsx";
+import Payments from "../src/pages/admin/Payments.jsx";
+import Scanner from "../src/pages/admin/Scanner.jsx";
+import Tracker from "../src/pages/admin/Tracker.jsx";
+import EmailTemplates from "../src/pages/admin/EmailTemplates.jsx";
+import Users from "../src/pages/admin/Users.jsx";
+
+const future = new Date(Date.now() + 30 * 864e5).toISOString();
+const ev = {
+  id: "e1", title: "IVEMON: ODD PLATINUM Cupsleeve Event", subtitle: "IVE's Kim Gaeul Cupsleeve Event hosted by Teenfresh", event_date: future, ends_at: future, registration_deadline: future,
+  venue: "Psicom Blue Club", venue_address: "6 Yale St., Cubao, Quezon City", price_info: "100 PHP", capacity: 100, registration_open: true, ticket_prefix: "IVEMONOP", created_at: future, description: "",
+  registration_fee: 100, fee_note: "exclusive of food and drinks", hashtags: ["#IVEMON_OP", "#Teenfresh"], kit_inclusions: ["(1) Cupsleeve", "(1) Trading Card", "(2) Mezastar Tags"],
+  payment_account_name: "BR**N CA**O S.", payment_account_number: "09171234567", send_ack_email: false, receipt_retention_days: null,
+  contact_links: [{ label: "Facebook", url: "https://www.facebook.com/TeenfreshPH" }, { label: "Gmail", url: "mailto:teenfreshph@gmail.com" }],
+  terms_html: "<p>Please read these Terms.</p><ol><li>Strictly <strong>NO CANCELLATION</strong>.</li><li>Be 101% sure.</li></ol>",
+};
+const reg = { id: "r1", event_id: "e1", user_id: "u1", name: "Juan Dela Cruz", x_username: "juan", email: "juan@example.com", facebook_url: "https://www.facebook.com/juan", contact_number: "+639171234567", notes: null, ticket_number: "IVEMON-000001", status: "confirmed", payment_id: "p1", checked_in_at: null, kit_claimed: false, receipt_verified: false, created_at: future, checker: null, payment: { status: "verified", amount_paid: 100, reference_number: "1234567890123" }, payments: { id: "p1", status: "verified", review_note: null, amount_due: null, amount_paid: 100, reference_number: "1234567890123", sender_name: "Juan D." }, events: { title: ev.title, event_date: future, venue: "Psicom Blue Club", registration_fee: 100 } };
+const payment = (over = {}) => ({ id: "p1", event_id: "e1", user_id: "u1", sender_name: "Juan D.", amount_paid: 100, reference_number: "1234567890123", receipt_path: "u1/receipt.png", receipt_history: [], reference_history: [], status: "pending", amount_due: null, review_note: null, resubmission_count: 0, created_at: future,
+  sender_profile: { email: "juan@example.com", full_name: "Juan" }, registrations: [{ id: "r1", name: "Juan Dela Cruz", x_username: "juan", facebook_url: "https://www.facebook.com/juan", status: "pending_verification", ticket_number: null }], ...over });
+
+beforeEach(() => {
+  sessionStorage.clear();   // the registration form saves unsent progress there
+  asGuest();
+  fixtures.current = {
+    events: [ev, { ...ev, id: "e2", title: "Sold out event" }],
+    event_availability: [{ event_id: "e1", registered: 95 }, { event_id: "e2", registered: 100 }],
+    registrations: [reg, { ...reg, id: "r2", name: "Maria Santos", ticket_number: "IVEMON-000002", checked_in_at: future, checker: { full_name: "Admin", email: "a@x.io" } }],
+    payments: [payment()],
+    event_images: [],
+    registration_email_status: [{ registration_id: "r1", status: "failed", error: "x", sent_at: future, event_id: "e1" }],
+    profiles: [{ id: "u1", email: "juan@example.com", full_name: "Juan", role: "attendee", created_at: future }, { id: "u2", email: "admin@example.com", full_name: "Admin", role: "admin", created_at: future }],
+    email_templates: [{ subject: "Confirmation", html_body: "<p>Hello {{Name}}</p>{{Terms}}", text_body: "Hello {{Name}}" }],
+    email_logs: [{ id: 1, registration_id: "r1", recipient: "juan@example.com", kind: "confirmation", status: "failed", error: "boom", sent_at: future, registrations: { event_id: "e1", ticket_number: "IVEMON-000001", name: "Juan" } }],
+    attendance_logs: [{ id: 1, ticket_number_scanned: "IVEMON-000001", result: "success", scanned_at: future, registrations: { name: "Juan", event_id: "e1" }, scanner: { full_name: "Admin", email: "a@x.io" } }],
+  };
+});
+
+const shell = (ui) => <LiveRegionProvider><ToastProvider>{ui}</ToastProvider></LiveRegionProvider>;
+const page = (path, element, initial = path) => render(shell(<MemoryRouter initialEntries={[initial]}><Routes><Route path={path} element={element} /></Routes></MemoryRouter>));
+const admin = (element) => render(shell(
+  <MemoryRouter initialEntries={["/admin"]}><Routes><Route path="/admin" element={<Outlet context={{ events: fixtures.current.events, event: ev, reloadEvents() {} }} />}><Route index element={element} /></Route></Routes></MemoryRouter>));
+const settled = async (name) => { await screen.findAllByRole("heading", { level: 1, name }); await new Promise((r) => setTimeout(r, 50)); };
+
+describe("public and auth pages", () => {
+  it.each([["Login", "/login", <Login />, "Sign in"], ["Register", "/register", <Register />, "Create an account"], ["ForgotPassword", "/forgot-password", <ForgotPassword />, "Forgot your password?"], ["ResetPassword (expired link)", "/reset-password", <ResetPassword />, "Link expired"], ["Callback", "/auth/callback", <Callback />, null]])("%s has one h1 and no violations", async (_n, path, el, h1) => {
+    const { container } = page(path, el);
+    if (h1) await screen.findByRole("heading", { level: 1, name: h1 });
+    expect(container.querySelectorAll("h1").length).toBeLessThanOrEqual(1);
+    expect(await check(container)).toHaveNoViolations();
+  });
+
+  it("Login: failed submit shows an error summary that takes focus, linked to the fields", async () => {
+    const user = userEvent.setup();
+    const { container } = page("/login", <Login />);
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    const summary = await screen.findByRole("alert", { name: /problems? with your submission/ });
+    await waitFor(() => expect(summary).toHaveFocus());
+    expect(screen.getByLabelText(/^Email/)).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText(/^Email/)).toHaveAccessibleDescription(/Enter your email address/);
+    expect(await check(container)).toHaveNoViolations();
+  });
+
+  it("Register: password rules are listed before the field; autocomplete attributes set", async () => {
+    const { container } = page("/register", <Register />);
+    const html = container.innerHTML;
+    expect(html.indexOf("At least 8 characters")).toBeLessThan(html.indexOf('id="password"'));
+    expect(screen.getByLabelText(/^Email/)).toHaveAttribute("autocomplete", "email");
+    expect(screen.getByLabelText(/^Full name/)).toHaveAttribute("autocomplete", "name");
+    expect(container.querySelector("#password")).toHaveAttribute("autocomplete", "new-password");
+    expect(await check(container)).toHaveNoViolations();
+  });
+});
+
+describe("attendee pages", () => {
+  it("Home: event cards", async () => {
+    const { container } = page("/", <Home />);
+    await screen.findByText("Sold out event");
+    expect(await check(container)).toHaveNoViolations();
+    expect(screen.getByText("5 of 100 slots left")).toBeInTheDocument();
+    expect(screen.getAllByText("Few slots left").length).toBeGreaterThan(0);
+  });
+
+  const fillStep1 = async (user) => { await user.click(screen.getByRole("checkbox", { name: /agree to the Terms/ })); await user.click(screen.getByRole("button", { name: "Next" })); };
+  const fillStep2 = async (user) => {
+    await user.clear(screen.getByLabelText(/^Name/));                              // pre-filled from the account
+    await user.type(screen.getByLabelText(/^Name/), "Juan Dela Cruz");
+    await user.type(screen.getByLabelText(/^X\/Twitter Username/), "@juan_dc");
+    await user.type(screen.getByLabelText(/^Facebook Profile Link/), "fb.com/TeenfreshPH");
+    await user.type(screen.getByLabelText(/^Contact Number/), "09171234567");
+    await user.click(screen.getByRole("button", { name: "Next" }));
+  };
+
+  it("EventRegister: the four steps, per-step errors, review, submit and the status page", async () => {
+    asUser();
+    fixtures.current.payments = [];                                // no earlier payments to reuse
+    fixtures.current.rpc = { submit_registration: { registration_id: "rnew", payment_id: "pnew", status: "pending_verification", ticket_number: null } };
+    const user = userEvent.setup({ applyAccept: false });
+    const { container } = page("/events/:id/register", <EventRegister />, "/events/e1/register");
+    await screen.findByRole("heading", { level: 1, name: "Register" });
+
+    // header: real text, not only images
+    expect(screen.getByText("1 Form = 1 Entry")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open in Google Maps/ })).toBeInTheDocument();
+    expect(screen.getByText("* Indicates required question")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Registration progress" })).toBeInTheDocument();
+
+    // step 1: placeholders (no images uploaded), terms from terms_html, contact links, kit inclusions
+    expect(screen.getByRole("heading", { level: 2, name: "Event info and terms" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Email/)).toHaveValue("juan@example.com");
+    expect(screen.getByText("Event poster image coming soon")).toBeInTheDocument();
+    expect(screen.getByText("Event details image coming soon")).toBeInTheDocument();
+    expect(screen.getByText("NO CANCELLATION").tagName).toBe("STRONG");
+    expect(screen.getByRole("list", { name: "Contact links" })).toBeInTheDocument();
+    expect(screen.getByText("(2) Mezastar Tags")).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+
+    await user.click(screen.getByRole("button", { name: "Next" }));                 // agreement missing
+    const summary = await screen.findByRole("alert", { name: /problem/ });
+    await waitFor(() => expect(summary).toHaveFocus());
+    expect(screen.getByRole("checkbox", { name: /agree/ })).toHaveAttribute("aria-invalid", "true");
+    expect(await check(container)).toHaveNoViolations();
+    await fillStep1(user);
+
+    // step 2
+    const h2 = await screen.findByRole("heading", { level: 2, name: "Participant's information" });
+    await waitFor(() => expect(h2).toHaveFocus());                                  // focus moves to the step heading
+    expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Participant");
+    expect(screen.getByLabelText(/^X\/Twitter Username/)).toHaveAccessibleDescription(/without "@" sign/);
+    expect(screen.getByLabelText(/^Facebook Profile Link/)).toHaveAccessibleDescription(/fb.com\/TeenfreshPH/);
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: "Next" }));                 // the name is pre-filled from the account, the other three are empty
+    expect((await screen.findByRole("alert", { name: /3 problems/ }))).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/^X\/Twitter Username/), "@@juan_dc");
+    await user.tab();
+    expect(screen.getByLabelText(/^X\/Twitter Username/)).toHaveValue("juan_dc");   // a leading @ is stripped when you leave the field
+    await user.clear(screen.getByLabelText(/^X\/Twitter Username/));
+    await fillStep2(user);
+
+    // step 3: payment
+    await screen.findByRole("heading", { level: 2, name: "Payment" });
+    expect(screen.getByRole("heading", { name: "PAYMENT METHOD" })).toBeInTheDocument();
+    expect(screen.getByText("BR**N CA**O S.")).toBeInTheDocument();
+    expect(screen.getByText("09171234567")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy number" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "QR CODE" })).toBeInTheDocument();
+    expect(screen.getByText("GCash QR code image coming soon")).toBeInTheDocument();
+    expect(screen.getByText(/avoid using the "Money Protect" feature/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/earlier forms/)).toBeNull();                    // nothing to reuse yet
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: "Review registration" }));
+    const paySummary = await screen.findByRole("alert", { name: /problems/ });
+    expect(paySummary).toHaveTextContent(/Name of sender/); expect(paySummary).toHaveTextContent(/Payment receipt/);
+    await user.type(screen.getByLabelText(/^Name of Sender/), "Juan D.");
+    await user.type(screen.getByLabelText(/^Amount Paid/), "50");
+    await user.type(screen.getByLabelText(/^Reference Number/), "123456789012");
+    await user.upload(container.querySelector("#receipt"), new File(["r"], "gcash.png", { type: "image/png" }));
+    expect(await screen.findByText(/usually 13 digits/)).toBeInTheDocument();       // a warning, not an error
+    await user.click(screen.getByRole("button", { name: "Review registration" }));
+    expect((await screen.findAllByText(/at least 100.00 PHP/)).length).toBeGreaterThan(0);
+    await user.clear(screen.getByLabelText(/^Amount Paid/)); await user.type(screen.getByLabelText(/^Amount Paid/), "100");
+    await user.type(screen.getByLabelText(/^Notes/), "hello");
+    expect(screen.getByLabelText(/^Notes/)).toHaveAccessibleDescription("5 of 500 characters");
+    await user.click(screen.getByRole("button", { name: "Review registration" }));
+
+    // step 4: review (everything normalised) and submit
+    const reviewH = await screen.findByRole("heading", { level: 2, name: "Review and submit" });
+    await waitFor(() => expect(reviewH).toHaveFocus());
+    expect(screen.getByText("@juan_dc")).toBeInTheDocument();
+    expect(screen.getByText("https://www.facebook.com/TeenfreshPH")).toBeInTheDocument();
+    expect(screen.getByText("+639171234567")).toBeInTheDocument();
+    expect(screen.getByText("₱100.00")).toBeInTheDocument();
+    expect(screen.getByText(/gcash.png/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Edit / }).length).toBe(3);
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: "Edit Participant's information" }));
+    expect(await screen.findByLabelText(/^Name/)).toHaveValue("Juan Dela Cruz");     // values survive going back
+    await user.click(screen.getByRole("button", { name: "Next" })); await screen.findByRole("heading", { level: 2, name: "Payment" });
+    expect(screen.getByLabelText(/^Amount Paid/)).toHaveValue("100");
+    await user.click(screen.getByRole("button", { name: "Review registration" }));
+    await user.click(await screen.findByRole("button", { name: "Submit registration" }));
+
+    // status page
+    const done = await screen.findByRole("heading", { level: 1, name: "Registration received" });
+    await waitFor(() => expect(done).toHaveFocus());
+    expect(screen.getAllByText("Pending verification").length).toBeGreaterThan(0);
+    expect(screen.getByText(/within 48 to 72 hours/)).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/IVEMONOP-0/);                         // no ticket yet
+    expect(await check(container)).toHaveNoViolations();
+    // what was sent: the receipt in the private bucket under the user's own folder, a random name, then the RPC
+    const { storageLog } = await import("./helpers/mockSupabase.js");
+    const up = storageLog.uploads.at(-1);
+    expect(up).toMatchObject({ bucket: "payment-receipts", type: "image/png" });
+    expect(up.path).toMatch(/^u1\/[0-9a-f-]{36}\.png$/);
+    expect(up.path).not.toContain("gcash");
+    const call = fixtures.current.rpcCalls.find((c) => c.name === "submit_registration").args;
+    expect(call).toMatchObject({ p_event_id: "e1", p_name: "Juan Dela Cruz", p_x_username: "juan_dc", p_facebook: "fb.com/TeenfreshPH", p_contact: "09171234567", p_agreed: true, p_amount: 100, p_reference: "123456789012", p_receipt_path: up.path, p_payment_id: null });
+    expect(fixtures.current.fnCalls ?? []).toHaveLength(0);                           // acknowledgment emails are off by default
+  });
+
+  it("EventRegister: one earlier payment can be reused, which locks the fields and needs no new receipt", async () => {
+    asUser();
+    fixtures.current.payments = [{ id: "pay1", sender_name: "Juan D.", amount_paid: 200, reference_number: "5550001112223", status: "pending", registrations: [{ id: "r1", status: "pending_verification" }] }];
+    fixtures.current.rpc = { submit_registration: { registration_id: "r2", payment_id: "pay1", status: "pending_verification", ticket_number: null } };
+    const user = userEvent.setup();
+    const { container } = page("/events/:id/register", <EventRegister />, "/events/e1/register");
+    await screen.findByRole("heading", { level: 1, name: "Register" });
+    await fillStep1(user);
+    await screen.findByRole("heading", { level: 2, name: "Participant's information" });
+    await fillStep2(user);
+    await screen.findByRole("heading", { level: 2, name: "Payment" });
+    const select = screen.getByLabelText("Use the payment details from one of my earlier forms");
+    expect(select).toHaveTextContent("1 form left");
+    await user.selectOptions(select, "pay1");
+    expect(screen.getByLabelText(/^Name of Sender/)).toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/^Amount Paid/)).toHaveValue("200");
+    expect(screen.queryByText("Files submitted:")).toBeNull();                      // no file needed
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: "Review registration" }));
+    await user.click(await screen.findByRole("button", { name: "Submit registration" }));
+    await screen.findByRole("heading", { level: 1, name: "Registration received" });
+    expect(fixtures.current.rpcCalls.find((c) => c.name === "submit_registration").args).toMatchObject({ p_payment_id: "pay1", p_receipt_path: null });
+  });
+
+  it("EventRegister: a server error (duplicate X username) is shown in plain words on the review step", async () => {
+    asUser();
+    fixtures.current.payments = [{ id: "pay1", sender_name: "Juan D.", amount_paid: 100, reference_number: "5550001112223", status: "verified", registrations: [] }];
+    fixtures.current.rpc = { submit_registration: { error: { message: "ALREADY_REGISTERED" } } };
+    const user = userEvent.setup();
+    page("/events/:id/register", <EventRegister />, "/events/e1/register");
+    await screen.findByRole("heading", { level: 1, name: "Register" });
+    await fillStep1(user); await screen.findByRole("heading", { level: 2, name: "Participant's information" }); await fillStep2(user);
+    await screen.findByRole("heading", { level: 2, name: "Payment" });
+    await user.selectOptions(screen.getByLabelText(/earlier forms/), "pay1");
+    await user.click(screen.getByRole("button", { name: "Review registration" }));
+    await user.click(await screen.findByRole("button", { name: "Submit registration" }));
+    expect(await screen.findByText(/already registered for this event/)).toBeInTheDocument();
+  });
+
+  it("EventRegister: after the deadline, when sold out, or when closed the form is replaced by a clear message", async () => {
+    asUser();
+    for (const [over, reason] of [[{ registration_deadline: new Date(Date.now() - 864e5).toISOString() }, /deadline has passed/], [{ registration_open: false }, /closed by the organizers/]]) {
+      fixtures.current.events = [{ ...ev, ...over }];
+      const { container, unmount } = page("/events/:id/register", <EventRegister />, "/events/e1/register");
+      expect(await screen.findByText(reason)).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 1, name: "Register" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+      expect(await check(container)).toHaveNoViolations();
+      unmount();
+    }
+    fixtures.current.events = [ev];
+    fixtures.current.event_availability = [{ event_id: "e1", registered: 100 }];
+    page("/events/:id/register", <EventRegister />, "/events/e1/register");
+    expect(await screen.findByText(/All slots are taken/)).toBeInTheDocument();
+  });
+
+  it("MyRegistrations and MyTicket", async () => {
+    asUser();
+    let r = page("/my-registrations", <MyRegistrations />);
+    await screen.findByText("IVEMON-000001");
+    expect(await check(r.container)).toHaveNoViolations();
+    r.unmount();
+    r = page("/my-ticket/:id", <MyTicket />, "/my-ticket/r1");
+    await screen.findByRole("heading", { level: 1, name: "My ticket" });
+    await screen.findByText(/Transfer your slot/);
+    expect(await check(r.container)).toHaveNoViolations();
+  });
+});
+
+describe("admin pages", () => {
+  it("Dashboard", async () => { const { container } = admin(<Dashboard />); await settled("Dashboard"); expect(await check(container)).toHaveNoViolations(); });
+  it("Events (list and edit dialog)", async () => {
+    const user = userEvent.setup();
+    const { container } = admin(<Events />); await settled("Events");
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: /New event/ }));
+    expect(screen.getByRole("dialog", { name: "New event" })).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+  });
+  it("Events: the editor has every new field, and the Media tab has one card per image slot", async () => {
+    const user = userEvent.setup();
+    const { container } = admin(<Events />); await settled("Events");
+    await user.click(screen.getByRole("button", { name: /Edit IVEMON: ODD PLATINUM/ }));
+    const dialog = screen.getByRole("dialog", { name: "Edit event" });
+    for (const label of ["Title", "Subtitle", "Venue", "Address", "Registration fee \\(PHP\\)", "GCash account name \\(masked\\)", "GCash number", "Hashtags", "Kit inclusions", "Contact links", "Registration deadline"]) expect(within(dialog).getByLabelText(new RegExp(label))).toBeInTheDocument();
+    expect(within(dialog).getByRole("toolbar", { name: "Formatting" })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText(/Delete payment receipts/)).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(within(dialog).getByRole("tab", { name: "Media" }));
+    const cards = await within(dialog).findAllByRole("heading", { level: 3 });
+    expect(cards.map((h) => h.textContent)).toEqual(["Event poster", "Event details card", "GCash QR code", "Home page banner", "Confirmation email banner"]);
+    expect(within(dialog).getAllByText(/Recommended:/).length).toBe(5);
+    expect(within(dialog).getAllByText(/JPG, PNG or WebP, 5 MB at most/).length).toBeGreaterThanOrEqual(5);
+    expect(within(dialog).getByText("Event poster image coming soon")).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+  });
+  it("Media tab: upload, replace, alt text and remove for an image slot", async () => {
+    const user = userEvent.setup();
+    fixtures.current.event_images = [{ id: "i1", event_id: "e1", slot: "poster", storage_path: "e1/old.png", alt_text: "Old alt", updated_at: future }];
+    admin(<Events />); await settled("Events");
+    await user.click(screen.getByRole("button", { name: /Edit IVEMON: ODD PLATINUM/ }));
+    const dialog = screen.getByRole("dialog", { name: "Edit event" });
+    await user.click(within(dialog).getByRole("tab", { name: "Media" }));
+    await within(dialog).findByText(/Last updated/);
+    expect(within(dialog).getByLabelText("Alt text")).toHaveValue("Old alt");
+    expect(within(dialog).getByText("Replace image", { exact: false })).toBeInTheDocument();
+    const { storageLog } = await import("./helpers/mockSupabase.js");
+    storageLog.uploads.length = 0;
+    await user.upload(within(dialog).getByLabelText(/Replace image for Event poster/), new File(["x"], "new poster.PNG", { type: "image/png" }));
+    await waitFor(() => expect(storageLog.uploads.at(-1)).toMatchObject({ bucket: "event-media", type: "image/png" }));
+    expect(storageLog.uploads.at(-1).path).toMatch(/^e1\/poster-[0-9a-f-]{36}\.png$/);
+    await waitFor(() => expect(storageLog.removed).toContain("e1/old.png"));          // the replaced file is cleaned up
+    await user.click(within(dialog).getByRole("button", { name: /Remove Event poster/ }));
+    expect(screen.getByRole("dialog", { name: "Remove Event poster?" })).toBeInTheDocument();
+  });
+  it("Media tab: a file that is not a JPG, PNG or WebP image is refused", async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    admin(<Events />); await settled("Events");
+    await user.click(screen.getByRole("button", { name: /Edit IVEMON: ODD PLATINUM/ }));
+    const dialog = screen.getByRole("dialog", { name: "Edit event" });
+    await user.click(within(dialog).getByRole("tab", { name: "Media" }));
+    const { storageLog } = await import("./helpers/mockSupabase.js");
+    storageLog.uploads.length = 0;
+    await user.upload(await within(dialog).findByLabelText(/Upload image for Event poster/), new File(["x"], "poster.gif", { type: "image/gif" }));
+    expect(await screen.findByText("Use a JPG, PNG or WebP image.")).toBeInTheDocument();
+    expect(storageLog.uploads).toHaveLength(0);
+  });
+
+  it("Payments: the queue, the receipt viewer and the review actions", async () => {
+    asUser(true);
+    fixtures.current.rpc = { review_payment: { decision: "verified", registration_ids: ["r1"], ticket_numbers: ["IVEMONOP-000001"] } };
+    const user = userEvent.setup();
+    const { container } = admin(<Payments />); await settled("Payments");
+    await screen.findByRole("table", { name: /Payments/ });
+    expect(screen.getByText("1 payment found")).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: /Review payment of Juan D./ }));
+    const dialog = screen.getByRole("dialog", { name: /Payment of ₱100.00 from Juan D./ });
+    expect(await within(dialog).findByAltText(/GCash receipt, reference 1234567890123/)).toHaveAttribute("src", "https://signed.test/u1/receipt.png");   // short-lived signed URL
+    expect(within(dialog).getByText("Linked forms")).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+
+    await user.click(within(dialog).getByRole("button", { name: "Reject payment" }));
+    const confirm = screen.getByRole("dialog", { name: "Reject this payment?" });
+    await user.click(within(confirm).getByRole("button", { name: "Reject and email" }));
+    expect(await within(confirm).findByText(/Give a reason/)).toBeInTheDocument();     // a reason is required
+    expect(fixtures.current.rpcCalls ?? []).toHaveLength(0);
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Reject this payment?" })).toBeNull();
+    expect(screen.getByRole("dialog", { name: /Payment of/ })).toBeInTheDocument();    // only the top dialog closed
+
+    await user.click(within(screen.getByRole("dialog", { name: /Payment of/ })).getByRole("button", { name: "Verify payment" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Verify this payment?" })).getByRole("button", { name: "Verify and send tickets" }));
+    await waitFor(() => expect(fixtures.current.rpcCalls.find((c) => c.name === "review_payment")?.args).toMatchObject({ p_payment_id: "p1", p_decision: "verified", p_override: false }));
+    await waitFor(() => expect(fixtures.current.fnCalls.find((c) => c.name === "send-confirmation-email")?.body).toEqual({ registration_ids: ["r1"] }));   // the ticket email goes out
+  });
+  it("Payments: an amount below the fee is flagged and needs an override with a reason", async () => {
+    asUser(true);
+    fixtures.current.payments = [payment({ amount_paid: 80 })];
+    const user = userEvent.setup();
+    admin(<Payments />); await settled("Payments");
+    await user.click(await screen.findByRole("button", { name: /Review payment of Juan D./ }));
+    const dialog = screen.getByRole("dialog", { name: /Payment of ₱80.00/ });
+    expect(within(dialog).getByText(/lower than expected \(₱100.00\)/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Verify payment" }));
+    const confirm = screen.getByRole("dialog", { name: "Verify this payment?" });
+    expect(within(confirm).getByRole("checkbox", { name: /Verify anyway/ })).toBeInTheDocument();
+    await user.click(within(confirm).getByRole("button", { name: "Verify and send tickets" }));
+    expect(await within(confirm).findByText(/Tick “Verify anyway” and give a reason/)).toBeInTheDocument();
+    expect(fixtures.current.rpcCalls ?? []).toHaveLength(0);
+  });
+  it("Payments: marking underpaid asks for the amount due", async () => {
+    asUser(true);
+    fixtures.current.payments = [payment({ amount_paid: 95 })];
+    fixtures.current.rpc = { review_payment: { decision: "underpaid", registration_ids: [] } };
+    const user = userEvent.setup();
+    admin(<Payments />); await settled("Payments");
+    await user.click(await screen.findByRole("button", { name: /Review payment of Juan D./ }));
+    await user.click(within(screen.getByRole("dialog", { name: /Payment of/ })).getByRole("button", { name: "Mark underpaid" }));
+    const confirm = screen.getByRole("dialog", { name: "Mark this payment as underpaid?" });
+    expect(within(confirm).getByLabelText(/Amount still due/)).toHaveValue("5.00");    // prefilled with the shortfall
+    await user.click(within(confirm).getByRole("button", { name: "Mark underpaid and email" }));
+    await waitFor(() => expect(fixtures.current.rpcCalls.find((c) => c.name === "review_payment")?.args).toMatchObject({ p_decision: "underpaid", p_amount_due: 5 }));
+    await waitFor(() => expect(fixtures.current.fnCalls.find((c) => c.name === "send-payment-email")?.body).toEqual({ kind: "payment_underpaid", payment_id: "p1" }));
+  });
+
+  it("My registrations: statuses, and an underpaid payment can be fixed from a dialog", async () => {
+    asUser();
+    fixtures.current.registrations = [
+      { ...reg, id: "ra", status: "confirmed" },
+      { ...reg, id: "rb", name: "Maria Santos", ticket_number: null, status: "pending_verification", payment_id: "pb", payments: { id: "pb", status: "underpaid", review_note: "Transaction fee deducted", amount_due: 5, amount_paid: 95, reference_number: "999", sender_name: "Maria S." } },
+      { ...reg, id: "rc", name: "Pedro Reyes", ticket_number: null, status: "rejected", payment_id: "pc", payments: { id: "pc", status: "rejected", review_note: "Wrong reference number", amount_due: null, amount_paid: 100, reference_number: "888", sender_name: "Pedro R." } },
+      { ...reg, id: "rd", name: "Ana Cruz", ticket_number: null, status: "pending_verification", payment_id: "pd", payments: { id: "pd", status: "pending", review_note: null, amount_due: null, amount_paid: 100, reference_number: "777", sender_name: "Ana C." } },
+    ];
+    fixtures.current.rpc = { resubmit_payment: { payment_id: "pb", status: "pending" } };
+    const user = userEvent.setup({ applyAccept: false });
+    const { container } = page("/my-registrations", <MyRegistrations />);
+    await screen.findAllByText("Maria Santos", { exact: false });
+    expect(screen.getByText("Confirmed")).toBeInTheDocument();
+    expect(screen.getAllByText("Pending verification").length).toBe(2);
+    expect(screen.getByText("Rejected")).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /View ticket/ })).toHaveLength(1);      // a ticket and QR only when confirmed
+    expect(screen.getByText(/Payment incomplete: ₱5.00 still due/)).toBeInTheDocument();
+    expect(screen.getByText("Wrong reference number")).toBeInTheDocument();
+    expect(screen.getByText(/being verified/)).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+
+    await user.click(screen.getByRole("button", { name: /Send the missing amount for Maria Santos/ }));
+    const dialog = screen.getByRole("dialog", { name: "Send the missing amount" });
+    expect(within(dialog).getByText(/total you have paid/)).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(within(dialog).getByRole("button", { name: "Send for review" }));
+    expect(await within(dialog).findByRole("alert", { name: /problems/ })).toBeInTheDocument();   // nothing filled in yet
+    await user.type(within(dialog).getByLabelText(/^Total Amount Paid/), "100");
+    await user.type(within(dialog).getByLabelText(/^Reference Number/), "9990001112223");
+    await user.upload(dialog.querySelector("#resub-receipt"), new File(["r"], "r.pdf", { type: "application/pdf" }));
+    await user.click(within(dialog).getByRole("button", { name: "Send for review" }));
+    await waitFor(() => expect(fixtures.current.rpcCalls.find((c) => c.name === "resubmit_payment")?.args).toMatchObject({ p_payment_id: "pb", p_amount: 100, p_reference: "9990001112223" }));
+    expect(fixtures.current.rpcCalls.find((c) => c.name === "resubmit_payment").args.p_receipt_path).toMatch(/^u1\/[0-9a-f-]{36}\.pdf$/);
+  });
+
+  it("Attendees (table and detail dialog)", async () => {
+    const user = userEvent.setup();
+    const { container } = admin(<Attendees />); await settled("Attendees");
+    await screen.findByRole("table", { name: /Attendees/ });
+    expect(await check(container)).toHaveNoViolations();
+    expect(screen.getByText(/attendees? found/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /View Juan Dela Cruz/ }));
+    expect(screen.getByRole("dialog", { name: "Juan Dela Cruz" })).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+  });
+  it("Scanner: camera controls, live region and manual alternative", async () => {
+    const { container } = admin(<Scanner />); await settled("QR Scanner");
+    expect(screen.getByRole("button", { name: "Start camera" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Sound and vibration/ })).toHaveAttribute("aria-pressed");
+    expect(screen.getByLabelText("Ticket number")).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+  });
+  it("Scanner: a scan result is announced in an assertive live region", async () => {
+    fixtures.current.rpc = { check_in_attendee: { result: "success", name: "Juan Dela Cruz", x_username: "juan", ticket_number: "IVEMON-000001", registration_id: "r1", kit_claimed: false, receipt_verified: false } };
+    const user = userEvent.setup();
+    const { container } = admin(<Scanner />); await settled("QR Scanner");
+    await user.type(screen.getByLabelText("Ticket number"), "ivemon-000001{enter}");
+    await screen.findByRole("heading", { name: "Valid ticket" });
+    const live = container.querySelector('[aria-live="assertive"]');
+    expect(live).toHaveTextContent("Valid ticket. Juan Dela Cruz, X username juan, ticket IVEMON-000001. Checked in.");
+    expect(await check(container)).toHaveNoViolations();
+  });
+  it("Tracker (list and audit log)", async () => {
+    const user = userEvent.setup();
+    const { container } = admin(<Tracker />); await settled(/Attendance/);
+    await screen.findByRole("table", { name: /Attendance list/ });
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("tab", { name: "Scan audit log" }));
+    await screen.findByRole("table", { name: /Scan audit log/ });
+    expect(await check(container)).toHaveNoViolations();
+  });
+  it("EmailTemplates (template, bulk, logs)", async () => {
+    const user = userEvent.setup();
+    const { container } = admin(<EmailTemplates />); await settled("Email");
+    await screen.findByLabelText("Subject");
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("tab", { name: "Bulk mail merge" })); await screen.findByLabelText("Recipients");
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("tab", { name: "Email logs" })); await screen.findByRole("table", { name: /Email logs/ });
+    expect(await check(container)).toHaveNoViolations();
+  });
+  it("Users", async () => { asUser(true); const { container } = admin(<Users />); await settled("Admin users"); await screen.findByRole("table", { name: /Admin users/ }); expect(await check(container)).toHaveNoViolations(); });
+});
