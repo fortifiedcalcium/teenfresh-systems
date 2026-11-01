@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { SkipLink } from "../a11y.jsx";
 import logo from "../logo/teenfresh-logo.png";
+import { IconCalendar, IconTicket, IconDashboard, IconLogIn, IconLogOut, IconUserPlus } from "../components/NavIcons.jsx";
 import { FacebookIcon, MailIcon, XIcon } from "../components/SocialIcons.jsx";
 
 const SUPPORT = import.meta.env.VITE_SUPPORT_EMAIL;
@@ -16,15 +17,15 @@ export default function AttendeeLayout() {
         <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2" aria-label="Main">
           <Link to="/" className="nav-link" aria-label="Teenfresh Events, home"><img src={logo} alt="" width="188" height="40" className="h-10 w-auto" /></Link>
           <div className="flex flex-wrap items-center gap-1">
-            <NavLink to="/" end className="nav-link">Events</NavLink>
-            {user && <NavLink to="/my-registrations" className="nav-link">My registrations</NavLink>}
-            {isAdmin && <NavLink to="/admin" className="nav-link">Admin</NavLink>}
+            <NavLink to="/" end className="nav-link"><IconCalendar />Events</NavLink>
+            {user && <NavLink to="/my-registrations" className="nav-link"><IconTicket />My registrations</NavLink>}
+            {isAdmin && <NavLink to="/admin" className="nav-link"><IconDashboard />Admin</NavLink>}
             {user ? (
-              <button className="btn-secondary ml-2" onClick={signOut}>Sign out</button>
+              <button className="btn-secondary ml-2" onClick={signOut}><IconLogOut />Sign out</button>
             ) : (
               <>
-                <NavLink to="/login" className="nav-link">Sign in</NavLink>
-                <Link to="/register" className="btn-primary ml-1">Sign up</Link>
+                <NavLink to="/login" className="nav-link"><IconLogIn />Sign in</NavLink>
+                <Link to="/register" className="btn-primary ml-1"><IconUserPlus />Sign up</Link>
               </>
             )}
           </div>
