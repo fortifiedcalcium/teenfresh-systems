@@ -94,3 +94,20 @@ describe("the seeded confirmation email", () => {
     expect(termsHtml("a", ["x & y"])).toContain("x &amp; y");
   });
 });
+
+describe("signature images", () => {
+  const sig = '<img src="{{Logo URL}}"><img src="{{Facebook Icon URL}}"><img src="{{X Icon URL}}">';
+  const base = { reg: { name: "A" }, event: { title: "E" } };
+  it("are absolute https URLs even when PUBLIC_SITE_URL is not set", async () => {
+    const { renderEmail } = await import("../supabase/functions/_shared/merge.ts");
+    for (const site of ["", undefined, "  "]) {
+      const html = renderEmail({ subject: "s", html_body: sig, text_body: "t" }, { ...base, site }).html;
+      expect(html).toBe('<img src="https://teenfresh-events.web.app/email/logo.png"><img src="https://teenfresh-events.web.app/email/facebook.png"><img src="https://teenfresh-events.web.app/email/x.png">');
+    }
+  });
+  it("use the configured site when it is set, without a double slash", async () => {
+    const { renderEmail } = await import("../supabase/functions/_shared/merge.ts");
+    const html = renderEmail({ subject: "s", html_body: sig, text_body: "t" }, { ...base, site: "https://events.example.com/" }).html;
+    expect(html).toContain('src="https://events.example.com/email/logo.png"');
+  });
+});

@@ -155,7 +155,12 @@ export interface MergeSource {
 const money = (v: unknown) => (v == null || v === "" ? "" : Number(v).toFixed(2));
 
 /** One value map per mode, because {{Terms}}, {{Banner}} and {{Contact Links}} differ between html and text. */
-export function buildValues({ reg, event, site = "", bannerUrl, bannerAlt, extra = {} }: MergeSource, mode: "html" | "text"): MergeValues {
+/** Where the logo, social icons and banners are hosted. Email clients cannot load a relative path like /email/logo.png,
+ *  so when the PUBLIC_SITE_URL secret is missing the signature lost its logo and icons. This fallback keeps them working. */
+export const DEFAULT_SITE = "https://teenfresh-events.web.app";
+
+export function buildValues({ reg, event, site: siteIn = "", bannerUrl, bannerAlt, extra = {} }: MergeSource, mode: "html" | "text"): MergeValues {
+  const site = siteIn?.trim() ? siteIn.trim().replace(/\/+$/, "") : DEFAULT_SITE;
   const banner = absoluteUrl(bannerUrl ?? event.banner_url, site);
   const items = event.terms_items ?? [];
   let terms: string;
