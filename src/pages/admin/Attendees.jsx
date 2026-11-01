@@ -12,6 +12,7 @@ import Modal from "../../components/Modal.jsx";
 import Field from "../../components/Field.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import { Empty } from "../../components/Spinner.jsx";
+import { IconClose, IconDownload, IconEye, IconPencil, IconSave, IconSend, IconTrash, IconUndo, IconUserCheck, IconUserX, IconXCircle } from "../../components/NavIcons.jsx";
 
 const EMAIL_BADGE = { sent: "badge-ok", failed: "badge-bad", none: "badge-neutral" };
 const STATUS_BADGE = { pending_verification: ["badge-warn", "pending verification"], confirmed: ["badge-ok", "confirmed"], rejected: ["badge-bad", "rejected"], cancelled: ["badge-bad", "cancelled"] };
@@ -101,13 +102,13 @@ export default function Attendees() {
     { key: "created_at", label: "Registered", className: "whitespace-nowrap", render: (r) => fmtDateTime(r.created_at) },
     { key: "email_status", label: "Email", render: (r) => <span className={`badge ${EMAIL_BADGE[r.email_status]}`}>{r.email_status === "none" ? "not sent" : r.email_status}</span> },
     { key: "attendance", label: "Status", sortValue: (r) => (r.checked_in_at ? 1 : 0), render: (r) => r.status === "confirmed" ? (r.checked_in_at ? <span className="badge badge-ok">checked in</span> : <span className="badge badge-neutral">not yet</span>) : <span className={`badge ${STATUS_BADGE[r.status][0]}`}>{STATUS_BADGE[r.status][1]}</span> },
-    { key: "actions", label: "", sortable: false, render: (r) => <button className="btn-secondary" onClick={() => setSel(r)}>View{" "}<span className="sr-only">{r.name}</span></button> },
+    { key: "actions", label: "", sortable: false, render: (r) => <button className="btn-secondary" onClick={() => setSel(r)}><IconEye />View{" "}<span className="sr-only">{r.name}</span></button> },
   ];
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl">Attendees</h1>
-        <div className="flex flex-wrap gap-2"><button className="btn-secondary" onClick={resendFailed} disabled={busy || !rows}>Resend all failed</button><button className="btn-primary" onClick={exportCsv} disabled={!shown.length}>Export CSV</button></div>
+        <div className="flex flex-wrap gap-2"><button className="btn-secondary" onClick={resendFailed} disabled={busy || !rows}><IconSend />Resend all failed</button><button className="btn-primary" onClick={exportCsv} disabled={!shown.length}><IconDownload />Export CSV</button></div>
       </div>
       <div className="flex flex-wrap gap-2">
         <input className="input max-w-xs" placeholder="Search name, X, email, ticket, contact" aria-label="Search attendees" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -130,13 +131,13 @@ export default function Attendees() {
           </dl>
           <p className="mt-3 text-sm text-ink-muted">Payments are verified on the Payments page.</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button className="btn-secondary" disabled={busy || sel.status !== "confirmed"} onClick={() => resend(sel)}>Resend email</button>
-            <button className="btn-secondary" disabled={busy || sel.status !== "confirmed"} onClick={() => mark(sel, !sel.checked_in_at)}>{sel.checked_in_at ? "Clear attendance" : "Mark present"}</button>
-            <button className="btn-secondary" onClick={() => setEdit({ ...sel })}>Edit / transfer</button>
+            <button className="btn-secondary" disabled={busy || sel.status !== "confirmed"} onClick={() => resend(sel)}><IconSend />Resend email</button>
+            <button className="btn-secondary" disabled={busy || sel.status !== "confirmed"} onClick={() => mark(sel, !sel.checked_in_at)}>{sel.checked_in_at ? <IconUserX /> : <IconUserCheck />}{sel.checked_in_at ? "Clear attendance" : "Mark present"}</button>
+            <button className="btn-secondary" onClick={() => setEdit({ ...sel })}><IconPencil />Edit / transfer</button>
             {sel.status === "cancelled" || sel.status === "rejected"
-              ? <button className="btn-secondary" disabled={busy} onClick={() => setConfirm({ title: "Restore this slot?", body: `Restore ${sel.name}? The slot is taken again (it may fail if the event is full or the X username is in use).`, label: "Restore", tone: "primary", run: () => setStatus(sel, restoreStatus(sel)) })}>Restore slot</button>
-              : <button className="btn-secondary" disabled={busy} onClick={() => setConfirm({ title: "Cancel this slot?", body: `Cancel ${sel.ticket_number || sel.name}? The slot is freed and the ticket stops working.`, label: "Cancel slot", tone: "danger", run: () => setStatus(sel, "cancelled") })}>Cancel slot</button>}
-            <button className="btn-danger" disabled={busy} onClick={() => setConfirm({ title: "Delete this registration?", body: `Permanently delete ${sel.name} (${sel.ticket_number || "no ticket"})?`, label: "Delete", tone: "danger", run: () => remove(sel) })}>Delete</button>
+              ? <button className="btn-secondary" disabled={busy} onClick={() => setConfirm({ title: "Restore this slot?", body: `Restore ${sel.name}? The slot is taken again (it may fail if the event is full or the X username is in use).`, label: "Restore", tone: "primary", run: () => setStatus(sel, restoreStatus(sel)) })}><IconUndo />Restore slot</button>
+              : <button className="btn-secondary" disabled={busy} onClick={() => setConfirm({ title: "Cancel this slot?", body: `Cancel ${sel.ticket_number || sel.name}? The slot is freed and the ticket stops working.`, label: "Cancel slot", tone: "danger", run: () => setStatus(sel, "cancelled") })}><IconXCircle />Cancel slot</button>}
+            <button className="btn-danger" disabled={busy} onClick={() => setConfirm({ title: "Delete this registration?", body: `Permanently delete ${sel.name} (${sel.ticket_number || "no ticket"})?`, label: "Delete", tone: "danger", run: () => remove(sel) })}><IconTrash />Delete</button>
           </div>
         </Modal>
       )}
@@ -150,7 +151,7 @@ export default function Attendees() {
             <Field id="e-fb" label="Facebook link"><input className="input" value={edit.facebook_url || ""} onChange={(e) => setEdit({ ...edit, facebook_url: e.target.value })} /></Field>
             <Field id="e-tel" label="Contact number"><input className="input" value={edit.contact_number || ""} onChange={(e) => setEdit({ ...edit, contact_number: e.target.value })} /></Field>
             <Field id="e-notes" label="Notes"><textarea className="input" rows={2} value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} /></Field>
-            <div className="flex justify-end gap-2"><button type="button" className="btn-secondary" onClick={() => setEdit(null)}>Cancel</button><button className="btn-primary" disabled={busy}>Save</button></div>
+            <div className="flex justify-end gap-2"><button type="button" className="btn-secondary" onClick={() => setEdit(null)}><IconClose />Cancel</button><button className="btn-primary" disabled={busy}><IconSave />Save</button></div>
           </form>
         </Modal>
       )}

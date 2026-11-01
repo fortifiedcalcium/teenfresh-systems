@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Empty, Loading } from "./Spinner.jsx";
 import { LiveRegion } from "../a11y.jsx";
+import { IconChevronLeft, IconChevronRight } from "./NavIcons.jsx";
 
 /** Sortable, paginated table. columns: [{ key, label, sortValue?(row), render?(row), className?, sortable? }].
  *  `caption` names the table for screen readers (required). Sort buttons use aria-sort; the pagination is a labelled nav. */
@@ -67,8 +68,8 @@ export default function DataTable({ caption, columns, rows, rowKey = "id", loadi
         <nav aria-label={`${caption} pagination`} className="mt-3 flex items-center justify-between gap-2 text-sm text-ink">
           <span>{sorted.length} rows · page {cur + 1} of {pages}</span>
           <div className="flex gap-2">
-            <button className="btn-secondary" disabled={cur === 0} onClick={() => setPage(cur - 1)}>Previous{" "}<span className="sr-only">page</span></button>
-            <button className="btn-secondary" disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)}>Next{" "}<span className="sr-only">page</span></button>
+            <button className="btn-secondary" disabled={cur === 0} onClick={() => setPage(cur - 1)}><IconChevronLeft />Previous{" "}<span className="sr-only">page</span></button>
+            <button className="btn-secondary" disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)}><IconChevronRight />Next{" "}<span className="sr-only">page</span></button>
           </div>
         </nav>
       )}

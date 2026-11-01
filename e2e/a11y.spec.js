@@ -122,7 +122,7 @@ test.describe("axe: wcag2a / wcag2aa / wcag21aa / wcag22aa on every route", () =
     await page.getByRole("tab", { name: "Kits" }).click();
     await expect(page.getByRole("textbox", { name: /^Name/ }).first()).toHaveValue("Standard kit");
     v = await scan(page); expect(v, "kits tab\n" + formatViolations(v)).toEqual([]);
-    await page.getByRole("button", { name: "+ Add a kit" }).click();
+    await page.getByRole("button", { name: "Add a kit" }).click();
     await page.getByRole("button", { name: "Save kits" }).click();
     await expect(page.getByRole("alert").filter({ hasText: "problem" })).toBeFocused();
     v = await scan(page); expect(v, "kits tab errors\n" + formatViolations(v)).toEqual([]);

@@ -4,6 +4,7 @@ import { fmtDateTime } from "../../lib/availability.js";
 import { useToast } from "../../components/Toast.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import { Loading } from "../../components/Spinner.jsx";
+import { IconSave, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
 function SlotCard({ event, slot, row, reload }) {
   const spec = SLOTS[slot];
@@ -30,8 +31,8 @@ function SlotCard({ event, slot, row, reload }) {
       <div className="flex flex-wrap gap-2">
         <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" className="file-input sr-only" disabled={busy}
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) run(() => uploadEventImage(event, slot, f, alt, row), `${spec.label} ${row ? "replaced" : "uploaded"}`); }} />
-        <label htmlFor={inputId} className="btn-primary cursor-pointer" aria-disabled={busy}>{busy ? "Working…" : row ? "Replace image" : "Upload image"}{" "}<span className="sr-only">for {spec.label}</span></label>
-        {row && <button type="button" className="btn-secondary" disabled={busy} onClick={() => setConfirm(true)}>Remove{" "}<span className="sr-only">{spec.label}</span></button>}
+        <label htmlFor={inputId} className="btn-primary cursor-pointer" aria-disabled={busy}><IconUpload />{busy ? "Working…" : row ? "Replace image" : "Upload image"}{" "}<span className="sr-only">for {spec.label}</span></label>
+        {row && <button type="button" className="btn-secondary" disabled={busy} onClick={() => setConfirm(true)}><IconTrash />Remove{" "}<span className="sr-only">{spec.label}</span></button>}
       </div>
       {row && (
         <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); run(() => saveImageAlt(row, alt), "Alt text saved"); }}>
@@ -40,7 +41,7 @@ function SlotCard({ event, slot, row, reload }) {
             <input id={`alt-${slot}`} className="input" value={alt} onChange={(e) => setAlt(e.target.value)} aria-describedby={`alt-hint-${slot}`} />
             <p id={`alt-hint-${slot}`} className="hint">Describe the image for people who cannot see it. Posters are images of text, so the event info is also shown as real text on the page.</p>
           </div>
-          <button className="btn-secondary" disabled={busy}>Save alt text</button>
+          <button className="btn-secondary" disabled={busy}><IconSave />Save alt text</button>
         </form>
       )}
       {confirm && <ConfirmDialog title={`Remove ${spec.label}?`} confirmLabel="Remove image" busy={busy} onCancel={() => setConfirm(false)} onConfirm={async () => { await run(() => removeEventImage(row), `${spec.label} removed`); setConfirm(false); }}>The page will show the placeholder again.</ConfirmDialog>}

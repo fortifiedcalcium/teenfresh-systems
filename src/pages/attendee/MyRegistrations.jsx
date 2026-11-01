@@ -16,6 +16,7 @@ import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { IconClose, IconSend, IconTicket, IconUpload } from "../../components/NavIcons.jsx";
 
 const STATUS = {
   pending_verification: { tone: "warn", label: "Pending verification" },
@@ -69,7 +70,7 @@ function ResubmitDialog({ reg, onClose, onDone }) {
         <Field id="resub-ref" label="Reference Number (of the new transfer)" required hint="Digits only" error={errors.reference_number?.message}><input className="input" inputMode="numeric" autoComplete="off" {...register("reference_number")} /></Field>
         <FileUpload id="resub-receipt" file={file} onChange={(f) => { setFile(f); setReceiptError(""); }} error={receiptError} />
         {serverError && <Alert tone="bad">{serverError}</Alert>}
-        <div className="flex justify-end gap-2"><button type="button" className="btn-secondary" onClick={onClose} disabled={busy}>Cancel</button><button type="button" className="btn-primary" onClick={submit} disabled={busy}>{busy ? "Sending…" : "Send for review"}</button></div>
+        <div className="flex justify-end gap-2"><button type="button" className="btn-secondary" onClick={onClose} disabled={busy}><IconClose />Cancel</button><button type="button" className="btn-primary" onClick={submit} disabled={busy}><IconSend />{busy ? "Sending…" : "Send for review"}</button></div>
       </form>
     </Modal>
   );
@@ -120,7 +121,7 @@ export default function MyRegistrations() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge tone={s.tone}>{s.label}</Badge>
-                    {r.status === "confirmed" && <Link className="btn-primary" to={`/my-ticket/${r.id}`} aria-label={`View ticket ${r.ticket_number} for ${r.events?.title}`}>View ticket</Link>}
+                    {r.status === "confirmed" && <Link className="btn-primary" to={`/my-ticket/${r.id}`} aria-label={`View ticket ${r.ticket_number} for ${r.events?.title}`}><IconTicket />View ticket</Link>}
                   </div>
                 </div>
                 {r.status === "pending_verification" && !needsAction && <p className="text-sm text-ink-muted">Your payment is being verified. A confirmation email will be sent within 48 to 72 hours.</p>}
@@ -128,7 +129,7 @@ export default function MyRegistrations() {
                   <Alert tone={p.status === "underpaid" ? "warn" : "bad"}>
                     <p className="font-semibold">{p.status === "underpaid" ? `Payment incomplete: ${peso(p.amount_due)} still due.` : "Payment rejected."}</p>
                     {p.review_note && <p>{p.review_note}</p>}
-                    <button className="btn-primary mt-2" onClick={() => setResubmit(r)}>{p.status === "underpaid" ? "Send the missing amount" : "Upload a new receipt"}{" "}<span className="sr-only">for {r.name}</span></button>
+                    <button className="btn-primary mt-2" onClick={() => setResubmit(r)}><IconUpload />{p.status === "underpaid" ? "Send the missing amount" : "Upload a new receipt"}{" "}<span className="sr-only">for {r.name}</span></button>
                   </Alert>
                 )}
               </li>

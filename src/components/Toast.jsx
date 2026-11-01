@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useState } from "react";
+import { IconClose } from "./NavIcons.jsx";
 
 const ToastContext = createContext(() => {});
 export const useToast = () => useContext(ToastContext);
@@ -26,7 +27,7 @@ export function ToastProvider({ children }) {
           <div key={t.id} role={t.type === "error" ? "alert" : "status"} className={`pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-lg border border-link border-l-4 bg-white p-3 text-sm text-ink shadow-lg ${TONE[t.type].bar}`}>
             <span aria-hidden="true" className="font-extrabold">{TONE[t.type].icon}</span>
             <p className="flex-1"><span className="sr-only">{TONE[t.type].label}:</span>{" "}{t.message}</p>
-            <button className="min-h-target min-w-target rounded font-bold hover:bg-brand-sky" onClick={() => dismiss(t.id)} aria-label="Dismiss notification">✕</button>
+            <button className="inline-flex min-h-target min-w-target items-center justify-center rounded font-bold hover:bg-brand-sky" onClick={() => dismiss(t.id)} aria-label="Dismiss notification"><IconClose /></button>
           </div>
         ))}
       </div>

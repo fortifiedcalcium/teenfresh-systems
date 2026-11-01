@@ -5,6 +5,7 @@ import { friendlyError } from "../../lib/api.js";
 import { feedback } from "../../lib/beep.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import QrScanner from "../../components/QrScanner.jsx";
+import { IconClose, IconSearch, IconUserCheck, IconVolume } from "../../components/NavIcons.jsx";
 
 // Result panels: surface colour + icon + big text. Sound and vibration are extras, never the only cue (1.4.1).
 const PANEL = {
@@ -79,7 +80,7 @@ export default function Scanner() {
       <section aria-labelledby="scan-h" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="scan-h" className="text-lg">Scan a ticket</h2>
-          <button type="button" className="btn-secondary" aria-pressed={sound} onClick={toggleSound}>Sound and vibration: {sound ? "on" : "off"}</button>
+          <button type="button" className="btn-secondary" aria-pressed={sound} onClick={toggleSound}><IconVolume />Sound and vibration: {sound ? "on" : "off"}</button>
         </div>
         <QrScanner onScan={checkIn} paused={busy} />
       </section>
@@ -107,7 +108,7 @@ export default function Scanner() {
               </fieldset>
             </div>
           )}
-          <button className="btn-secondary mt-4" onClick={() => setResult(null)}>Dismiss result</button>
+          <button className="btn-secondary mt-4" onClick={() => setResult(null)}><IconClose />Dismiss result</button>
         </section>
       )}
 
@@ -116,18 +117,18 @@ export default function Scanner() {
         <h2 id="manual-h" className="text-lg">Manual check-in</h2>
         <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); checkIn(manual); setManual(""); }}>
           <div className="min-w-0 flex-1"><label htmlFor="ticket-input" className="label">Ticket number</label><input id="ticket-input" className="input font-mono uppercase" placeholder="IVEMON-000123" autoComplete="off" value={manual} onChange={(e) => setManual(e.target.value)} /></div>
-          <button className="btn-primary self-end" disabled={busy || !manual.trim()}>Check in</button>
+          <button className="btn-primary self-end" disabled={busy || !manual.trim()}><IconUserCheck />Check in</button>
         </form>
         <form className="flex flex-wrap gap-2" onSubmit={search}>
           <div className="min-w-0 flex-1"><label htmlFor="search-input" className="label">Search by name, X username or ticket</label><input id="search-input" className="input" autoComplete="off" value={query} onChange={(e) => setQuery(e.target.value)} /></div>
-          <button className="btn-secondary self-end">Search</button>
+          <button className="btn-secondary self-end"><IconSearch />Search</button>
         </form>
         {matches && (matches.length === 0 ? <p role="status" className="text-ink-muted">No matches.</p> : (
           <ul className="divide-y divide-brand-sky" aria-label="Search results">
             {matches.map((m) => (
               <li key={m.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <div><p className="font-semibold">{m.name} <span className="font-normal text-ink-muted">@{m.x_username}</span></p><p className="font-mono text-xs text-ink-muted">{m.ticket_number}{m.checked_in_at ? " · already checked in" : ""}</p></div>
-                <button className="btn-primary" disabled={busy} onClick={() => checkIn(m.ticket_number)}>Check in{" "}<span className="sr-only">{m.name}</span></button>
+                <button className="btn-primary" disabled={busy} onClick={() => checkIn(m.ticket_number)}><IconUserCheck />Check in{" "}<span className="sr-only">{m.name}</span></button>
               </li>
             ))}
           </ul>

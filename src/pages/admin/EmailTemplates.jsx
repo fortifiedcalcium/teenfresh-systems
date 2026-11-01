@@ -11,6 +11,7 @@ import DataTable from "../../components/DataTable.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import Alert from "../../components/Alert.jsx";
 import { FORMATS, wrapSelection } from "../../lib/formatText.js";
+import { IconRefresh, IconSave, IconSend } from "../../components/NavIcons.jsx";
 
 /** HTML editor + merge-field chips + live preview. Used for both the saved template and the one-off bulk message. */
 function FormatToolbar({ onFormat }) {
@@ -129,9 +130,9 @@ function TemplateTab({ event }) {
         <select id="tpl-kind" className="input max-w-lg" value={kind} onChange={(e) => setKind(e.target.value)}>{KINDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
       <Editor draft={draft} setDraft={setDraft} event={event} />
       <div className="flex flex-wrap items-center gap-2 border-t border-link pt-4">
-        <button className="btn-primary" onClick={save} disabled={!!busy}>{busy === "save" ? "Saving…" : "Save template"}</button>
+        <button className="btn-primary" onClick={save} disabled={!!busy}><IconSave />{busy === "save" ? "Saving…" : "Save template"}</button>
         <input type="email" className="input max-w-xs" aria-label="Send test to" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
-        <button className="btn-secondary" onClick={test} disabled={!!busy || !testTo}>{busy === "test" ? "Sending…" : "Send test to myself"}</button>
+        <button className="btn-secondary" onClick={test} disabled={!!busy || !testTo}><IconSend />{busy === "test" ? "Sending…" : "Send test to myself"}</button>
       </div>
     </div>
   );
@@ -200,8 +201,8 @@ function BulkTab({ event }) {
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <input type="email" className="input max-w-xs" aria-label="Send test to" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
-        <button className="btn-secondary" onClick={test} disabled={!!progress || !testTo}>Send test to myself</button>
-        <button className="btn-danger" onClick={sendAll} disabled={!!progress || !count}>{progress ? `Sending ${progress.done}/${progress.total}…` : "Send to recipients"}</button>
+        <button className="btn-secondary" onClick={test} disabled={!!progress || !testTo}><IconSend />Send test to myself</button>
+        <button className="btn-danger" onClick={sendAll} disabled={!!progress || !count}><IconSend />{progress ? `Sending ${progress.done}/${progress.total}…` : "Send to recipients"}</button>
       </div>
     </div>
   );
@@ -239,14 +240,14 @@ function LogsTab({ event }) {
     { key: "ticket", label: "Ticket", className: "font-mono", sortValue: (l) => l.registrations?.ticket_number || "", render: (l) => l.registrations?.ticket_number || "—" },
     { key: "status", label: "Result", render: (l) => <span className={`badge ${l.status === "sent" ? "badge-ok" : "badge-bad"}`}>{l.status}</span> },
     { key: "error", label: "Error", className: "max-w-xs break-words text-xs text-danger", render: (l) => l.error || "" },
-    { key: "act", label: "", sortable: false, render: (l) => l.status === "failed" && l.registration_id && l.kind === "confirmation" ? <button className="btn-secondary" onClick={() => resendOne(l.registration_id)}>Resend{" "}<span className="sr-only">to {l.recipient}</span></button> : null },
+    { key: "act", label: "", sortable: false, render: (l) => l.status === "failed" && l.registration_id && l.kind === "confirmation" ? <button className="btn-secondary" onClick={() => resendOne(l.registration_id)}><IconSend />Resend{" "}<span className="sr-only">to {l.recipient}</span></button> : null },
   ];
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <select className="input max-w-[10rem]" aria-label="Result filter" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">All results</option><option value="sent">Sent</option><option value="failed">Failed</option></select>
-        <button className="btn-secondary" onClick={load}>Refresh</button>
-        <button className="btn-primary" onClick={resendFailed} disabled={busy}>{busy ? "Resending…" : "Resend all failed"}</button>
+        <button className="btn-secondary" onClick={load}><IconRefresh />Refresh</button>
+        <button className="btn-primary" onClick={resendFailed} disabled={busy}><IconSend />{busy ? "Resending…" : "Resend all failed"}</button>
       </div>
       <DataTable caption="Email logs" columns={cols} rows={(rows || []).filter((l) => !status || l.status === status)} loading={rows === null} empty="No emails logged yet." pageSize={30} />
     </div>

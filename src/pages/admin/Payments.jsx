@@ -14,6 +14,7 @@ import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import { Lightbox } from "../../components/EventImage.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
+import { IconAlert, IconCheckCircle, IconDownload, IconEye, IconSend, IconXCircle } from "../../components/NavIcons.jsx";
 
 const TONE = { pending: "warn", verified: "ok", underpaid: "warn", rejected: "bad" };
 const LABEL = { pending: "Pending", verified: "Verified", underpaid: "Underpaid", rejected: "Rejected" };
@@ -121,12 +122,12 @@ function ReviewDialog({ payment, onClose, onChanged }) {
 
       {reviewable && !action && (
         <div className="mt-5 flex flex-wrap gap-2 border-t border-brand-sky pt-4">
-          <button className="btn-primary" onClick={() => setAction("verified")}>Verify payment</button>
-          <button className="btn-secondary" onClick={() => setAction("underpaid")}>Mark underpaid</button>
-          <button className="btn-danger" onClick={() => setAction("rejected")}>Reject payment</button>
+          <button className="btn-primary" onClick={() => setAction("verified")}><IconCheckCircle />Verify payment</button>
+          <button className="btn-secondary" onClick={() => setAction("underpaid")}><IconAlert />Mark underpaid</button>
+          <button className="btn-danger" onClick={() => setAction("rejected")}><IconXCircle />Reject payment</button>
         </div>
       )}
-      {!reviewable && <div className="mt-5 border-t border-brand-sky pt-4"><button className="btn-secondary" onClick={resendNotice} disabled={busy}>Resend the email for this decision</button></div>}
+      {!reviewable && <div className="mt-5 border-t border-brand-sky pt-4"><button className="btn-secondary" onClick={resendNotice} disabled={busy}><IconSend />Resend the email for this decision</button></div>}
 
       {action && (
         <ConfirmDialog
@@ -184,13 +185,13 @@ export default function Payments() {
     { key: "forms", label: "Forms", sortValue: (p) => (p.registrations || []).length, render: (p) => <ul>{(p.registrations || []).map((r) => <li key={r.id}>{r.name} <span className="text-ink-muted">@{r.x_username}</span></li>)}</ul> },
     { key: "created_at", label: "Submitted", className: "whitespace-nowrap", render: (p) => fmtDateTime(p.created_at) },
     { key: "status", label: "Status", render: (p) => <Badge tone={TONE[p.status]}>{LABEL[p.status]}</Badge> },
-    { key: "act", label: "", sortable: false, render: (p) => <button className="btn-primary" onClick={() => setSel(p)}>{p.status === "pending" || p.status === "underpaid" ? "Review" : "View"}{" "}<span className="sr-only">payment of {p.sender_name}</span></button> },
+    { key: "act", label: "", sortable: false, render: (p) => <button className="btn-primary" onClick={() => setSel(p)}><IconEye />{p.status === "pending" || p.status === "underpaid" ? "Review" : "View"}{" "}<span className="sr-only">payment of {p.sender_name}</span></button> },
   ];
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl">Payments</h1>
-        <button className="btn-secondary" disabled={!shown.length} onClick={() => downloadCsv(`payments-${event.ticket_prefix}.csv`, ["Sender", "Email", "Amount paid", "Reference", "Status", "Forms", "Submitted"], shown.map((p) => [p.sender_name, p.sender_profile?.email, p.amount_paid, p.reference_number, p.status, (p.registrations || []).map((r) => `${r.name} (@${r.x_username})`).join("; "), fmtDateTime(p.created_at)]))}>Export CSV</button>
+        <button className="btn-secondary" disabled={!shown.length} onClick={() => downloadCsv(`payments-${event.ticket_prefix}.csv`, ["Sender", "Email", "Amount paid", "Reference", "Status", "Forms", "Submitted"], shown.map((p) => [p.sender_name, p.sender_profile?.email, p.amount_paid, p.reference_number, p.status, (p.registrations || []).map((r) => `${r.name} (@${r.x_username})`).join("; "), fmtDateTime(p.created_at)]))}><IconDownload />Export CSV</button>
       </div>
       <div className="flex flex-wrap gap-2">
         <input className="input max-w-xs" placeholder="Search sender, reference, name" aria-label="Search payments" value={q} onChange={(e) => setQ(e.target.value)} />

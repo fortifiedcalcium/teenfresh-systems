@@ -7,6 +7,7 @@ import PasswordInput from "../../components/PasswordInput.jsx";
 import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import Alert from "../../components/Alert.jsx";
 import AuthShell, { GoogleButton } from "./AuthShell.jsx";
+import { IconLogIn } from "../../components/NavIcons.jsx";
 
 export const rememberDestination = (path) => { try { sessionStorage.setItem("post_auth_path", path); } catch { /* ignore */ } };
 export const takeDestination = () => { try { const p = sessionStorage.getItem("post_auth_path"); sessionStorage.removeItem("post_auth_path"); return p; } catch { return null; } };
@@ -40,7 +41,7 @@ export default function Login() {
         <Field id="password" label="Password" required error={errors.password?.message}>
           <PasswordInput autoComplete="current-password" {...register("password", { required: "Enter your password" })} />
         </Field>
-        <button className="btn-primary w-full" disabled={isSubmitting}>{isSubmitting ? "Signing in…" : "Sign in"}</button>
+        <button className="btn-primary w-full" disabled={isSubmitting}><IconLogIn />{isSubmitting ? "Signing in…" : "Sign in"}</button>
         <p className="text-center text-sm text-ink-muted">or</p>
         <GoogleButton onClick={() => signInWithGoogle()} />
         <p className="text-center text-sm">

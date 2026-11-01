@@ -388,7 +388,7 @@ describe("attendee pages", () => {
     expect(await screen.findByDisplayValue("Standard kit")).toBeInTheDocument();
     expect(screen.getByLabelText(/^Price per kit/)).toHaveValue("100");
     expect(await check(container)).toHaveNoViolations();
-    await user.click(screen.getByRole("button", { name: "+ Add a kit" }));
+    await user.click(screen.getByRole("button", { name: "Add a kit" }));
     await user.click(screen.getByRole("button", { name: "Save kits" }));
     const summary = await screen.findByRole("alert", { name: /problems/ });
     expect(summary).toHaveTextContent(/Kit 2: Enter the kit's name/); expect(summary).toHaveTextContent(/Kit 2: Enter a price above 0/);
@@ -630,7 +630,7 @@ describe("admin pages", () => {
     expect(within(dialog).getByLabelText(/Registration fee \(PHP\)/)).toHaveAccessibleDescription(/Used only when the event has no kits/);
     await user.click(within(dialog).getByRole("tab", { name: "Kits" }));
     expect(await within(dialog).findByDisplayValue("Standard kit")).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "+ Add a kit" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Add a kit" })).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
   });
 

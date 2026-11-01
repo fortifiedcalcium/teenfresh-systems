@@ -6,6 +6,7 @@ import { downloadCsv } from "../../lib/csv.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import DataTable from "../../components/DataTable.jsx";
 import { Empty } from "../../components/Spinner.jsx";
+import { IconDownload } from "../../components/NavIcons.jsx";
 
 const RESULT_BADGE = { success: "badge-ok", duplicate: "badge-warn", invalid: "badge-bad" };
 
@@ -63,7 +64,7 @@ export default function Tracker() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl">Attendance</h1><span className="badge badge-ok">Live updates</span></div>
-        {tab === "list" && <button className="btn-primary" onClick={exportCsv} disabled={!shown.length}>Export CSV</button>}
+        {tab === "list" && <button className="btn-primary" onClick={exportCsv} disabled={!shown.length}><IconDownload />Export CSV</button>}
       </div>
       <div className="grid grid-cols-3 gap-3 text-center">
         <div className="card p-3"><p className="text-2xl font-extrabold">{counts.total}</p><p className="text-xs text-ink-muted">Registered</p></div>

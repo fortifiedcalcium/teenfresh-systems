@@ -7,6 +7,7 @@ import TermsBox from "../../components/TermsBox.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { IconSend } from "../../components/NavIcons.jsx";
 
 export default function MyTicket() {
   const { id } = useParams();
@@ -43,7 +44,7 @@ export default function MyTicket() {
         <div className="card space-y-3 p-4 text-sm">
           <h2 className="text-lg font-bold">Can't attend? Transfer your slot</h2>
           <p className="text-ink">Your confirmation email is your ticket. To transfer your slot, forward that email to the new owner. We are not responsible for unauthorized leaks of your ticket. Keep it confidential.</p>
-          <button className="btn-secondary" onClick={resend} disabled={sending}>{sending ? "Sending…" : "Email me my confirmation again"}</button>
+          <button className="btn-secondary" onClick={resend} disabled={sending}><IconSend />{sending ? "Sending…" : "Email me my confirmation again"}</button>
         </div>
       )}
       <TermsBox event={event} />

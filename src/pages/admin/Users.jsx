@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import DataTable from "../../components/DataTable.jsx";
 import { fmtDateTime } from "../../lib/availability.js";
+import { IconArrowDown, IconShield } from "../../components/NavIcons.jsx";
 
 export default function Users() {
   const { user } = useAuth();
@@ -29,8 +30,8 @@ export default function Users() {
     { key: "role", label: "Role", render: (r) => <span className={`badge ${r.role === "admin" ? "badge-info" : "badge-neutral"}`}>{r.role}</span> },
     { key: "created_at", label: "Joined", render: (r) => fmtDateTime(r.created_at) },
     { key: "actions", label: "", sortable: false, render: (r) => r.id === user.id ? <span className="text-xs text-ink-muted">You</span> : r.role === "admin"
-      ? <button className="btn-secondary" onClick={() => setRoleFor(r, "attendee")}>Demote{" "}<span className="sr-only">{r.email}</span></button>
-      : <button className="btn-secondary" onClick={() => setRoleFor(r, "admin")}>Make admin{" "}<span className="sr-only">{r.email}</span></button> },
+      ? <button className="btn-secondary" onClick={() => setRoleFor(r, "attendee")}><IconArrowDown />Demote{" "}<span className="sr-only">{r.email}</span></button>
+      : <button className="btn-secondary" onClick={() => setRoleFor(r, "admin")}><IconShield />Make admin{" "}<span className="sr-only">{r.email}</span></button> },
   ];
   return (
     <div className="space-y-4">

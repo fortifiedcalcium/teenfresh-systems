@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
+import { IconCamera, IconCameraOff, IconZap } from "./NavIcons.jsx";
 
 /** Camera QR scanner (needs HTTPS or localhost). Calls onScan(text) for each code, ignoring the same
  *  code again for `cooldownMs` so one ticket held in front of the camera is not processed 20 times. */
@@ -75,8 +76,8 @@ export default function QrScanner({ onScan, paused = false, cooldownMs = 3000 })
           <option value="">Back camera (default)</option>
           {cameras.map((c, i) => <option key={c.id} value={c.id}>{c.label || `Camera ${i + 1}`}</option>)}
         </select>
-        {running ? <button className="btn-secondary" onClick={stop}>Stop camera</button> : <button className="btn-primary" onClick={() => start(cameraId)}>Start camera</button>}
-        {torch.supported && <button className="btn-secondary" onClick={toggleTorch} aria-pressed={torch.on}>Torch: {torch.on ? "on" : "off"}</button>}
+        {running ? <button className="btn-secondary" onClick={stop}><IconCameraOff />Stop camera</button> : <button className="btn-primary" onClick={() => start(cameraId)}><IconCamera />Start camera</button>}
+        {torch.supported && <button className="btn-secondary" onClick={toggleTorch} aria-pressed={torch.on}><IconZap />Torch: {torch.on ? "on" : "off"}</button>}
       </div>
       {error && <div role="alert" className="alert alert-bad block"><p className="font-semibold">{error}</p><p>You can still check people in with the <a href="#manual-checkin">manual check-in form</a> below.</p></div>}
       <div className="mx-auto w-full max-w-md overflow-hidden rounded-xl border-2 border-ink bg-brand-sky" style={{ minHeight: running ? undefined : 120 }} role="group" aria-label="Camera preview">

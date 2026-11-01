@@ -1,5 +1,6 @@
 import React from "react";
 import { peso } from "../lib/payment.js";
+import { IconMinus, IconPlus } from "./NavIcons.jsx";
 
 /** Choose a kit (radio group), a quantity (number field with plus/minus buttons) and see the total.
  *  The price is shown per kit; the total is quantity x price and is also announced when it changes.
@@ -32,9 +33,9 @@ export default function KitOrder({ kits, register, errors, kitId, quantity, onQu
       <div>
         <label htmlFor="quantity" className="label">Quantity <span className="font-normal text-ink-muted">(required)</span></label>
         <div className="flex items-center gap-2">
-          <button type="button" className="btn-secondary" onClick={() => step(-1)} disabled={!kit || n <= 1} aria-label="Decrease quantity"><span aria-hidden="true">−</span></button>
+          <button type="button" className="btn-secondary" onClick={() => step(-1)} disabled={!kit || n <= 1} aria-label="Decrease quantity"><IconMinus /></button>
           <input id="quantity" type="number" inputMode="numeric" min="1" max={max} step="1" className="input w-24 text-center" aria-required="true" aria-invalid={qErr ? "true" : undefined} aria-describedby={`quantity-hint${qErr ? " quantity-err" : ""}`} {...register("quantity")} />
-          <button type="button" className="btn-secondary" onClick={() => step(1)} disabled={!kit || n >= max} aria-label="Increase quantity"><span aria-hidden="true">+</span></button>
+          <button type="button" className="btn-secondary" onClick={() => step(1)} disabled={!kit || n >= max} aria-label="Increase quantity"><IconPlus /></button>
         </div>
         <p id="quantity-hint" className="hint">{kit ? `Up to ${max} of this kit per form.` : "Choose a kit first."}</p>
         {qErr && <p id="quantity-err" className="mt-1 flex gap-1 text-sm font-semibold text-danger"><span aria-hidden="true">✕</span>{qErr}</p>}

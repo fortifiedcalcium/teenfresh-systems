@@ -5,6 +5,7 @@ import Badge from "./Badge.jsx";
 import EventImage from "./EventImage.jsx";
 import { eventStatus, fmtDate, fmtDeadline, fmtTimeRange, STATUS_TONE } from "../lib/availability.js";
 import { peso, priceRange } from "../lib/payment.js";
+import { IconTicket } from "./NavIcons.jsx";
 
 export default function EventCard({ event, registered, bannerImage, onChanged, kits = [] }) {
   const st = eventStatus(event, registered);
@@ -31,10 +32,10 @@ export default function EventCard({ event, registered, bannerImage, onChanged, k
           <AvailabilityBar registered={registered} capacity={event.capacity} label={`Slots taken for ${event.title}`} />
           <p className="text-sm font-semibold text-ink">{slotsText}</p>
           {st.canRegister ? (
-            <Link to={`/events/${event.id}/register`} className="btn-primary w-full" aria-label={`Register for ${event.title}`}>Register</Link>
+            <Link to={`/events/${event.id}/register`} className="btn-primary w-full" aria-label={`Register for ${event.title}`}><IconTicket />Register</Link>
           ) : (
             <>
-              <button type="button" className="btn-primary w-full" aria-disabled="true" aria-describedby={explainId} onClick={(e) => e.preventDefault()}>Register</button>
+              <button type="button" className="btn-primary w-full" aria-disabled="true" aria-describedby={explainId} onClick={(e) => e.preventDefault()}><IconTicket />Register</button>
               <p id={explainId} className="text-sm text-danger">Registration is unavailable. {st.reason}</p>
             </>
           )}

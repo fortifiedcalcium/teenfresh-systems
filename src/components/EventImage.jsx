@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { imageUrl, SLOTS, uploadEventImage } from "../lib/eventImages.js";
 import Modal from "./Modal.jsx";
 import { useToast } from "./Toast.jsx";
+import { IconUpload } from "./NavIcons.jsx";
 
 const ImageIcon = () => (
   <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -43,7 +44,7 @@ export default function EventImage({ slot, event, image, onChanged, lightbox = t
           <>
             <p className="text-sm">Recommended: {spec.recommended}. JPG, PNG or WebP, 5 MB at most.</p>
             <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" className="file-input sr-only" onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
-            <label htmlFor={inputId} className="btn-secondary cursor-pointer" aria-disabled={busy}>{busy ? "Uploading…" : "Upload image"}{" "}<span className="sr-only">for {spec.label}</span></label>
+            <label htmlFor={inputId} className="btn-secondary cursor-pointer" aria-disabled={busy}><IconUpload />{busy ? "Uploading…" : "Upload image"}{" "}<span className="sr-only">for {spec.label}</span></label>
           </>
         )}
       </div>

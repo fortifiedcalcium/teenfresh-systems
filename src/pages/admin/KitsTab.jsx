@@ -5,6 +5,7 @@ import { useToast } from "../../components/Toast.jsx";
 import Alert from "../../components/Alert.jsx";
 import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Loading } from "../../components/Spinner.jsx";
+import { IconPlus, IconSave, IconTrash } from "../../components/NavIcons.jsx";
 
 const blank = () => ({ key: crypto.randomUUID(), id: null, name: "", description: "", unit_price: "", max_per_order: "5", active: true });
 const toRow = (k) => ({ key: k.id, id: k.id, name: k.name, description: k.description || "", unit_price: String(k.unit_price), max_per_order: String(k.max_per_order), active: k.active });
@@ -93,7 +94,7 @@ export default function KitsTab({ event }) {
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <label className="flex min-h-target items-center gap-3 text-sm"><input type="checkbox" className="check" checked={r.active} onChange={(ev) => set(r.key, "active", ev.target.checked)} /> Available on the registration form</label>
-                  <button type="button" className="btn-secondary" onClick={() => remove(r)}>Remove{" "}<span className="sr-only">kit {i + 1}{r.name ? `, ${r.name}` : ""}</span></button>
+                  <button type="button" className="btn-secondary" onClick={() => remove(r)}><IconTrash />Remove{" "}<span className="sr-only">kit {i + 1}{r.name ? `, ${r.name}` : ""}</span></button>
                 </div>
               </fieldset>
             </li>
@@ -101,8 +102,8 @@ export default function KitsTab({ event }) {
         })}
       </ul>
       <div className="flex flex-wrap justify-between gap-2 border-t border-brand-sky pt-4">
-        <button type="button" className="btn-secondary" onClick={() => setRows((rs) => [...rs, blank()])}>+ Add a kit</button>
-        <button type="button" className="btn-primary" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save kits"}</button>
+        <button type="button" className="btn-secondary" onClick={() => setRows((rs) => [...rs, blank()])}><IconPlus />Add a kit</button>
+        <button type="button" className="btn-primary" onClick={save} disabled={saving}><IconSave />{saving ? "Saving…" : "Save kits"}</button>
       </div>
     </div>
   );

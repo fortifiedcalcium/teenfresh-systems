@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from "react";
+import { IconClose } from "./NavIcons.jsx";
 
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"])';
 
@@ -39,7 +40,7 @@ export default function Modal({ title, onClose, children, wide }) {
       <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-link bg-white p-5 sm:rounded-2xl ${wide ? "sm:max-w-3xl" : "sm:max-w-lg"}`}>
         <div className="mb-4 flex items-center justify-between gap-2">
           <h2 id={titleId} className="text-lg font-bold">{title}</h2>
-          <button className="btn-secondary" onClick={onClose} aria-label={`Close dialog: ${title}`}>✕</button>
+          <button className="btn-secondary" onClick={onClose} aria-label={`Close dialog: ${title}`}><IconClose /></button>
         </div>
         {children}
       </div>

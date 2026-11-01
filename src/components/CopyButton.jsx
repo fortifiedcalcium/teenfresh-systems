@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useAnnounce } from "../a11y.jsx";
+import { IconAlert, IconCheck, IconCopy } from "./NavIcons.jsx";
 
 /** Copies text and says so out loud: the live region announces "copied", and the label changes for everyone else. */
 export default function CopyButton({ text, label = "Copy number", what = "GCash number" }) {
@@ -25,7 +26,7 @@ export default function CopyButton({ text, label = "Copy number", what = "GCash 
 
   return (
     <button type="button" className="btn-secondary" onClick={copy}>
-      {state === "copied" ? <><span aria-hidden="true">✓</span> Copied</> : state === "failed" ? "Copy failed" : label}
+      {state === "copied" ? <><IconCheck />Copied</> : state === "failed" ? <><IconAlert />Copy failed</> : <><IconCopy />{label}</>}
     </button>
   );
 }

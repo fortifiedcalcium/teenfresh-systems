@@ -7,6 +7,7 @@ import PasswordInput from "../../components/PasswordInput.jsx";
 import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import AuthShell, { GoogleButton } from "./AuthShell.jsx";
 import { rememberDestination } from "./Login.jsx";
+import { IconUserPlus } from "../../components/NavIcons.jsx";
 
 export default function Register() {
   const { signUp, signInWithGoogle } = useAuth();
@@ -53,7 +54,7 @@ export default function Register() {
         <Field id="confirm" label="Confirm password" required error={errors.confirm?.message}>
           <PasswordInput autoComplete="new-password" {...register("confirm", { validate: (v) => v === getValues("password") || "The passwords do not match. Type the same password again" })} />
         </Field>
-        <button className="btn-primary w-full" disabled={isSubmitting}>{isSubmitting ? "Creating account…" : "Sign up"}</button>
+        <button className="btn-primary w-full" disabled={isSubmitting}><IconUserPlus />{isSubmitting ? "Creating account…" : "Sign up"}</button>
         <p className="text-center text-sm text-ink-muted">or</p>
         <GoogleButton onClick={() => { rememberDestination(from); signInWithGoogle(); }} />
         <p className="text-center text-sm">Already have an account? <Link to="/login" state={{ from }}>Sign in</Link></p>

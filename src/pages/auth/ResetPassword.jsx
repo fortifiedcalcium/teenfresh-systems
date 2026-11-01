@@ -7,6 +7,7 @@ import PasswordInput from "../../components/PasswordInput.jsx";
 import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import AuthShell from "./AuthShell.jsx";
+import { IconKey } from "../../components/NavIcons.jsx";
 
 export default function ResetPassword() {
   const { session, loading, updatePassword } = useAuth();
@@ -40,7 +41,7 @@ export default function ResetPassword() {
         <Field id="confirm" label="Confirm new password" required error={errors.confirm?.message}>
           <PasswordInput autoComplete="new-password" {...register("confirm", { validate: (v) => v === getValues("password") || "The passwords do not match. Type the same password again" })} />
         </Field>
-        <button className="btn-primary w-full" disabled={isSubmitting}>{isSubmitting ? "Saving…" : "Update password"}</button>
+        <button className="btn-primary w-full" disabled={isSubmitting}><IconKey />{isSubmitting ? "Saving…" : "Update password"}</button>
       </form>
     </AuthShell>
   );

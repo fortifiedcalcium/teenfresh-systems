@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import Field from "../../components/Field.jsx";
 import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import AuthShell from "./AuthShell.jsx";
+import { IconSend } from "../../components/NavIcons.jsx";
 
 export default function ForgotPassword() {
   const { resetPassword } = useAuth();
@@ -30,7 +31,7 @@ export default function ForgotPassword() {
           <Field id="email" label="Email" required error={errors.email?.message}>
             <input type="email" autoComplete="email" className="input" {...register("email", { required: "Enter your email address" })} />
           </Field>
-          <button className="btn-primary w-full" disabled={isSubmitting}>{isSubmitting ? "Sending…" : "Send reset link"}</button>
+          <button className="btn-primary w-full" disabled={isSubmitting}><IconSend />{isSubmitting ? "Sending…" : "Send reset link"}</button>
           <p className="text-center text-sm"><Link to="/login">Back to sign in</Link></p>
         </form>
       )}

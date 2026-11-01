@@ -12,6 +12,7 @@ import KitsTab from "./KitsTab.jsx";
 import { Empty } from "../../components/Spinner.jsx";
 import { fmtDateTime } from "../../lib/availability.js";
 import { peso } from "../../lib/payment.js";
+import { IconClose, IconLock, IconPencil, IconPlus, IconSave, IconTrash, IconUnlock } from "../../components/NavIcons.jsx";
 
 // <input type="datetime-local"> works in local time; the database stores an absolute instant.
 const toLocalInput = (iso) => { if (!iso) return ""; const d = new Date(iso); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
@@ -106,7 +107,7 @@ export default function Events() {
   const current = form?.id ? events.find((e) => e.id === form.id) : null;
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between"><h1 className="text-2xl">Events</h1><button className="btn-primary" onClick={() => open(null)}>+ New event</button></div>
+      <div className="flex items-center justify-between"><h1 className="text-2xl">Events</h1><button className="btn-primary" onClick={() => open(null)}><IconPlus />New event</button></div>
       {events.length === 0 ? <Empty>No events yet.</Empty> : (
         <ul className="space-y-3">
           {events.map((e) => (
@@ -118,9 +119,9 @@ export default function Events() {
                 <span className={`badge mt-1 ${e.registration_open ? "badge-ok" : "badge-bad"}`}>{e.registration_open ? "Registration open" : "Registration closed"}</span>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button className="btn-secondary" onClick={() => toggleOpen(e)}>{e.registration_open ? "Close registration" : "Open registration"}{" "}<span className="sr-only">for {e.title}</span></button>
-                <button className="btn-secondary" onClick={() => open(e)}>Edit{" "}<span className="sr-only">{e.title}</span></button>
-                <button className="btn-danger" onClick={() => setDeleting(e)}>Delete{" "}<span className="sr-only">{e.title}</span></button>
+                <button className="btn-secondary" onClick={() => toggleOpen(e)}>{e.registration_open ? <IconLock /> : <IconUnlock />}{e.registration_open ? "Close registration" : "Open registration"}{" "}<span className="sr-only">for {e.title}</span></button>
+                <button className="btn-secondary" onClick={() => open(e)}><IconPencil />Edit{" "}<span className="sr-only">{e.title}</span></button>
+                <button className="btn-danger" onClick={() => setDeleting(e)}><IconTrash />Delete{" "}<span className="sr-only">{e.title}</span></button>
               </div>
             </li>
           ))}
@@ -178,7 +179,7 @@ export default function Events() {
                 <Field id="retention" label="Delete payment receipts this many days after the event" hint="Empty = keep them. Run scripts/purge-receipts.mjs (see the README) to carry it out."><input type="number" min="0" className="input" value={form.receipt_retention_days} onChange={set("receipt_retention_days")} /></Field>
               </fieldset>
 
-              <div className="flex justify-end gap-2 border-t border-brand-sky pt-4"><button type="button" className="btn-secondary" onClick={() => setForm(null)}>Close</button><button className="btn-primary" disabled={saving}>{saving ? "Saving…" : "Save event"}</button></div>
+              <div className="flex justify-end gap-2 border-t border-brand-sky pt-4"><button type="button" className="btn-secondary" onClick={() => setForm(null)}><IconClose />Close</button><button className="btn-primary" disabled={saving}><IconSave />{saving ? "Saving…" : "Save event"}</button></div>
             </form>
             </div>
           )}

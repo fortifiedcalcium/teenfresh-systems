@@ -26,6 +26,7 @@ import ContactLinks from "../../components/ContactLinks.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import { useAnnounce } from "../../a11y.jsx";
+import { IconArrowLeft, IconArrowRight, IconPencil, IconPlus, IconSend, IconTicket } from "../../components/NavIcons.jsx";
 
 const DEFAULTS = { email: "", agree: false, name: "", x_username: "", facebook_url: "", contact_number: "", kit_id: "", quantity: "1", reuse_payment_id: "", sender_name: "", amount_paid: "", reference_number: "", notes: "" };
 const FIELD_LABELS = { email: "Email", agree: "Confirmation", name: "Name", x_username: "X/Twitter username", facebook_url: "Facebook profile link", contact_number: "Contact number", kit_id: "Kit", quantity: "Quantity", sender_name: "Name of sender", amount_paid: "Amount paid", reference_number: "Reference number", receipt: "Payment receipt", notes: "Notes" };
@@ -194,8 +195,8 @@ export default function EventRegister() {
         {confirmed && <TicketCard registration={{ name: done.name, x_username: done.x_username, ticket_number: done.ticket_number, status: "confirmed" }} event={event} />}
         {confirmed && <p role="status" className="text-center text-sm text-ink-muted">{emailState === "sending" ? "Sending your confirmation email…" : emailState === "sent" ? "Confirmation email sent. Check your spam folder if you can't find it." : emailState === "failed" ? "We couldn't send the email yet. You can resend it from My registrations." : ""}</p>}
         <div className="flex flex-wrap justify-center gap-2">
-          <button className="btn-primary" onClick={another}>Submit another form</button>
-          <Link className="btn-secondary" to="/my-registrations">Go to my registrations</Link>
+          <button className="btn-primary" onClick={another}><IconPlus />Submit another form</button>
+          <Link className="btn-secondary" to="/my-registrations"><IconTicket />Go to my registrations</Link>
         </div>
       </div>
     );
@@ -353,7 +354,7 @@ export default function EventRegister() {
             <p className="text-ink-muted">Check your details. Your ticket and confirmation email use exactly this information.</p>
             {reviewSections.map(([key, title, rows]) => (
               <section key={key} aria-label={title} className="rounded-lg border border-link p-3">
-                <div className="mb-2 flex items-center justify-between gap-2"><h3 className="text-lg">{title}</h3><button type="button" className="btn-secondary" onClick={() => go(key)}>Edit{" "}<span className="sr-only">{title}</span></button></div>
+                <div className="mb-2 flex items-center justify-between gap-2"><h3 className="text-lg">{title}</h3><button type="button" className="btn-secondary" onClick={() => go(key)}><IconPencil />Edit{" "}<span className="sr-only">{title}</span></button></div>
                 <dl className="space-y-1 text-sm">{rows.map(([k, val]) => <div key={k} className="flex flex-wrap justify-between gap-2"><dt className="font-semibold">{k}</dt><dd className="break-all text-right">{val}</dd></div>)}</dl>
               </section>
             ))}
@@ -364,10 +365,10 @@ export default function EventRegister() {
         )}
 
         <div className="flex flex-wrap justify-between gap-2 border-t border-brand-sky pt-4">
-          {stepIndex > 0 ? <button type="button" className="btn-secondary" onClick={back} disabled={submitting}>Back</button> : <span />}
+          {stepIndex > 0 ? <button type="button" className="btn-secondary" onClick={back} disabled={submitting}><IconArrowLeft />Back</button> : <span />}
           {current === "review"
-            ? <button type="button" className="btn-primary" onClick={submitAll} disabled={submitting || (paid && !reusedPayment && !file)}>{submitting ? "Submitting…" : "Submit registration"}</button>
-            : <button type="button" className="btn-primary" onClick={onNext}>{current === steps[steps.length - 2].key ? "Review registration" : "Next"}</button>}
+            ? <button type="button" className="btn-primary" onClick={submitAll} disabled={submitting || (paid && !reusedPayment && !file)}><IconSend />{submitting ? "Submitting…" : "Submit registration"}</button>
+            : <button type="button" className="btn-primary" onClick={onNext}><IconArrowRight />{current === steps[steps.length - 2].key ? "Review registration" : "Next"}</button>}
         </div>
       </form>
     </div>

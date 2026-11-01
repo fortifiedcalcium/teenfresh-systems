@@ -30,6 +30,7 @@
 
   .btn { @apply inline-flex min-h-target min-w-target items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-bold no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60; }
   /* brand-blue fill + ink label = 5.2:1; ink border keeps the shape visible (3:1) */
+  .btn-primary svg, .btn-secondary svg, .btn-danger svg { width: 1.125rem; height: 1.125rem; }
   .btn-primary { @apply btn border-ink bg-brand-blue text-ink hover:bg-ink hover:text-brand-ivory active:bg-ink active:text-brand-ivory; }
   .btn-secondary { @apply btn border-ink bg-brand-ivory text-ink hover:bg-brand-sky; }
   .btn-danger { @apply btn border-danger bg-danger text-white hover:bg-ink hover:border-ink; }
