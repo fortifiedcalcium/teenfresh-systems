@@ -86,7 +86,7 @@ test.describe("security headers", () => {
     await as("admin");
     await page.goto("/admin/payments");
     await page.getByRole("button", { name: /Review payment of Juan D./ }).click();
-    const img = page.getByRole("dialog", { name: /Payment of/ }).getByAltText(/GCash receipt/);
+    const img = page.getByRole("region", { name: /Payment of/ }).getByAltText(/GCash receipt/);
     await expect(img).toBeVisible();
     await expect.poll(() => img.evaluate((i) => i.complete && i.naturalWidth > 0)).toBe(true);   // the signed-URL image actually loaded (not blocked by the policy)
     await img.click();

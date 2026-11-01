@@ -36,8 +36,9 @@ export default function Modal({ title, onClose, children, wide }) {
   }, [onClose, order]);
 
   return (
-    <div role="presentation" className="overlay fixed inset-0 z-40 flex items-end justify-center sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-link bg-white p-5 sm:rounded-2xl ${wide ? "sm:max-w-3xl" : "sm:max-w-lg"}`}>
+    <div role="presentation" className="overlay fixed inset-0 z-40 flex items-stretch justify-center md:items-center md:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`modal-panel h-[100vh] h-dvh w-full overflow-y-auto border-link bg-white p-5 pb-[calc(1.25rem+var(--safe-bottom))] pt-[calc(0.75rem+var(--safe-top))] md:h-auto md:max-h-[92vh] md:rounded-2xl md:border md:pb-5 md:pt-5 ${wide ? "md:max-w-3xl" : "md:max-w-lg"}`}>
+        <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-brand-sky md:hidden" aria-hidden="true" />
         <div className="mb-4 flex items-center justify-between gap-2">
           <h2 id={titleId} className="text-lg font-bold">{title}</h2>
           <button className="btn-secondary" onClick={onClose} aria-label={`Close dialog: ${title}`}><IconClose /></button>

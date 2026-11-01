@@ -57,7 +57,7 @@ export default function MediaTab({ event }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-ink-muted">Replace any image here at any time. Changes show up straight away; no redeploy is needed. Until an image is uploaded, a placeholder is shown.</p>
-      <ul className="grid gap-4 sm:grid-cols-2">{SLOT_KEYS.map((slot) => <SlotCard key={slot} event={event} slot={slot} row={rows[slot]} reload={reload} />)}</ul>
+      <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{SLOT_KEYS.map((slot) => <SlotCard key={slot} event={event} slot={slot} row={rows[slot]} reload={reload} />)}</ul>
     </div>
   );
 }

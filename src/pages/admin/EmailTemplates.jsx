@@ -61,7 +61,7 @@ function Editor({ draft, setDraft, event, ensureQr = false }) {
   const preview = useMemo(() => renderEmail(draft, { reg: SAMPLE_REG, event, qrUrl, ensureQr, site: window.location.origin, bannerUrl: banner?.url ?? event.banner_url, bannerAlt: banner?.alt, extra: SAMPLE_EXTRA }), [draft, event, banner, qrUrl, ensureQr]);
   const [view, setView] = useState("html");
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2">
       <div className="space-y-3">
         <div>
           <p className="label">Merge fields <span className="font-normal text-ink-muted">(click to insert at the cursor in: {focus.replace("_body", "").replace("html", "HTML body").replace("text", "text body")})</span></p>
@@ -131,7 +131,7 @@ function TemplateTab({ event }) {
       <div><label htmlFor="tpl-kind" className="label">Email</label>
         <select id="tpl-kind" className="input max-w-lg" value={kind} onChange={(e) => setKind(e.target.value)}>{KINDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
       <Editor draft={draft} setDraft={setDraft} event={event} ensureQr={kind === "confirmation"} />
-      <div className="flex flex-wrap items-center gap-2 border-t border-link pt-4">
+      <div className="page-actions flex flex-wrap items-center gap-2 border-t border-link pt-4">
         <button className="btn-primary" onClick={save} disabled={!!busy}><IconSave />{busy === "save" ? "Saving…" : "Save template"}</button>
         <input type="email" className="input max-w-xs" aria-label="Send test to" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
         <button className="btn-secondary" onClick={test} disabled={!!busy || !testTo}><IconSend />{busy === "test" ? "Sending…" : "Send test to myself"}</button>

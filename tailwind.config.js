@@ -5,6 +5,8 @@ const v = (name) => `var(--${name})`;
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
+    // Default Tailwind breakpoints plus xs (480). Keep in sync with src/lib/breakpoints.js and src/styles/breakpoints.md.
+    screens: { xs: "480px", sm: "640px", md: "768px", lg: "1024px", xl: "1280px", "2xl": "1536px" },
     // Body text is never below 14px; most UI text is 16px (WCAG 1.4.4 / readability).
     fontSize: {
       xs: ["0.875rem", { lineHeight: "1.5" }],

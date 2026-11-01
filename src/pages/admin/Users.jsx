@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabaseClient.js";
 import { fetchAll } from "../../lib/api.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useToast } from "../../components/Toast.jsx";
+import FilterBar from "../../components/FilterBar.jsx";
 import DataTable from "../../components/DataTable.jsx";
 import { fmtDateTime } from "../../lib/availability.js";
 import { IconArrowDown, IconShield } from "../../components/NavIcons.jsx";
@@ -36,10 +37,10 @@ export default function Users() {
   return (
     <div className="space-y-4">
       <h1 className="flex items-center gap-2 text-2xl font-extrabold"><IconShield />Admin users</h1>
-      <div className="flex flex-wrap gap-2">
-        <input className="input max-w-xs" placeholder="Search name or email" aria-label="Search users" value={q} onChange={(e) => setQ(e.target.value)} />
+      <FilterBar activeCount={role ? 1 : 0}
+        search={<input className="input w-full md:w-72" placeholder="Search name or email" aria-label="Search users" value={q} onChange={(e) => setQ(e.target.value)} />}>
         <select className="input max-w-[10rem]" aria-label="Role filter" value={role} onChange={(e) => setRole(e.target.value)}><option value="">All roles</option><option value="admin">Admins</option><option value="attendee">Attendees</option></select>
-      </div>
+      </FilterBar>
       <DataTable caption="Admin users" columns={cols} rows={shown} loading={rows === null} empty="No users found." />
     </div>
   );

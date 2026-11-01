@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { check } from "./helpers/a11y.js";
@@ -165,14 +165,19 @@ describe("shared components have no axe violations", () => {
     asGuest();
   });
 
-  it("AdminLayout: nav aria-label, current page, menu button state", async () => {
+  it("AdminLayout (phone): one Admin landmark, five tabs in visual order, the active tab is aria-current", async () => {
     asUser(true);
+    // jsdom has no CSS: apply the two rules that decide the layout below 1024px (sidebar hidden)
+    const style = document.createElement("style"); style.textContent = ".hidden{display:none}"; document.head.appendChild(style);
     const { container } = render(<MemoryRouter initialEntries={["/admin"]}><LiveRegionProvider><Routes><Route path="/admin" element={<AdminLayout />}><Route index element={<h1>Dashboard</h1>} /></Route></Routes></LiveRegionProvider></MemoryRouter>);
     expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
-    expect(screen.getByRole("navigation", { name: "Admin" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Dashboard", current: "page" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Menu" })).toHaveAttribute("aria-expanded", "false");
+    const nav = screen.getByRole("navigation", { name: "Admin" });
+    const tabs = within(nav).getAllByRole("link").map((a) => a.getAttribute("aria-label") || a.textContent.trim());
+    expect(tabs).toEqual(["Home", "Search", "Scan QR code", "History", "Profile"]);
+    expect(within(nav).getByRole("link", { name: "Home", current: "page" })).toBeInTheDocument();
+    expect(within(nav).getAllByRole("link", { current: "page" })).toHaveLength(1);
+    style.remove();
     asGuest();
   });
 });

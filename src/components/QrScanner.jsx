@@ -80,7 +80,7 @@ export default function QrScanner({ onScan, paused = false, cooldownMs = 3000 })
         {torch.supported && <button className="btn-secondary" onClick={toggleTorch} aria-pressed={torch.on}><IconZap />Torch: {torch.on ? "on" : "off"}</button>}
       </div>
       {error && <div role="alert" className="alert alert-bad block"><p className="font-semibold">{error}</p><p>You can still check people in with the <a href="#manual-checkin">manual check-in form</a> below.</p></div>}
-      <div className="mx-auto w-full max-w-md overflow-hidden rounded-xl border-2 border-ink bg-brand-sky" style={{ minHeight: running ? undefined : 120 }} role="group" aria-label="Camera preview">
+      <div className="w-full overflow-hidden border-2 border-ink bg-brand-sky max-md:-mx-4 max-md:w-auto max-md:rounded-none max-md:border-x-0 sm:max-md:-mx-5 md:mx-auto md:max-w-xl md:rounded-xl" style={{ minHeight: running ? undefined : 120 }} role="group" aria-label="Camera preview">
         {!running && !error && <p className="p-8 text-center text-ink">The camera is off. Press “Start camera”, or use manual check-in below.</p>}
         {/* html5-qrcode rewrites everything inside this element, so React must never render children into it
             (that made React crash with "removeChild" when the camera started). The text above is a sibling. */}

@@ -26,6 +26,7 @@ const Tracker = lazy(() => import("./pages/admin/Tracker.jsx"));
 const EmailTemplates = lazy(() => import("./pages/admin/EmailTemplates.jsx"));
 const Users = lazy(() => import("./pages/admin/Users.jsx"));
 const ChangeLog = lazy(() => import("./pages/admin/ChangeLog.jsx"));
+const Profile = lazy(() => import("./pages/admin/Profile.jsx"));
 
 function SetupNotice() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="emails" element={<EmailTemplates />} />
         <Route path="users" element={<Users />} />
         <Route path="changelog" element={<ChangeLog />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

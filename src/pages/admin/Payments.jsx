@@ -6,6 +6,10 @@ import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import { downloadCsv } from "../../lib/csv.js";
 import DataTable from "../../components/DataTable.jsx";
+import { useMediaQuery } from "../../hooks/useBreakpoint.js";
+import { MEDIA } from "../../lib/breakpoints.js";
+import FilterBar from "../../components/FilterBar.jsx";
+import TopBarAction from "../../components/admin/TopBarAction.jsx";
 import Modal from "../../components/Modal.jsx";
 import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
@@ -14,7 +18,7 @@ import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import { Lightbox } from "../../components/EventImage.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
-import { IconAlert, IconCheckCircle, IconDownload, IconEye, IconSend, IconWallet, IconXCircle } from "../../components/NavIcons.jsx";
+import { IconAlert, IconCheckCircle, IconClose, IconDownload, IconEye, IconSend, IconWallet, IconXCircle } from "../../components/NavIcons.jsx";
 
 const TONE = { pending: "warn", verified: "ok", underpaid: "warn", rejected: "bad" };
 const LABEL = { pending: "Pending", verified: "Verified", underpaid: "Underpaid", rejected: "Rejected" };
@@ -45,7 +49,18 @@ function Receipt({ path, label }) {
   );
 }
 
-function ReviewDialog({ payment, onClose, onChanged }) {
+/** The review opens as a dialog (a full-screen sheet on phones). From 768px it is shown beside the list instead (master-detail). */
+function Shell({ inline, title, onClose, children }) {
+  if (!inline) return <Modal title={title} onClose={onClose} wide>{children}</Modal>;
+  return (
+    <section aria-label={title} className="card p-4">
+      <div className="mb-3 flex items-start justify-between gap-2"><h2 className="text-lg font-bold">{title}</h2><button type="button" className="btn-secondary" onClick={onClose} aria-label="Close review"><IconClose /></button></div>
+      {children}
+    </section>
+  );
+}
+
+function ReviewDialog({ payment, onClose, onChanged, inline = false }) {
   const toast = useToast();
   const forms = activeForms(payment);
   const expected = expectedOf(payment);
@@ -95,8 +110,8 @@ function ReviewDialog({ payment, onClose, onChanged }) {
   };
 
   return (
-    <Modal title={`Payment of ${peso(paid)} from ${payment.sender_name}`} onClose={onClose} wide>
-      <div className="grid gap-5 lg:grid-cols-2">
+    <Shell inline={inline} title={`Payment of ${peso(paid)} from ${payment.sender_name}`} onClose={onClose}>
+      <div className={`grid gap-5 ${inline ? "" : "lg:grid-cols-2"}`}>
         <section aria-labelledby="rcpt-h" className="space-y-3">
           <h3 id="rcpt-h" className="text-lg">Receipt</h3>
           {payment.receipt_path ? <Receipt path={payment.receipt_path} label={`GCash receipt, reference ${payment.reference_number}`} /> : <Alert tone="warn">The receipt file was deleted{payment.receipt_deleted_at ? ` on ${fmtDateTime(payment.receipt_deleted_at)}` : ""}.</Alert>}
@@ -121,7 +136,7 @@ function ReviewDialog({ payment, onClose, onChanged }) {
       </div>
 
       {reviewable && !action && (
-        <div className="mt-5 flex flex-wrap gap-2 border-t border-brand-sky pt-4">
+        <div className="sheet-actions mt-5 flex flex-wrap gap-2">
           <button className="btn-primary" onClick={() => setAction("verified")}><IconCheckCircle />Verify payment</button>
           <button className="btn-secondary" onClick={() => setAction("underpaid")}><IconAlert />Mark underpaid</button>
           <button className="btn-danger" onClick={() => setAction("rejected")}><IconXCircle />Reject payment</button>
@@ -144,7 +159,7 @@ function ReviewDialog({ payment, onClose, onChanged }) {
           </div>
         </ConfirmDialog>
       )}
-    </Modal>
+    </Shell>
   );
 }
 
@@ -154,6 +169,7 @@ export default function Payments() {
   const [status, setStatus] = useState("pending");
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(null);
+  const split = useMediaQuery(MEDIA.fromTablet);   // 768 and up: list on the left (40%), review on the right (60%)
 
   const load = useCallback(async () => {
     if (!event) return;
@@ -191,17 +207,22 @@ export default function Payments() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-2xl"><IconWallet />Payments</h1>
-        <button className="btn-secondary" disabled={!shown.length} onClick={() => downloadCsv(`payments-${event.ticket_prefix}.csv`, ["Sender", "Email", "Amount paid", "Reference", "Status", "Forms", "Submitted"], shown.map((p) => [p.sender_name, p.sender_profile?.email, p.amount_paid, p.reference_number, p.status, (p.registrations || []).map((r) => `${r.name} (@${r.x_username})`).join("; "), fmtDateTime(p.created_at)]))}><IconDownload />Export CSV</button>
+        <TopBarAction icon={IconDownload} label="Export CSV" short="Export" disabled={!shown.length} onClick={() => downloadCsv(`payments-${event.ticket_prefix}.csv`, ["Sender", "Email", "Amount paid", "Reference", "Status", "Forms", "Submitted"], shown.map((p) => [p.sender_name, p.sender_profile?.email, p.amount_paid, p.reference_number, p.status, (p.registrations || []).map((r) => `${r.name} (@${r.x_username})`).join("; "), fmtDateTime(p.created_at)]))} />
       </div>
-      <div className="flex flex-wrap gap-2">
-        <input className="input max-w-xs" placeholder="Search sender, reference, name" aria-label="Search payments" value={q} onChange={(e) => setQ(e.target.value)} />
+      <FilterBar activeCount={status !== "pending" ? 1 : 0}
+        search={<input className="input w-full md:w-72" placeholder="Search sender, reference, name" aria-label="Search payments" value={q} onChange={(e) => setQ(e.target.value)} />}>
         <select className="input max-w-[14rem]" aria-label="Payment status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="pending">Pending ({counts.pending})</option><option value="underpaid">Underpaid ({counts.underpaid})</option><option value="verified">Verified ({counts.verified})</option><option value="rejected">Rejected ({counts.rejected})</option><option value="">All</option>
         </select>
-      </div>
+      </FilterBar>
       <p role="status" className="text-sm font-semibold">{rows ? `${shown.length} payment${shown.length === 1 ? "" : "s"} found` : "Loading payments…"}</p>
-      <DataTable caption="Payments" columns={cols} rows={shown} loading={rows === null} empty={status === "pending" ? "No payments are waiting for review." : "No payments match."} initialSort={{ key: "created_at", dir: "asc" }} />
-      {sel && <ReviewDialog payment={sel} onClose={() => setSel(null)} onChanged={() => { setSel(null); load(); }} />}
+      <div className={split && sel ? "grid items-start gap-4 md:grid-cols-5" : ""}>
+        <div className="min-w-0 md:col-span-2">
+          <DataTable caption="Payments" columns={cols} rows={shown} loading={rows === null} cards={split && !!sel} empty={status === "pending" ? "No payments are waiting for review." : "No payments match."} initialSort={{ key: "created_at", dir: "asc" }} />
+        </div>
+        {sel && split && <div className="min-w-0 md:sticky md:top-4 md:col-span-3"><ReviewDialog key={sel.id} inline payment={sel} onClose={() => setSel(null)} onChanged={() => { setSel(null); load(); }} /></div>}
+      </div>
+      {sel && !split && <ReviewDialog payment={sel} onClose={() => setSel(null)} onChanged={() => { setSel(null); load(); }} />}
     </div>
   );
 }

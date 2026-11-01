@@ -7,6 +7,7 @@ import { fmtDateTime } from "../../lib/availability.js";
 import DataTable from "../../components/DataTable.jsx";
 import { Empty } from "../../components/Spinner.jsx";
 import { IconChecklist, IconDownload, IconHistory } from "../../components/NavIcons.jsx";
+import TopBarAction from "../../components/admin/TopBarAction.jsx";
 
 const RESULT_BADGE = { success: "badge-ok", duplicate: "badge-warn", invalid: "badge-bad" };
 
@@ -64,9 +65,9 @@ export default function Tracker() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2"><h1 className="flex items-center gap-2 text-2xl"><IconChecklist />Attendance</h1><span className="badge badge-ok">Live updates</span></div>
-        {tab === "list" && <button className="btn-primary" onClick={exportCsv} disabled={!shown.length}><IconDownload />Export CSV</button>}
+        {tab === "list" && <TopBarAction className="btn-primary" icon={IconDownload} label="Export CSV" short="Export" onClick={exportCsv} disabled={!shown.length} />}
       </div>
-      <div className="grid grid-cols-3 gap-3 text-center">
+      <div className="grid grid-cols-3 gap-2 text-center md:gap-3">
         <div className="card p-3"><p className="text-2xl font-extrabold">{counts.total}</p><p className="text-xs text-ink-muted">Registered</p></div>
         <div className="card p-3"><p className="text-2xl font-extrabold text-success">{counts.in}</p><p className="text-xs text-ink-muted">Checked in</p></div>
         <div className="card p-3"><p className="text-2xl font-extrabold text-warning-ink">{counts.out}</p><p className="text-xs text-ink-muted">Not yet arrived</p></div>
@@ -78,7 +79,10 @@ export default function Tracker() {
         <>
           <div className="flex flex-wrap gap-2">
             <input className="input max-w-xs" placeholder="Search name, X or ticket" aria-label="Search" value={q} onChange={(e) => setQ(e.target.value)} />
-            <select className="input max-w-[12rem]" aria-label="Attendance filter" value={filter} onChange={(e) => setFilter(e.target.value)}><option value="">Everyone</option><option value="in">Checked in</option><option value="out">Not yet arrived</option></select>
+            <div role="group" aria-label="Attendance filter" className="flex w-full gap-1 md:hidden">
+              {[["", "Everyone"], ["in", "Checked in"], ["out", "Not yet arrived"]].map(([v, l]) => <button key={v} type="button" aria-pressed={filter === v} className={`${filter === v ? "btn-primary" : "btn-secondary"} min-w-0 flex-1 px-1 text-xs`} onClick={() => setFilter(v)}>{l}</button>)}
+            </div>
+            <select className="input hidden max-w-[12rem] md:block" aria-label="Attendance filter" value={filter} onChange={(e) => setFilter(e.target.value)}><option value="">Everyone</option><option value="in">Checked in</option><option value="out">Not yet arrived</option></select>
           </div>
           <DataTable caption="Attendance list" columns={cols} rows={shown} loading={rows === null} empty="No attendees match." pageSize={50} initialSort={{ key: "checked_in_at", dir: "desc" }} />
         </>

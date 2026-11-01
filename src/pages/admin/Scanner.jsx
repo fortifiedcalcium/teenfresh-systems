@@ -89,7 +89,7 @@ export default function Scanner() {
       <div className="sr-only" role="alert" aria-live="assertive" aria-atomic="true">{busy ? "Checking ticket" : summary(result)}</div>
       {busy && <p className="text-center text-ink-muted" aria-hidden="true">Checking…</p>}
       {p && (
-        <section aria-label="Scan result" className={`rounded-2xl border-4 p-6 text-center ${p.cls}`}>
+        <section aria-label="Scan result" className={`result-sheet rounded-2xl border-4 p-6 text-center ${p.cls}`}>
           <p className="text-5xl font-extrabold" aria-hidden="true">{p.icon}</p>
           <h2 className="mt-1 text-3xl font-extrabold" style={{ color: "inherit" }}>{p.title}</h2>
           {result.result === "invalid" ? (

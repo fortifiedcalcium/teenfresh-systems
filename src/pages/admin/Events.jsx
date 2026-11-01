@@ -145,7 +145,7 @@ export default function Events() {
                 <Field id="title" label="Title" required><input className="input" value={form.title} onChange={set("title")} /></Field>
                 <Field id="subtitle" label="Subtitle"><input className="input" value={form.subtitle} onChange={set("subtitle")} /></Field>
                 <Field id="description" label="Description"><textarea className="input" rows={2} value={form.description} onChange={set("description")} /></Field>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   <Field id="venue" label="Venue"><input className="input" value={form.venue} onChange={set("venue")} /></Field>
                   <Field id="venue_address" label="Address" hint="Used for the Open in Google Maps link"><input className="input" value={form.venue_address} onChange={set("venue_address")} /></Field>
                   <Field id="date" label="Start (Manila time shown to attendees)" required><input type="datetime-local" className="input" value={form.event_date} onChange={set("event_date")} /></Field>
@@ -160,7 +160,7 @@ export default function Events() {
               </fieldset>
 
               <fieldset className="space-y-4"><legend className="text-lg font-bold">Fee and payment (GCash)</legend>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   <Field id="fee" label="Registration fee (PHP)" hint="Used only when the event has no kits (see the Kits tab). 0 = free event: no payment step, tickets are issued immediately"><input type="number" min="0" step="0.01" className="input" value={form.registration_fee} onChange={set("registration_fee")} /></Field>
                   <Field id="fee_note" label="Fee note" hint="Shown after the fee, for example: exclusive of food and drinks"><input className="input" value={form.fee_note} onChange={set("fee_note")} /></Field>
                   <Field id="pay_name" label="GCash account name (masked)" hint="Store it already masked, for example BR**N CA**O S."><input className="input" value={form.payment_account_name} onChange={set("payment_account_name")} /></Field>
@@ -179,7 +179,7 @@ export default function Events() {
                 <Field id="retention" label="Delete payment receipts this many days after the event" hint="Empty = keep them. Run scripts/purge-receipts.mjs (see the README) to carry it out."><input type="number" min="0" className="input" value={form.receipt_retention_days} onChange={set("receipt_retention_days")} /></Field>
               </fieldset>
 
-              <div className="flex justify-end gap-2 border-t border-brand-sky pt-4"><button type="button" className="btn-secondary" onClick={() => setForm(null)}><IconClose />Close</button><button className="btn-primary" disabled={saving}><IconSave />{saving ? "Saving…" : "Save event"}</button></div>
+              <div className="sheet-actions flex justify-end gap-2 border-t border-brand-sky"><button type="button" className="btn-secondary" onClick={() => setForm(null)}><IconClose />Close</button><button className="btn-primary" disabled={saving}><IconSave />{saving ? "Saving…" : "Save event"}</button></div>
             </form>
             </div>
           )}

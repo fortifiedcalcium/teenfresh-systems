@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { callFunction, fetchAll, resendMany } from "../../lib/api.js";
 import { downloadCsv } from "../../lib/csv.js";
@@ -13,6 +13,8 @@ import Field from "../../components/Field.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import { Empty } from "../../components/Spinner.jsx";
 import { IconClose, IconDownload, IconEye, IconPencil, IconSave, IconSend, IconTrash, IconUndo, IconUserCheck, IconUserX, IconUsers, IconXCircle } from "../../components/NavIcons.jsx";
+import FilterBar from "../../components/FilterBar.jsx";
+import TopBarAction from "../../components/admin/TopBarAction.jsx";
 
 const EMAIL_BADGE = { sent: "badge-ok", failed: "badge-bad", none: "badge-neutral" };
 const STATUS_BADGE = { pending_verification: ["badge-warn", "pending verification"], confirmed: ["badge-ok", "confirmed"], rejected: ["badge-bad", "rejected"], cancelled: ["badge-bad", "cancelled"] };
@@ -23,6 +25,10 @@ export default function Attendees() {
   const toast = useToast();
   const [rows, setRows] = useState(null);
   const [q, setQ] = useState("");
+  const searchRef = useRef(null);
+  const [params] = useSearchParams();
+  // the Search tab in the bottom bar links here with ?focus=search
+  useEffect(() => { if (params.get("focus") === "search") searchRef.current?.focus(); }, [params]);
   const [fAttend, setFAttend] = useState("");
   const [fEmail, setFEmail] = useState("");
   const [fStatus, setFStatus] = useState("");
@@ -108,15 +114,15 @@ export default function Attendees() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-2xl"><IconUsers />Attendees</h1>
-        <div className="flex flex-wrap gap-2"><button className="btn-secondary" onClick={resendFailed} disabled={busy || !rows}><IconSend />Resend all failed</button><button className="btn-primary" onClick={exportCsv} disabled={!shown.length}><IconDownload />Export CSV</button></div>
+        <div className="flex flex-wrap gap-2"><button className="btn-secondary" onClick={resendFailed} disabled={busy || !rows}><IconSend />Resend all failed</button><TopBarAction className="btn-primary" icon={IconDownload} label="Export CSV" short="Export" onClick={exportCsv} disabled={!shown.length} /></div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <input className="input max-w-xs" placeholder="Search name, X, email, ticket, contact" aria-label="Search attendees" value={q} onChange={(e) => setQ(e.target.value)} />
+      <FilterBar activeCount={[fStatus, fPay, fAttend, fEmail].filter(Boolean).length}
+        search={<input ref={searchRef} className="input w-full md:w-72" placeholder="Search name, X, email, ticket, contact" aria-label="Search attendees" value={q} onChange={(e) => setQ(e.target.value)} />}>
         <select className="input max-w-[13rem]" aria-label="Registration status" value={fStatus} onChange={(e) => setFStatus(e.target.value)}><option value="">All registrations</option><option value="confirmed">Confirmed</option><option value="pending_verification">Pending verification</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option></select>
         <select className="input max-w-[12rem]" aria-label="Payment status" value={fPay} onChange={(e) => setFPay(e.target.value)}><option value="">Any payment</option><option value="pending">Payment pending</option><option value="verified">Payment verified</option><option value="underpaid">Underpaid</option><option value="rejected">Payment rejected</option><option value="none">No payment</option></select>
         <select className="input max-w-[11rem]" aria-label="Attendance" value={fAttend} onChange={(e) => setFAttend(e.target.value)}><option value="">Any attendance</option><option value="in">Checked in</option><option value="out">Not yet arrived</option></select>
         <select className="input max-w-[11rem]" aria-label="Email status" value={fEmail} onChange={(e) => setFEmail(e.target.value)}><option value="">Any email status</option><option value="sent">Sent</option><option value="failed">Failed</option><option value="none">Not sent</option></select>
-      </div>
+      </FilterBar>
       <p role="status" className="text-sm font-semibold">{rows ? `${shown.length} ${shown.length === 1 ? "attendee" : "attendees"} found` : "Loading attendees…"}</p>
       <DataTable caption="Attendees" columns={cols} rows={shown} loading={rows === null} empty="No attendees match." initialSort={{ key: "created_at", dir: "desc" }} />
 
@@ -151,7 +157,7 @@ export default function Attendees() {
             <Field id="e-fb" label="Facebook link"><input className="input" value={edit.facebook_url || ""} onChange={(e) => setEdit({ ...edit, facebook_url: e.target.value })} /></Field>
             <Field id="e-tel" label="Contact number"><input className="input" value={edit.contact_number || ""} onChange={(e) => setEdit({ ...edit, contact_number: e.target.value })} /></Field>
             <Field id="e-notes" label="Notes"><textarea className="input" rows={2} value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} /></Field>
-            <div className="flex justify-end gap-2"><button type="button" className="btn-secondary" onClick={() => setEdit(null)}><IconClose />Cancel</button><button className="btn-primary" disabled={busy}><IconSave />Save</button></div>
+            <div className="sheet-actions flex justify-end gap-2"><button type="button" className="btn-secondary" onClick={() => setEdit(null)}><IconClose />Cancel</button><button className="btn-primary" disabled={busy}><IconSave />Save</button></div>
           </form>
         </Modal>
       )}

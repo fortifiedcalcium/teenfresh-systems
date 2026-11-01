@@ -82,7 +82,7 @@ export default function KitsTab({ event }) {
             <li key={r.key}>
               <fieldset className="card space-y-3 p-4">
                 <legend className="px-1 text-lg font-bold">Kit {i + 1}{r.name ? `: ${r.name}` : ""}</legend>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                   {field("name", "Name (required)", { maxLength: 80 })}
                   {field("unit_price", "Price per kit, PHP (required)", { inputMode: "decimal" }, r.unit_price && !e.unit_price && Number(r.unit_price) > 0 ? `${peso(r.unit_price)} each` : "Amount per kit, for example 100")}
                   {field("max_per_order", "Most one form can order (required)", { inputMode: "numeric" }, "A whole number from 1 to 50")}
@@ -101,7 +101,7 @@ export default function KitsTab({ event }) {
           );
         })}
       </ul>
-      <div className="flex flex-wrap justify-between gap-2 border-t border-brand-sky pt-4">
+      <div className="sheet-actions flex flex-wrap justify-between gap-2 border-t border-brand-sky">
         <button type="button" className="btn-secondary" onClick={() => setRows((rs) => [...rs, blank()])}><IconPlus />Add a kit</button>
         <button type="button" className="btn-primary" onClick={save} disabled={saving}><IconSave />{saving ? "Saving…" : "Save kits"}</button>
       </div>

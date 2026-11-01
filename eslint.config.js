@@ -14,7 +14,7 @@ export default [
     plugins: { "react-hooks": react, react: reactPlugin },
     rules: {
       ...react.configs.recommended.rules,
-      "react/jsx-uses-vars": "error", "react/jsx-uses-react": "off",
+      "react/jsx-uses-vars": "error", "react/jsx-no-undef": "error", "react/jsx-uses-react": "off",
       "react-hooks/set-state-in-effect": "off", "react-hooks/purity": "off", "react-hooks/refs": "off", "react-hooks/immutability": "off", "react-hooks/preserve-manual-memoization": "off", "react-hooks/incompatible-library": "off",
       "no-unused-vars": ["error", { varsIgnorePattern: "^(React|_)", argsIgnorePattern: "^_", caughtErrors: "none" }],
     },

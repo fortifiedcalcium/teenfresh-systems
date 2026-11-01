@@ -96,7 +96,7 @@ export default function Dashboard() {
       <div><h1 className="flex items-center gap-2 text-2xl"><IconDashboard />Dashboard</h1><p className="text-ink-muted">{event.title}</p></div>
       <section aria-labelledby="stats-h">
         <h2 id="stats-h" className="sr-only">Key numbers</h2>
-        <dl className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat icon={IconUsers} label="Capacity" value={event.capacity} />
           <Stat icon={IconTicket} label="Slots used" value={m.registered} sub={`${Math.round((m.registered / event.capacity) * 100)}% full (pending + confirmed)`} />
           <Stat icon={IconClock} label="Pending verification" value={m.pending} tone={m.pending ? "text-warning-ink" : "text-ink"} sub="payments to review" />

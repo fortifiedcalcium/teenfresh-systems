@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
 import { useToast } from "../../components/Toast.jsx";
 import DataTable from "../../components/DataTable.jsx";
+import FilterBar from "../../components/FilterBar.jsx";
 import Alert from "../../components/Alert.jsx";
 import { fmtDateTime } from "../../lib/availability.js";
 import { IconHistory } from "../../components/NavIcons.jsx";
@@ -50,13 +51,13 @@ export default function ChangeLog() {
       <h1 className="flex items-center gap-2 text-2xl font-extrabold"><IconHistory />Change log</h1>
       <p className="text-sm text-ink-muted">Who changed what, newest first (the latest 1,000 changes). Contact details and payment references are recorded as “changed” without their values. Entries cannot be edited or deleted.</p>
       {failed && <Alert tone="bad"><strong>The change log is not set up yet.</strong> Run <code>004_change_log.sql</code> in the Supabase SQL Editor for this project, then reload.</Alert>}
-      <div className="flex flex-wrap gap-2">
-        <input className="input max-w-xs" placeholder="Search item, person or change" aria-label="Search the change log" value={q} onChange={(e) => setQ(e.target.value)} />
+      <FilterBar activeCount={area ? 1 : 0}
+        search={<input className="input w-full md:w-72" placeholder="Search item, person or change" aria-label="Search the change log" value={q} onChange={(e) => setQ(e.target.value)} />}>
         <select className="input max-w-[12rem]" aria-label="Area filter" value={area} onChange={(e) => setArea(e.target.value)}>
           <option value="">All areas</option>
           {Object.entries(AREAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-      </div>
+      </FilterBar>
       <DataTable caption="Change log" columns={cols} rows={shown} rowKey="id" loading={rows === null} empty="No changes recorded yet." initialSort={{ key: "at", dir: "desc" }} />
     </div>
   );

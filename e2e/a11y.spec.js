@@ -131,7 +131,7 @@ test.describe("axe: wcag2a / wcag2aa / wcag21aa / wcag22aa on every route", () =
     await as("admin");
     await page.goto("/admin/payments");
     await page.getByRole("button", { name: /Review payment of Juan D./ }).click();
-    const dialog = page.getByRole("dialog", { name: /Payment of/ });
+    const dialog = page.getByRole("region", { name: /Payment of/ })   // from 768px the review is a split view beside the list, not a modal;
     await expect(dialog.getByAltText(/GCash receipt/)).toBeVisible();
     let v = await scan(page); expect(v, "review dialog\n" + formatViolations(v)).toEqual([]);
     await dialog.getByRole("button", { name: "Reject payment" }).click();

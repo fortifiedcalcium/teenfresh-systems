@@ -1,0 +1,146 @@
+/* Admin bottom navigation (phones and tablets in portrait; the sidebar takes over at 1024px).
+   Sizes come from the CSS variables below so the bar, the page padding and the scan button always agree.
+   Colours are the Teenfresh tokens only (src/styles/tokens.css). */
+
+@property --cut { syntax: "<length>"; inherits: true; initial-value: 0px; }
+
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --nav-h: 64px;        /* bar height, without the safe area */
+  --nav-radius: 20px;
+  --nav-icon: 24px;
+  --nav-label: 11px;    /* never below 11 */
+  --fab-d: 56px;        /* scan button diameter */
+  --fab-up: 28px;       /* how far the raised scan button protrudes above the bar */
+  --fab-gap: 6px;       /* page-coloured ring between the scan button and the bar */
+  --nav-gap: 0px;       /* space below a floating bar (tablet) */
+  --topbar-h: 56px;
+  /* what the page content must clear: bar + protruding button + safe area (+ floating gap) */
+  --bottom-nav-h: calc(var(--nav-h) + var(--fab-up) + var(--safe-bottom) + var(--nav-gap));
+}
+@media (min-width: 480px) { :root { --nav-h: 68px; --nav-radius: 24px; --nav-label: 12px; --fab-d: 60px; --fab-up: 30px; } }
+@media (min-width: 768px) { :root { --nav-h: 76px; --nav-radius: 28px; --nav-icon: 28px; --nav-label: 14px; --fab-d: 68px; --fab-up: 34px; --nav-gap: 16px; } }
+/* short landscape phones: a slimmer bar, no visible labels (the accessible names stay) */
+@media (max-height: 480px) and (orientation: landscape) { :root { --nav-h: 56px; --nav-icon: 22px; --fab-d: 48px; --fab-up: 24px; --nav-gap: 0px; --topbar-h: 48px; } }
+
+.admin-bottom-nav {
+  position: fixed; inset: auto 0 0 0; z-index: 30;
+  padding-bottom: var(--safe-bottom);
+  pointer-events: none;                 /* only the bar itself takes clicks, never the transparent corners */
+}
+@media (min-width: 768px) {
+  .admin-bottom-nav { inset: auto 0 var(--nav-gap) 0; margin-inline: auto; max-width: 640px; width: calc(100% - 32px); padding-bottom: 0; }
+}
+/* keyboard open, or any dialog open: the bar gets out of the way (display:none also removes it from the tab order) */
+.admin-bottom-nav[data-hidden="true"], body:has([role="dialog"][aria-modal="true"]) .admin-bottom-nav { display: none; }
+
+.admin-bottom-nav__shadow { position: absolute; inset: 0; filter: drop-shadow(0 -4px 8px rgb(0 0 0 / 0.18)); }
+@media (min-width: 768px) { .admin-bottom-nav__shadow { filter: drop-shadow(0 6px 16px rgb(0 0 0 / 0.3)); } }
+.admin-bottom-nav__bg {
+  position: absolute; inset: 0;
+  background: var(--ink);
+  border-top: 1px solid var(--ink-muted);
+  border-radius: var(--nav-radius) var(--nav-radius) 0 0;
+  /* the cut-out for the raised scan button: a radial hole centred on the top edge, so the shadow follows it */
+  --cut: calc(var(--fab-d) / 2 + var(--fab-gap));
+  -webkit-mask: radial-gradient(circle at 50% 0, transparent var(--cut), #000 calc(var(--cut) + 0.5px));
+          mask: radial-gradient(circle at 50% 0, transparent var(--cut), #000 calc(var(--cut) + 0.5px));
+  transition: --cut 180ms ease-out;
+}
+@media (min-width: 768px) { .admin-bottom-nav__bg { border-radius: var(--nav-radius); } }
+.admin-bottom-nav[data-docked="true"] .admin-bottom-nav__bg { --cut: 0px; }
+
+.admin-bottom-nav__list { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: var(--nav-h); margin: 0; padding: 0; list-style: none; pointer-events: auto; }
+
+.bottom-nav-item {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 56px; margin: 4px 2px; padding: 4px 2px; border-radius: 16px;
+  color: var(--brand-sky); text-decoration: none; font-size: var(--nav-label); font-weight: 500; line-height: 1.15; text-align: center;
+  transition: transform 120ms ease-out, background-color 120ms ease-out;
+}
+.bottom-nav-item svg { width: var(--nav-icon); height: var(--nav-icon); }
+.bottom-nav-item:active { transform: scale(0.96); background: color-mix(in srgb, var(--brand-sky) 16%, transparent); }
+.bottom-nav-item[aria-current="page"] { color: var(--brand-blue); font-weight: 800; }
+.bottom-nav-item[aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 50%; width: 28px; height: 3px; border-radius: 3px; background: var(--brand-blue); transform: translateX(-50%); }
+.bottom-nav-item__label { max-width: 100%; overflow-wrap: anywhere; min-height: 1.15em; }  /* wraps to two lines, never truncates */
+@media (min-width: 768px) { .bottom-nav-item { min-height: 68px; } .bottom-nav-item[aria-current="page"]::before { width: 36px; } }
+@media (max-height: 480px) and (orientation: landscape) {
+  .bottom-nav-item { min-height: 48px; flex-direction: row; }
+  .bottom-nav-item__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }  /* labels hidden, names kept */
+}
+
+/* The raised / docked scan button */
+.scan-fab-slot { position: relative; }
+.scan-fab {
+  position: absolute; left: 50%; top: calc(var(--fab-up) * -1); transform: translateX(-50%);
+  display: grid; place-items: center; width: var(--fab-d); height: var(--fab-d); border-radius: 9999px;
+  background: var(--brand-blue); color: var(--ink); border: 2px solid var(--ink);
+  transition: top 180ms ease-out, transform 120ms ease-out; text-decoration: none;
+}
+.scan-fab svg { width: calc(var(--fab-d) * 0.5); height: calc(var(--fab-d) * 0.5); }
+.scan-fab:active { transform: translateX(-50%) scale(0.96); }
+.admin-bottom-nav[data-docked="true"] .scan-fab { top: calc((var(--nav-h) - var(--fab-d)) / 2); border-color: var(--brand-blue); }
+.scan-fab:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }                       /* raised: the gap is page-coloured */
+.admin-bottom-nav[data-docked="true"] .scan-fab:focus-visible { outline-color: var(--brand-ivory); }  /* docked: the bar is dark */
+.bottom-nav-item:focus-visible { outline: 3px solid var(--brand-ivory); outline-offset: -3px; }
+
+.nav-badge { position: absolute; top: 2px; right: calc(50% - 26px); min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--brand-coral); color: var(--ink); font-size: 12px; font-weight: 800; line-height: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-bottom-nav__bg, .scan-fab, .bottom-nav-item { transition: none !important; }
+  .bottom-nav-item:active, .scan-fab:active { transform: none; }
+  .scan-fab:active { transform: translateX(-50%); }
+}
+@media (prefers-contrast: more) {
+  .admin-bottom-nav__bg { border-top: 2px solid var(--brand-ivory); }
+  .bottom-nav-item { color: var(--white); }
+  .bottom-nav-item[aria-current="page"] { color: var(--white); text-decoration: underline; text-underline-offset: 4px; }
+}
+@media (forced-colors: active) {
+  .admin-bottom-nav__bg { background: Canvas; border: 2px solid CanvasText; }
+  .bottom-nav-item { color: LinkText; }
+  .bottom-nav-item[aria-current="page"] { color: HighlightText; background: Highlight; forced-color-adjust: none; outline: 2px solid CanvasText; }
+  .scan-fab { background: ButtonFace; color: ButtonText; border-color: ButtonText; forced-color-adjust: none; }
+}
+
+/* Admin page frame: gutters, max width, fluid type, and room for the bar */
+.admin-main { padding: 16px 16px calc(var(--bottom-nav-h) + 16px); }
+.admin-main[data-nav-hidden="true"] { padding-bottom: 16px; }
+@media (min-width: 640px) { .admin-main { padding-inline: 20px; } }
+@media (min-width: 768px) { .admin-main { padding-inline: 24px; padding-top: 24px; } }
+@media (min-width: 1024px) { .admin-main { padding: 24px; } }
+@media (min-width: 1280px) { .admin-main { padding-inline: 32px; } }
+.admin-main > .admin-page { margin-inline: auto; width: 100%; max-width: 720px; }
+@media (min-width: 1024px) { .admin-main > .admin-page { max-width: 1024px; } }
+@media (min-width: 1280px) { .admin-main > .admin-page { max-width: 1200px; } }
+@media (min-width: 1536px) { .admin-main > .admin-page { max-width: 1360px; } }
+/* fluid headings (24px on a phone to 32px on a desktop; h2 20 to 24) */
+.admin-main h1 { font-size: clamp(1.5rem, 1.25rem + 0.9vw, 2rem); line-height: 1.25; }
+.admin-main h2 { font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem); }
+/* below 1024 the top bar shows the title, so the page's own h1 stays for screen readers only */
+@media (max-width: 1023px) {
+  .admin-main h1:not([data-keep]) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+/* forms: 16px text (stops iOS zooming on focus) and 44px fields on phones */
+@media (max-width: 767px) { .input, select.input, textarea.input { font-size: 1rem; min-height: 2.75rem; } }
+
+/* Dialogs are full-screen sheets below 768px and slide up; centred dialogs from 768px */
+.modal-panel { animation: sheet-up 220ms ease-out; }
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (min-width: 768px) { .modal-panel { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .modal-panel { animation: none; } }
+/* a bottom action area inside a sheet: stays in view above the safe area, never behind the bottom bar (dialogs hide it) */
+.sheet-actions { position: sticky; bottom: calc(-1.25rem - var(--safe-bottom)); margin-inline: -1.25rem; padding: 0.75rem 1.25rem calc(0.75rem + var(--safe-bottom)); background: var(--white); border-top: 1px solid var(--border-soft); z-index: 1; }
+@media (min-width: 768px) { .sheet-actions { position: static; margin-inline: 0; padding: 1rem 0 0; } }
+
+/* A bottom action area for a page form (Save): sticky above the bottom bar on phones and tablets, plain on desktop */
+.page-actions { position: sticky; z-index: 5; bottom: calc(var(--nav-h) + var(--safe-bottom) + var(--nav-gap) + 12px); background: var(--brand-blush); padding-bottom: 0.5rem; }
+@media (min-width: 1024px) { .page-actions { position: static; background: transparent; padding-bottom: 0; } }
+
+/* Scanner: on phones the scan result slides up as a sheet above the bottom bar and the scan button (never over them) */
+@media (max-width: 767px) {
+  .result-sheet { position: fixed; left: 12px; right: 12px; bottom: calc(var(--bottom-nav-h) + 8px); z-index: 25; max-height: 55vh; max-height: 55dvh; overflow-y: auto; animation: sheet-up 220ms ease-out; box-shadow: 0 -8px 24px rgb(0 0 0 / 0.25); }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) { .result-sheet { animation: none; } }

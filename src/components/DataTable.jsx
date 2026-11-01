@@ -1,13 +1,19 @@
 import React, { useMemo, useState } from "react";
 import { Empty, Loading } from "./Spinner.jsx";
 import { LiveRegion } from "../a11y.jsx";
-import { IconChevronLeft, IconChevronRight } from "./NavIcons.jsx";
+import { useMediaQuery } from "../hooks/useBreakpoint.js";
+import { MEDIA } from "../lib/breakpoints.js";
+import { IconChevronDown, IconChevronLeft, IconChevronRight, IconChevronUp } from "./NavIcons.jsx";
 
 /** Sortable, paginated table. columns: [{ key, label, sortValue?(row), render?(row), className?, sortable? }].
  *  `caption` names the table for screen readers (required). Sort buttons use aria-sort; the pagination is a labelled nav. */
-export default function DataTable({ caption, columns, rows, rowKey = "id", loading, empty = "Nothing to show.", pageSize = 25, initialSort }) {
+export default function DataTable({ caption, columns, rows, rowKey = "id", loading, cards = false, empty = "Nothing to show.", pageSize = 25, initialSort }) {
   const [sort, setSort] = useState(initialSort || null); // { key, dir }
   const [page, setPage] = useState(0);
+  const isMobile = useMediaQuery(MEDIA.mobile);   // below 768: one card per row (`cards` forces that layout, e.g. a narrow master list)
+  const mobile = isMobile || cards;
+  const tablet = useMediaQuery(MEDIA.tablet);   // 768-1023: the first few columns, with a "Columns" toggle
+  const [allCols, setAllCols] = useState(false);
 
   const sorted = useMemo(() => {
     if (!sort) return rows;
@@ -28,12 +34,54 @@ export default function DataTable({ caption, columns, rows, rowKey = "id", loadi
   const slice = sorted.slice(cur * pageSize, cur * pageSize + pageSize);
   const toggle = (key) => { setSort((s) => (s?.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" })); setPage(0); };
 
+  // Tablet: the 4 most important (leftmost) columns plus the actions column; the toggle shows the rest.
+  const actionCol = columns.find((c) => c.sortable === false && !c.label);
+  const dataCols = columns.filter((c) => c !== actionCol);
+  const compact = tablet && !allCols && dataCols.length > 5;
+  const viewCols = compact ? [...dataCols.slice(0, 4), ...(actionCol ? [actionCol] : [])] : columns;
+  const cardCols = dataCols.slice(1);
+
   if (loading) return <Loading label={`Loading ${caption.toLowerCase()}…`} />;
   if (!rows.length) return <Empty>{empty}</Empty>;
 
+  const firstCol = columns[0];
   const sortLabel = sort ? `, sorted by ${columns.find((c) => c.key === sort.key)?.label} ${sort.dir === "asc" ? "ascending" : "descending"}` : "";
+  const sortControl = (
+    <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+      <label htmlFor={`sort-${caption}`} className="font-semibold">Sort by</label>
+      <select id={`sort-${caption}`} className="input max-w-[14rem]" value={sort?.key || ""} onChange={(e) => { if (e.target.value) { setSort({ key: e.target.value, dir: sort?.dir || "asc" }); setPage(0); } else setSort(null); }}>
+        <option value="">Default order</option>
+        {columns.filter((c) => c.sortable !== false).map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+      </select>
+      {sort && <button type="button" className="btn-secondary" onClick={() => toggle(sort.key)}>{sort.dir === "asc" ? <IconChevronUp /> : <IconChevronDown />}{sort.dir === "asc" ? "Ascending" : "Descending"}</button>}
+    </div>
+  );
+
   return (
     <div>
+      {mobile ? (
+        <>
+          {sortControl}
+          <ul aria-label={`${caption}${sortLabel}`} className="space-y-3">
+            {slice.map((r) => (
+              <li key={r[rowKey]} className="card p-4">
+                <div className="font-bold">{firstCol.render ? firstCol.render(r) : r[firstCol.key]}</div>
+                <dl className="mt-2 space-y-1.5 text-sm">
+                  {cardCols.map((c) => (
+                    <div key={c.key} className="flex flex-wrap items-baseline justify-between gap-x-3">
+                      <dt className="text-xs font-bold uppercase tracking-wide text-ink-muted">{c.label}</dt>
+                      <dd className={`min-w-0 text-right ${c.className || ""}`}>{c.render ? c.render(r) : r[c.key]}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {actionCol && <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-brand-sky pt-3">{actionCol.render(r)}</div>}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <>
+      {compact || (tablet && allCols) ? <div className="mb-2 flex justify-end"><button type="button" className="btn-secondary" aria-pressed={allCols} onClick={() => setAllCols(!allCols)}>{allCols ? "Fewer columns" : "Columns: show all"}</button></div> : null}
       {/* 1.4.10: the table scrolls inside a labelled, keyboard-focusable region instead of the whole page scrolling */}
       {/* A scrollable region must be keyboard-focusable (axe: scrollable-region-focusable), so tabIndex is intentional */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
@@ -42,7 +90,7 @@ export default function DataTable({ caption, columns, rows, rowKey = "id", loadi
           <caption className="sr-only">{caption}{sortLabel}</caption>
           <thead className="bg-brand-ivory">
             <tr>
-              {columns.map((c) => (
+              {viewCols.map((c) => (
                 <th key={c.key} scope="col" className="th" aria-sort={c.sortable === false ? undefined : sort?.key === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
                   {c.sortable === false ? (c.label || <span className="sr-only">Actions</span>) : (
                     <button type="button" className="inline-flex min-h-target min-w-target items-center justify-center gap-1 font-bold uppercase" onClick={() => toggle(c.key)}>
@@ -57,12 +105,14 @@ export default function DataTable({ caption, columns, rows, rowKey = "id", loadi
           <tbody className="divide-y divide-brand-sky">
             {slice.map((r) => (
               <tr key={r[rowKey]} className="hover:bg-brand-ivory">
-                {columns.map((c, i) => (i === 0 ? <th key={c.key} scope="row" className={`td text-left font-semibold ${c.className || ""}`}>{c.render ? c.render(r) : r[c.key]}</th> : <td key={c.key} className={`td ${c.className || ""}`}>{c.render ? c.render(r) : r[c.key]}</td>))}
+                {viewCols.map((c, i) => (i === 0 ? <th key={c.key} scope="row" className={`td text-left font-semibold ${c.className || ""}`}>{c.render ? c.render(r) : r[c.key]}</th> : <td key={c.key} className={`td ${c.className || ""}`}>{c.render ? c.render(r) : r[c.key]}</td>))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+        </>
+      )}
       <LiveRegion>{`${sorted.length} ${sorted.length === 1 ? "row" : "rows"} shown, page ${cur + 1} of ${pages}`}</LiveRegion>
       {pages > 1 && (
         <nav aria-label={`${caption} pagination`} className="mt-3 flex items-center justify-between gap-2 text-sm text-ink">

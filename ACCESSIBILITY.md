@@ -163,3 +163,12 @@ The ratios match the ones in the brand add-on (checked by `tests/contrast.test.j
 ## Reporting an accessibility issue
 
 The footer of every page has a **Report an accessibility issue** link. It emails the address in `VITE_SUPPORT_EMAIL` (set it in `.env`), and falls back to the Teenfresh X page (@TeenfreshPH) if unset. Include the page, what you tried to do, the browser and any assistive technology.
+
+## Admin navigation (bottom bar below 1024px, sidebar from 1024px)
+
+* One `<nav aria-label="Admin">` is ever in the accessibility tree: the other is `display:none` (CSS `lg:` switch, no user-agent sniffing). Tabs are real links; the current one has `aria-current="page"` (derived from the route, so `/admin/events` highlights Profile).
+* Order is Home, Search, Scan QR code, History, Profile. The scan button is a round link with an accessible name and a tooltip, and its hit area never overlaps its neighbours. Targets are at least 48 x 48 CSS px.
+* Colours (all tokens, checked by `scripts/check-contrast.js`): inactive sky on ink 9.2:1, active brand-blue on ink 5.2:1, ink on the blue scan button 5.2:1, ivory focus ring on ink 12.8:1. The active tab also has a 3px indicator line and bolder text, so colour is never the only cue.
+* `prefers-reduced-motion`: no slide or scale. `prefers-contrast: more`: solid ivory top edge and white labels. `forced-colors`: system colours and a visible border on the active tab.
+* The bar hides while a text field has focus (on-screen keyboard) and while a dialog is open; pages keep `--bottom-nav-h` of padding so the last row is never covered.
+* Below 1024px each page's `<h1>` is screen-reader only and the title is shown in the top bar (aria-hidden), so there is still exactly one h1 and route changes still focus it.
