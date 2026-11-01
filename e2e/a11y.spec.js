@@ -21,6 +21,19 @@ test.describe("axe: wcag2a / wcag2aa / wcag21aa / wcag22aa on every route", () =
     });
   }
 
+  test("event cards are all the same size, even across rows and with different content", async ({ page, as }) => {
+    await as(null);
+    await page.setViewportSize({ width: 800, height: 900 }); // two columns: two rows, the second holds the closed event
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: "Upcoming events" })).toBeVisible();
+    const cards = page.getByRole("article");
+    await expect(cards).toHaveCount(3);
+    await page.waitForLoadState("networkidle");
+    const sizes = await cards.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }));
+    expect(new Set(sizes.map((s) => s[1])).size, JSON.stringify(sizes)).toBe(1);
+    expect(new Set(sizes.map((s) => s[0])).size, JSON.stringify(sizes)).toBe(1);
+  });
+
   test("dialogs, error states and result panels", async ({ page, as }) => {
     await as("admin");
     await page.goto("/admin/events");

@@ -59,7 +59,7 @@ export default function Home() {
       ) : events.length === 0 ? (
         <Empty>No events yet. Check back soon!</Empty>
       ) : (
-        <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((e) => <li key={e.id} className="flex"><div className="flex w-full flex-col"><EventCard event={e} registered={counts[e.id] ?? 0} bannerImage={banners[e.id]} kits={kits[e.id] || []} /></div></li>)}
         </ul>
       )}

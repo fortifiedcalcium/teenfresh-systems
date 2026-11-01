@@ -13,18 +13,18 @@ export default function EventCard({ event, registered, bannerImage, onChanged, k
   const fee = Number(event.registration_fee);
   const slotsText = st.key === "closed" ? "Registration is closed" : `${st.slotsLeft} of ${event.capacity} slots left`;
   return (
-    <article className="card flex flex-col overflow-hidden" aria-labelledby={`title-${event.id}`}>
+    <article className="card flex h-full w-full flex-col overflow-hidden" aria-labelledby={`title-${event.id}`}>
       <EventImage slot="banner" event={event} image={bannerImage} onChanged={onChanged} lightbox={false} fit="cover" className="!rounded-none !border-0" />
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
-          <h2 id={`title-${event.id}`} className="min-w-0 flex-1 text-lg font-bold leading-snug">{event.title}</h2>
+          <h2 id={`title-${event.id}`} className="line-clamp-2 min-w-0 flex-1 text-lg font-bold leading-snug" title={event.title}>{event.title}</h2>
           <Badge tone={STATUS_TONE[st.key]}>{st.label}</Badge>
         </div>
-        {event.subtitle && <p className="-mt-1 text-sm text-ink-muted">{event.subtitle}</p>}
+        {event.subtitle && <p className="-mt-1 line-clamp-2 text-sm text-ink-muted" title={event.subtitle}>{event.subtitle}</p>}
         <dl className="space-y-1 text-sm text-ink-muted">
           <div className="flex gap-2"><dt className="font-semibold">Date:</dt><dd>{fmtDate(event.event_date)}</dd></div>
           <div className="flex gap-2"><dt className="font-semibold">Time:</dt><dd>{fmtTimeRange(event.event_date, event.ends_at)}</dd></div>
-          {event.venue && <div className="flex gap-2"><dt className="font-semibold">Venue:</dt><dd>{event.venue}</dd></div>}
+          {event.venue && <div className="flex gap-2"><dt className="font-semibold">Venue:</dt><dd className="line-clamp-2" title={event.venue}>{event.venue}</dd></div>}
           <div className="flex gap-2"><dt className="font-semibold">{kits.length ? "Kits:" : "Fee:"}</dt><dd>{kits.length ? `${priceRange(kits)} each${event.fee_note ? ` (${event.fee_note})` : ""}` : fee > 0 ? `${peso(fee)}${event.fee_note ? ` (${event.fee_note})` : ""}` : event.price_info || "Free"}</dd></div>
           {event.registration_deadline && <div className="flex gap-2"><dt className="font-semibold">Registration closes:</dt><dd>{fmtDeadline(event.registration_deadline)}</dd></div>}
         </dl>
