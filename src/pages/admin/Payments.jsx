@@ -4,7 +4,7 @@ import { supabase } from "../../lib/supabaseClient.js";
 import { callFunction, fetchAll, friendlyError, resendMany } from "../../lib/api.js";
 import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
-import { downloadCsv } from "../../lib/csv.js";
+import { exportReport } from "../../lib/excel.js";
 import DataTable from "../../components/DataTable.jsx";
 import { useMediaQuery } from "../../hooks/useBreakpoint.js";
 import { MEDIA } from "../../lib/breakpoints.js";
@@ -164,6 +164,7 @@ function ReviewDialog({ payment, onClose, onChanged, inline = false }) {
 }
 
 export default function Payments() {
+  const toast = useToast();
   const { event } = useOutletContext();
   const [rows, setRows] = useState(null);
   const [status, setStatus] = useState("pending");
@@ -207,7 +208,7 @@ export default function Payments() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-2xl"><IconWallet />Payments</h1>
-        <TopBarAction icon={IconDownload} label="Export CSV" short="Export" disabled={!shown.length} onClick={() => downloadCsv(`payments-${event.ticket_prefix}.csv`, ["Sender", "Email", "Amount paid", "Reference", "Status", "Forms", "Submitted"], shown.map((p) => [p.sender_name, p.sender_profile?.email, p.amount_paid, p.reference_number, p.status, (p.registrations || []).map((r) => `${r.name} (@${r.x_username})`).join("; "), fmtDateTime(p.created_at)]))} />
+        <TopBarAction icon={IconDownload} label="Export Excel" short="Export" disabled={!shown.length} onClick={() => exportReport(toast, `payments-${event.ticket_prefix}.xlsx`, ["Sender", "Email", "Amount paid", "Reference", "Status", "Forms", "Submitted"], shown.map((p) => [p.sender_name, p.sender_profile?.email, p.amount_paid, p.reference_number, p.status, (p.registrations || []).map((r) => `${r.name} (@${r.x_username})`).join("; "), fmtDateTime(p.created_at)]))} />
       </div>
       <FilterBar activeCount={status !== "pending" ? 1 : 0}
         search={<input className="input w-full md:w-72" placeholder="Search sender, reference, name" aria-label="Search payments" value={q} onChange={(e) => setQ(e.target.value)} />}>

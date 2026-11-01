@@ -2,7 +2,23 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs.
+
+## [1.1.0] - 2026-11-01
+
+### Added
+- Excel (.xlsx) reports: **Attendees**, **Payments** and **Attendance** now export as real Excel workbooks. The header row is bold on the Teenfresh ink colour, frozen, and has filters; columns are sized to their content; amounts stay numbers. Cells are written as typed values and never as formulas, so a name such as `=HYPERLINK(...)` cannot run in Excel. The Excel library is loaded only when someone exports.
+- Tests: Excel file contents (`tests/excel.test.js`), real downloads of all three reports and the edit/transfer typing flow in a browser (`e2e/reports.spec.js`), and a regression test for the dialog focus bug (`tests/modal.test.jsx`).
+
+### Changed
+- Export buttons read **Export Excel** (was "Export CSV") and download `attendees-<prefix>.xlsx`, `payments-<prefix>.xlsx` and `attendance-<prefix>.xlsx`.
+- If an export fails, a message explains it instead of failing silently.
+
+### Fixed
+- **Edit / transfer slot** (and every dialog with a form): only one character could be typed at a time. The dialog re-ran its setup on every keystroke because callers pass a new `onClose` function each render, which moved focus back to the first control. The dialog now sets up once and keeps the latest `onClose` in a reference. This also fixes the same problem in the event editor and other dialog forms.
+
+### Removed
+- CSV export from the Attendees, Payments and Attendance pages (replaced by Excel). `src/lib/csv.js` is no longer used by any page.
 
 ## [1.0.0] - 2026-11-01
 

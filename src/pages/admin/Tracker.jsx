@@ -2,16 +2,18 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { fetchAll } from "../../lib/api.js";
-import { downloadCsv } from "../../lib/csv.js";
+import { exportReport } from "../../lib/excel.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import DataTable from "../../components/DataTable.jsx";
 import { Empty } from "../../components/Spinner.jsx";
 import { IconChecklist, IconDownload, IconHistory } from "../../components/NavIcons.jsx";
 import TopBarAction from "../../components/admin/TopBarAction.jsx";
+import { useToast } from "../../components/Toast.jsx";
 
 const RESULT_BADGE = { success: "badge-ok", duplicate: "badge-warn", invalid: "badge-bad" };
 
 export default function Tracker() {
+  const toast = useToast();
   const { event } = useOutletContext();
   const [tab, setTab] = useState("list");
   const [rows, setRows] = useState(null);
@@ -40,7 +42,7 @@ export default function Tracker() {
   const shown = useMemo(() => (rows || []).filter((r) => (filter === "in" ? r.checked_in_at : filter === "out" ? !r.checked_in_at : true) && (!q || `${r.name} ${r.x_username} ${r.ticket_number}`.toLowerCase().includes(q.toLowerCase()))), [rows, filter, q]);
   const staff = (r) => r.checker?.full_name || r.checker?.email || "";
 
-  const exportCsv = () => downloadCsv(`attendance-${event.ticket_prefix}.csv`, ["Ticket", "Name", "X username", "Status", "Checked in at", "Checked in by", "Receipt verified", "Kit claimed"],
+  const exportExcel = () => exportReport(toast, `attendance-${event.ticket_prefix}.xlsx`, ["Ticket", "Name", "X username", "Status", "Checked in at", "Checked in by", "Receipt verified", "Kit claimed"],
     shown.map((r) => [r.ticket_number, r.name, "@" + r.x_username, r.checked_in_at ? "Checked in" : "Not yet arrived", fmtDateTime(r.checked_in_at), staff(r), r.receipt_verified ? "Yes" : "No", r.kit_claimed ? "Yes" : "No"]));
 
   if (!event) return <Empty>Create an event first.</Empty>;
@@ -65,7 +67,7 @@ export default function Tracker() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2"><h1 className="flex items-center gap-2 text-2xl"><IconChecklist />Attendance</h1><span className="badge badge-ok">Live updates</span></div>
-        {tab === "list" && <TopBarAction className="btn-primary" icon={IconDownload} label="Export CSV" short="Export" onClick={exportCsv} disabled={!shown.length} />}
+        {tab === "list" && <TopBarAction className="btn-primary" icon={IconDownload} label="Export Excel" short="Export" onClick={exportExcel} disabled={!shown.length} />}
       </div>
       <div className="grid grid-cols-3 gap-2 text-center md:gap-3">
         <div className="card p-3"><p className="text-2xl font-extrabold">{counts.total}</p><p className="text-xs text-ink-muted">Registered</p></div>

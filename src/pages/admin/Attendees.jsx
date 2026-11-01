@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { callFunction, fetchAll, resendMany } from "../../lib/api.js";
-import { downloadCsv } from "../../lib/csv.js";
+import { exportReport } from "../../lib/excel.js";
 import { normalizeFacebook, normalizePhone, normalizeX } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import { peso } from "../../lib/payment.js";
@@ -90,7 +90,7 @@ export default function Attendees() {
     }, "Saved (change logged)");
   };
 
-  const exportCsv = () => downloadCsv(`attendees-${event.ticket_prefix}.csv`,
+  const exportExcel = () => exportReport(toast, `attendees-${event.ticket_prefix}.xlsx`,
     ["Ticket", "Name", "X username", "Email", "Facebook", "Contact", "Kit", "Quantity", "Price per kit", "Total", "Notes", "Registered", "Registration status", "Payment status", "Payment reference", "Email status", "Checked in", "Checked in by", "Receipt verified", "Kit claimed"],
     shown.map((r) => [r.ticket_number || "", r.name, "@" + r.x_username, r.email, r.facebook_url, r.contact_number, r.kit_name || "", r.kit_name ? r.kit_quantity : "", r.kit_unit_price ?? "", r.total_amount ?? "", r.notes, fmtDateTime(r.created_at), r.status, r.pay_status === "none" ? "" : r.pay_status, r.payment?.reference_number || "", r.email_status, fmtDateTime(r.checked_in_at), r.checker?.full_name || r.checker?.email || "", r.receipt_verified ? "Yes" : "No", r.kit_claimed ? "Yes" : "No"]));
 
@@ -114,7 +114,7 @@ export default function Attendees() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-2xl"><IconUsers />Attendees</h1>
-        <div className="flex flex-wrap gap-2"><button className="btn-secondary" onClick={resendFailed} disabled={busy || !rows}><IconSend />Resend all failed</button><TopBarAction className="btn-primary" icon={IconDownload} label="Export CSV" short="Export" onClick={exportCsv} disabled={!shown.length} /></div>
+        <div className="flex flex-wrap gap-2"><button className="btn-secondary" onClick={resendFailed} disabled={busy || !rows}><IconSend />Resend all failed</button><TopBarAction className="btn-primary" icon={IconDownload} label="Export Excel" short="Export" onClick={exportExcel} disabled={!shown.length} /></div>
       </div>
       <FilterBar activeCount={[fStatus, fPay, fAttend, fEmail].filter(Boolean).length}
         search={<input ref={searchRef} className="input w-full md:w-72" placeholder="Search name, X, email, ticket, contact" aria-label="Search attendees" value={q} onChange={(e) => setQ(e.target.value)} />}>
