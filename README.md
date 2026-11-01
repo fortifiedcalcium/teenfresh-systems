@@ -7,6 +7,7 @@ src/                     React app (attendee site + /admin)
 supabase/migrations/schema.sql                  tables, RLS, triggers, RPCs, seed (IVEMON: BRILLIANT FORCE event)
 supabase/migrations/002_registration_payments.sql   payments, receipts, image slots, storage buckets, ODD PLATINUM seed (run second)
 supabase/migrations/003_kits.sql                    kit options, quantity and price per kit, balance-based shared payments (run third)
+supabase/migrations/004_change_log.sql              admin Change log: who changed what (run fourth)
 supabase/functions/send-confirmation-email   ticket email on verification / resend / test email
 supabase/functions/send-payment-email        underpaid, rejected and "we received your registration" emails
 supabase/functions/send-bulk-email           admin bulk mail merge
@@ -24,6 +25,7 @@ The app targets **WCAG 2.2 AA** with the Teenfresh palette (brand colours as sur
 2. **SQL Editor** → paste all of `supabase/migrations/schema.sql` → **Run**.
 3. **SQL Editor** → new query → paste all of `supabase/migrations/002_registration_payments.sql` → **Run**. Run it once, after the first file. It adds payments, receipt uploads, image slots, the two storage buckets (`event-media` public, `payment-receipts` private) and the *IVEMON: ODD PLATINUM* event. It keeps existing events and registrations (see the comments at the top of the file). If it stops with "registered more than once", two active registrations share an X username for the same event: cancel the extra one in Admin > Attendees and run it again.
 4. **SQL Editor** → new query → paste all of `supabase/migrations/003_kits.sql` → **Run** (once, after the second file). It adds kit options, quantity and amount per kit. Existing registrations are kept as quantity 1 at the old fee.
+5. **SQL Editor** → new query → paste all of `supabase/migrations/004_change_log.sql` → **Run** (once, after the third file). It adds **Admin → Change log**, filled by database triggers; contact details and payment references are logged as “changed” without their values.
 
 ## 2. Auth providers
 **Authentication → Providers → Email**: enable, and keep **Confirm email** on (sign-up sends a verification link).

@@ -24,6 +24,7 @@ const Scanner = lazy(() => import("./pages/admin/Scanner.jsx"));
 const Tracker = lazy(() => import("./pages/admin/Tracker.jsx"));
 const EmailTemplates = lazy(() => import("./pages/admin/EmailTemplates.jsx"));
 const Users = lazy(() => import("./pages/admin/Users.jsx"));
+const ChangeLog = lazy(() => import("./pages/admin/ChangeLog.jsx"));
 
 function SetupNotice() {
   return (
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="tracker" element={<Tracker />} />
         <Route path="emails" element={<EmailTemplates />} />
         <Route path="users" element={<Users />} />
+        <Route path="changelog" element={<ChangeLog />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

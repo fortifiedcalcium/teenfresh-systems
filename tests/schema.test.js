@@ -75,6 +75,7 @@ beforeAll(async () => {
   await db.exec(read("schema.sql"));
   await db.exec(read("002_registration_payments.sql"));
   await db.exec(read("003_kits.sql"));
+  await db.exec(read("004_change_log.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -599,5 +600,54 @@ describe("upgrading a database that already has registrations (migration 003 on 
     // the old 13-argument function is gone and the new one exists with the kit arguments
     const fn = (await old.query("select pronargs from pg_proc where proname = 'submit_registration'")).rows;
     expect(fn.map((f) => f.pronargs)).toEqual([15]);
+  });
+});
+
+describe("004 change log", () => {
+  it("records admin edits with who/what, redacts personal data, and cannot be written or read by others", async () => {
+    const ev = await mkEvent();
+    await asUser("admin");
+    await db.query("update public.events set title = 'Renamed' where id = $1", [ev]);
+    await asUser("alice");
+    const r = await submit("alice", ev);
+    await asSuper();
+    await db.exec(`update public.registrations set name = 'Secret Name', kit_claimed = true where event_id = '${ev}'`);
+
+    await asUser("admin");
+    const ch = (await db.query("select * from public.change_log where event_id = $1 order by id", [ev])).rows;
+    const ev1 = ch.find((c) => c.table_name === "events" && c.action === "update");
+    expect(ev1.actor_email).toBe("admin@example.com");
+    expect(ev1.changes.title.new).toBe("Renamed");
+    const reg = ch.filter((c) => c.table_name === "registrations");
+    expect(reg.some((c) => c.action === "insert")).toBe(true);
+    const upd = reg.find((c) => c.action === "update");
+    expect(upd.changes.name).toBe("[changed]");
+    expect(upd.changes.kit_claimed.new).toBe("true");
+    expect(JSON.stringify(ch.map((c) => [c.label, c.changes]))).not.toMatch(/Secret Name|alice@example\.com|09171234567/);
+    expect(ch.some((c) => c.table_name === "payments" && c.action === "insert")).toBe(true);
+
+    await asUser("alice");
+    expect((await db.query("select * from public.change_log")).rows).toHaveLength(0);
+    await fails(db.query("insert into public.change_log (table_name, action) values ('x','insert')"), /row-level security|permission/);
+    await asUser("admin");
+    await db.query("update public.change_log set label = 'x'");
+    await db.query("delete from public.change_log");
+    expect((await db.query("select count(*)::int as n from public.change_log")).rows[0].n).toBeGreaterThan(0);
+    expect(r).toBeTruthy();
+  });
+
+  it("logs role changes but not sign-ups, and skips updates that only touch ignored columns", async () => {
+    await asSuper();
+    await db.exec(`update public.profiles set role = 'admin' where id = '${ids.bob}'`);
+    await db.exec(`update public.profiles set role = 'attendee' where id = '${ids.bob}'`);
+    const ev = await mkEvent();
+    const before = (await db.query("select count(*)::int as n from public.change_log where event_id = $1", [ev])).rows[0].n;
+    await db.exec(`update public.events set updated_at = now() + interval '1 second' where id = '${ev}'`).catch(() => {});
+    const after = (await db.query("select count(*)::int as n from public.change_log where event_id = $1", [ev])).rows[0].n;
+    expect(after).toBe(before);
+    const roles = (await db.query("select action, changes from public.change_log where table_name = 'profiles' and row_id = $1", [ids.bob])).rows;
+    expect(roles.length).toBe(2);
+    expect(roles[0].changes.role.new).toBe("admin");
+    expect((await db.query("select count(*)::int as n from public.change_log where table_name = 'profiles' and action = 'insert'")).rows[0].n).toBe(0);
   });
 });

@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabaseClient.js";
 import { Loading } from "../components/Spinner.jsx";
 import { SkipLink } from "../a11y.jsx";
 import logo from "../logo/teenfresh-logo.png";
-import { IconDashboard, IconCalendar, IconWallet, IconUsers, IconScan, IconChecklist, IconMail, IconShield, IconArrowLeft, IconLogOut, IconMenu, IconClose } from "../components/NavIcons.jsx";
+import { IconDashboard, IconCalendar, IconWallet, IconUsers, IconScan, IconChecklist, IconMail, IconShield, IconHistory, IconArrowLeft, IconLogOut, IconMenu, IconClose } from "../components/NavIcons.jsx";
 
 const NAV = [
   ["/admin", "Dashboard", IconDashboard, true],
@@ -16,6 +16,7 @@ const NAV = [
   ["/admin/tracker", "Attendance", IconChecklist],
   ["/admin/emails", "Email", IconMail],
   ["/admin/users", "Admin users", IconShield],
+  ["/admin/changelog", "Change log", IconHistory],
 ];
 
 /** Sidebar layout. Loads the events once and shares the selected one with every admin page through Outlet context. */

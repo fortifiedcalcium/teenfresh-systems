@@ -30,6 +30,7 @@ import Scanner from "../src/pages/admin/Scanner.jsx";
 import Tracker from "../src/pages/admin/Tracker.jsx";
 import EmailTemplates from "../src/pages/admin/EmailTemplates.jsx";
 import Users from "../src/pages/admin/Users.jsx";
+import ChangeLog from "../src/pages/admin/ChangeLog.jsx";
 
 const future = new Date(Date.now() + 30 * 864e5).toISOString();
 const ev = {
@@ -57,6 +58,7 @@ beforeEach(() => {
     payments: [payment()],
     event_images: [],
     registration_email_status: [{ registration_id: "r1", status: "failed", error: "x", sent_at: future, event_id: "e1" }],
+    change_log: [{ id: 2, at: future, actor_id: "u2", actor_email: "admin@example.com", table_name: "payments", row_id: "p1", event_id: "e1", action: "update", label: "payment ab12cd34", changes: { status: { old: "pending", new: "verified" } } }, { id: 1, at: future, actor_id: null, actor_email: null, table_name: "events", row_id: "e1", event_id: "e1", action: "insert", label: "Event", changes: { title: "Event", capacity: "50" } }],
     profiles: [{ id: "u1", email: "juan@example.com", full_name: "Juan", role: "attendee", created_at: future }, { id: "u2", email: "admin@example.com", full_name: "Admin", role: "admin", created_at: future }],
     email_templates: [{ subject: "Confirmation", html_body: "<p>Hello {{Name}}</p>{{Terms}}", text_body: "Hello {{Name}}" }],
     email_logs: [{ id: 1, registration_id: "r1", recipient: "juan@example.com", kind: "confirmation", status: "failed", error: "boom", sent_at: future, registrations: { event_id: "e1", ticket_number: "IVEMON-000001", name: "Juan" } }],
@@ -754,6 +756,12 @@ describe("admin pages", () => {
     await user.click(screen.getByRole("tab", { name: "Bulk mail merge" })); await screen.findByLabelText("Recipients");
     expect(await check(container)).toHaveNoViolations();
     await user.click(screen.getByRole("tab", { name: "Email logs" })); await screen.findByRole("table", { name: /Email logs/ });
+    expect(await check(container)).toHaveNoViolations();
+  });
+  it("ChangeLog", async () => {
+    const { container } = admin(<ChangeLog />); await settled("Change log");
+    await screen.findByRole("table", { name: /Change log/ });
+    expect(screen.getByText(/status: pending → verified/)).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
   });
   it("Users", async () => { asUser(true); const { container } = admin(<Users />); await settled("Admin users"); await screen.findByRole("table", { name: /Admin users/ }); expect(await check(container)).toHaveNoViolations(); });
