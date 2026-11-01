@@ -10,8 +10,22 @@ import { useToast } from "../../components/Toast.jsx";
 import DataTable from "../../components/DataTable.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import Alert from "../../components/Alert.jsx";
+import { FORMATS, wrapSelection } from "../../lib/formatText.js";
 
 /** HTML editor + merge-field chips + live preview. Used for both the saved template and the one-off bulk message. */
+function FormatToolbar({ onFormat }) {
+  const glyph = { bold: <b>B</b>, italic: <i>I</i>, underline: <u>U</u> };
+  return (
+    <div role="toolbar" aria-label="Text formatting for the HTML body" aria-controls="html" className="mb-1 flex flex-wrap gap-2">
+      {Object.entries(FORMATS).map(([k, f]) => (
+        <button key={k} type="button" className="btn-secondary" aria-label={f.key ? `${f.label} (Ctrl+${f.key.toUpperCase()})` : f.label} onClick={() => onFormat(k)}>
+          {glyph[k] ? <span aria-hidden="true" className="font-serif text-base leading-none">{glyph[k]}</span> : f.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Editor({ draft, setDraft, event }) {
   const refs = { html_body: useRef(null), text_body: useRef(null), subject: useRef(null) };
   const [focus, setFocus] = useState("html_body");
@@ -23,6 +37,19 @@ function Editor({ draft, setDraft, event }) {
     const [s, e] = el ? [el.selectionStart ?? v.length, el.selectionEnd ?? v.length] : [v.length, v.length];
     setDraft({ ...draft, [focus]: v.slice(0, s) + tag + v.slice(e) });
     requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(s + tag.length, s + tag.length); });
+  };
+
+  const format = (kind) => {
+    const f = FORMATS[kind], el = refs.html_body.current, v = draft.html_body;
+    const [a, b] = el ? [el.selectionStart ?? v.length, el.selectionEnd ?? v.length] : [v.length, v.length];
+    const r = wrapSelection(v, a, b, f.open, f.close, f.placeholder);
+    setDraft({ ...draft, html_body: r.value });
+    requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(r.start, r.end); });
+  };
+  const onKey = (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    const kind = Object.keys(FORMATS).find((k) => FORMATS[k].key === e.key.toLowerCase());
+    if (kind) { e.preventDefault(); format(kind); }
   };
 
   const [banner, setBanner] = useState(null);
@@ -40,7 +67,7 @@ function Editor({ draft, setDraft, event }) {
           </div>
         </div>
         <div><label className="label" htmlFor="subj">Subject</label><input id="subj" ref={refs.subject} className="input" value={draft.subject} onFocus={() => setFocus("subject")} onChange={(e) => setDraft({ ...draft, subject: e.target.value })} /></div>
-        <div><label className="label" htmlFor="html">HTML body</label><textarea id="html" ref={refs.html_body} rows={14} className="input font-mono text-xs" value={draft.html_body} onFocus={() => setFocus("html_body")} onChange={(e) => setDraft({ ...draft, html_body: e.target.value })} /></div>
+        <div><label className="label" htmlFor="html">HTML body</label><FormatToolbar onFormat={format} /><textarea id="html" onKeyDown={onKey} ref={refs.html_body} rows={14} className="input font-mono text-xs" value={draft.html_body} onFocus={() => setFocus("html_body")} onChange={(e) => setDraft({ ...draft, html_body: e.target.value })} /></div>
         <div><label className="label" htmlFor="txt">Plain-text body</label><textarea id="txt" ref={refs.text_body} rows={9} className="input font-mono text-xs" value={draft.text_body} onFocus={() => setFocus("text_body")} onChange={(e) => setDraft({ ...draft, text_body: e.target.value })} /></div>
         <p className="text-xs text-ink-muted">Unknown fields are left blank, and every value is HTML-escaped before it is inserted.</p>
       </div>

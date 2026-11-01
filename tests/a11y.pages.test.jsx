@@ -748,6 +748,24 @@ describe("admin pages", () => {
     await screen.findByRole("table", { name: /Scan audit log/ });
     expect(await check(container)).toHaveNoViolations();
   });
+  it("EmailTemplates: bold, italic and underline buttons and shortcuts format the HTML body", async () => {
+    const user = userEvent.setup();
+    const { container } = admin(<EmailTemplates />); await settled("Email");
+    const body = await screen.findByLabelText("HTML body");
+    expect(screen.getByRole("toolbar", { name: /Text formatting/ })).toBeInTheDocument();
+    body.focus(); body.setSelectionRange(0, 0);
+    await user.click(screen.getByRole("button", { name: /^Underline/ }));
+    expect(body.value).toContain("<u>underlined text</u>");
+    await new Promise((r) => requestAnimationFrame(() => r())); // the editor re-selects the inserted text
+    await user.click(screen.getByRole("button", { name: /^Underline/ }));
+    expect(body.value).not.toContain("<u>");
+    await user.click(screen.getByRole("button", { name: /^Bold/ }));
+    expect(body.value).toContain("<strong>bold text</strong>");
+    body.focus();
+    await user.keyboard("{Control>}i{/Control}");
+    expect(body.value).toContain("<em>");
+    expect(await check(container)).toHaveNoViolations();
+  });
   it("EmailTemplates (template, bulk, logs)", async () => {
     const user = userEvent.setup();
     const { container } = admin(<EmailTemplates />); await settled("Email");
