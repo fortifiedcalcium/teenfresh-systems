@@ -1,4 +1,6 @@
 import { test, expect, scan, newAxe, formatViolations } from "./fixtures.js";
+import jsQR from "jsqr";
+import { PNG } from "pngjs";
 
 const ROUTES = [
   ["guest", "/", "Upcoming events"], ["guest", "/login", "Sign in"], ["guest", "/register", "Create an account"],
@@ -32,6 +34,17 @@ test.describe("axe: wcag2a / wcag2aa / wcag21aa / wcag22aa on every route", () =
     const sizes = await cards.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }));
     expect(new Set(sizes.map((s) => s[1])).size, JSON.stringify(sizes)).toBe(1);
     expect(new Set(sizes.map((s) => s[0])).size, JSON.stringify(sizes)).toBe(1);
+  });
+
+  test("the ticket QR code carries the Teenfresh logo and still scans", async ({ page, as }) => {
+    await as("user");
+    await page.goto("/my-ticket/r1");
+    const qr = page.getByRole("img", { name: /QR code\. Ticket number IVEMON-000001/ });
+    await expect(qr).toBeVisible();
+    await expect(qr.locator("svg image")).toHaveCount(1);                          // the logo
+    await page.waitForLoadState("networkidle");
+    const png = PNG.sync.read(await qr.screenshot());
+    expect(jsQR(new Uint8ClampedArray(png.data), png.width, png.height)?.data).toBe("IVEMON-000001");
   });
 
   test("dialogs, error states and result panels", async ({ page, as }) => {

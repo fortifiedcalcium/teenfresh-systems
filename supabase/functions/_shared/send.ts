@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { renderEmail, Template } from "./merge.ts";
 import { sendMail } from "./mailer.ts";
+import { ticketQrPng } from "./qr.ts";
 
 export const serviceClient = (): SupabaseClient =>
   createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
@@ -36,6 +37,15 @@ export async function resolveBanner(db: SupabaseClient, event: { id: string; ban
   return { url, alt: pick.alt_text || event.title || null };
 }
 
+/** The emailed QR code. Mail apps cannot run scripts, so it is a PNG (ticket number + Teenfresh logo) kept in the public
+ *  event-media bucket under qr/<registration id>.png: an unguessable name that stays the same when the email is resent. */
+export async function ticketQrUrl(db: SupabaseClient, key: string, ticket: string): Promise<string> {
+  const path = `qr/${key}.png`;
+  const { error } = await db.storage.from("event-media").upload(path, await ticketQrPng(ticket), { contentType: "image/png", upsert: true, cacheControl: "3600" });
+  if (error) throw new Error(`QR image upload failed: ${error.message}`);
+  return db.storage.from("event-media").getPublicUrl(path).data.publicUrl;
+}
+
 /** Merge, send and log one email. Never throws: the outcome is returned and written to email_logs. */
 export async function sendRegistrationEmail(
   db: SupabaseClient, reg: any, event: any, tpl: Template, kind: "confirmation" | "bulk" | "payment_underpaid" | "payment_rejected" | "acknowledgment",
@@ -44,10 +54,17 @@ export async function sendRegistrationEmail(
 ) {
   let status: "sent" | "failed" = "sent";
   let error: string | null = null;
+  let note: string | null = null;
   try {
     const b = banner ?? await resolveBanner(db, event);
-    const mail = renderEmail(tpl, { reg, event, site: siteUrl(), bannerUrl: b.url, bannerAlt: b.alt, extra });
+    let qrUrl: string | null = null;
+    if (reg.ticket_number) {
+      try { qrUrl = await ticketQrUrl(db, reg.id, reg.ticket_number); }
+      catch (e) { note = String((e as Error)?.message ?? e).slice(0, 300); }   // send the email anyway, and say so in the log
+    }
+    const mail = renderEmail(tpl, { reg, event, site: siteUrl(), bannerUrl: b.url, bannerAlt: b.alt, qrUrl, ensureQr: kind === "confirmation", extra });
     await sendMail({ to: reg.email, ...mail });
+    error = note;
   } catch (e) {
     status = "failed";
     error = String((e as Error)?.message ?? e).slice(0, 500);

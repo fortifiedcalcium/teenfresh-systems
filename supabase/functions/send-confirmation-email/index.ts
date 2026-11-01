@@ -3,7 +3,7 @@
 //  - registration_ids, test_to: admin only
 // Always verified with the caller's JWT; data is read with the service role.
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { getCaller, getTemplate, resolveBanner, sendRegistrationEmail, serviceClient, siteUrl, sleep } from "../_shared/send.ts";
+import { getCaller, getTemplate, resolveBanner, sendRegistrationEmail, serviceClient, siteUrl, sleep, ticketQrUrl } from "../_shared/send.ts";
 import { renderEmail, SAMPLE_EXTRA, SAMPLE_REG } from "../_shared/merge.ts";
 import { sendMail } from "../_shared/mailer.ts";
 
@@ -35,7 +35,8 @@ Deno.serve(async (req) => {
     let status: "sent" | "failed" = "sent", error: string | null = null;
     try {
       const b = await resolveBanner(db, event);
-      await sendMail({ to, ...renderEmail(tpl, { reg: SAMPLE_REG, event, site: siteUrl(), bannerUrl: b.url, bannerAlt: b.alt, extra: SAMPLE_EXTRA }) });
+      const qrUrl = await ticketQrUrl(db, `sample-${event.id}`, SAMPLE_REG.ticket_number).catch(() => null);
+      await sendMail({ to, ...renderEmail(tpl, { reg: SAMPLE_REG, event, site: siteUrl(), bannerUrl: b.url, bannerAlt: b.alt, qrUrl, ensureQr: kind === "confirmation", extra: SAMPLE_EXTRA }) });
     } catch (e) { status = "failed"; error = String((e as Error).message).slice(0, 500); }
     await db.from("email_logs").insert({ registration_id: null, recipient: to, kind: "test", status, error });
     return json({ results: [{ id: null, status, error }] }, status === "sent" ? 200 : 502);

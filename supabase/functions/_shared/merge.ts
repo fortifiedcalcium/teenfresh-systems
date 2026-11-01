@@ -2,12 +2,12 @@
 
 export const MERGE_FIELDS = [
   "Name", "X/Twitter Username", "Ticket Number", "Event Title", "Event Subtitle", "Event Date", "Venue",
-  "Registration Fee", "Kit", "Quantity", "Unit Price", "Total Amount", "Terms", "Contact Links", "Banner", "Banner URL", "Logo URL", "Facebook Icon URL", "X Icon URL", "Site URL",
+  "Registration Fee", "Kit", "Quantity", "Unit Price", "Total Amount", "Terms", "Contact Links", "Banner", "QR Code", "QR Code URL", "Banner URL", "Logo URL", "Facebook Icon URL", "X Icon URL", "Site URL",
   "Reference Number", "Amount Paid", "Amount Due", "Reason",
 ] as const;
 
 // Fields whose value is already-safe HTML (built from escaped or sanitized parts) and must not be escaped again.
-const RAW_HTML_FIELDS = new Set(["terms", "contact links", "banner"]);
+const RAW_HTML_FIELDS = new Set(["terms", "contact links", "banner", "qr code"]);
 
 const norm = (k: string) => k.trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -149,10 +149,26 @@ export interface MergeSource {
   site?: string;
   bannerUrl?: string | null;   // the resolved email_banner / banner image (falls back to event.banner_url)
   bannerAlt?: string | null;
+  qrUrl?: string | null;       // the ticket QR image (PNG with the logo), hosted so every mail app can load it
+  ensureQr?: boolean;          // confirmation emails: add the QR block when the template has no {{QR Code}}
   extra?: { reason?: string | null; amount_paid?: number | string | null; amount_due?: number | string | null; reference_number?: string | null };
 }
 
 const money = (v: unknown) => (v == null || v === "" ? "" : Number(v).toFixed(2));
+
+/** The emailed QR code: the image (scannable at the entrance) with the ticket number beneath it as the text alternative. */
+export const qrBlock = (url: string, ticket: string) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px 0;"><tr><td style="padding:12px;border:1px solid #dadce0;border-radius:8px;text-align:center;background:#ffffff;">`
+  + `<p style="margin:0 0 8px 0;font-weight:bold;">Your QR code</p>`
+  + `<img src="${escapeHtml(url)}" alt="Ticket QR code for ${escapeHtml(ticket)}" width="220" height="220" style="display:block;width:220px;height:220px;border:0;margin:0 auto;">`
+  + `<p style="margin:8px 0 0 0;font-size:13px;color:#555555;">${escapeHtml(ticket)}<br>Show this at the entrance to check in.</p></td></tr></table>`;
+
+/** Confirmation templates saved before the QR code existed have no {{QR Code}}: put it before the Terms (or at the end). */
+export function withQrBlock(html: string): string {
+  if (/\{\{\s*QR Code\s*\}\}/i.test(html)) return html;
+  if (/\{\{\s*Terms\s*\}\}/i.test(html)) return html.replace(/\{\{\s*Terms\s*\}\}/i, "{{QR Code}}\n{{Terms}}");
+  return html + "\n{{QR Code}}";
+}
 
 /** One value map per mode, because {{Terms}}, {{Banner}} and {{Contact Links}} differ between html and text. */
 /** Where the logo and social icons of the signature are hosted. Email clients cannot load a relative path, and a stale
@@ -160,7 +176,7 @@ const money = (v: unknown) => (v == null || v === "" ? "" : Number(v).toFixed(2)
  *  lost its logo and icons. These brand images therefore always come from here; PUBLIC_SITE_URL still builds other links. */
 export const DEFAULT_SITE = "https://teenfresh-events.web.app";
 
-export function buildValues({ reg, event, site: siteIn = "", bannerUrl, bannerAlt, extra = {} }: MergeSource, mode: "html" | "text"): MergeValues {
+export function buildValues({ reg, event, site: siteIn = "", bannerUrl, bannerAlt, qrUrl, extra = {} }: MergeSource, mode: "html" | "text"): MergeValues {
   const site = siteIn?.trim() ? siteIn.trim().replace(/\/+$/, "") : DEFAULT_SITE;
   const banner = absoluteUrl(bannerUrl ?? event.banner_url, site);
   const items = event.terms_items ?? [];
@@ -190,6 +206,8 @@ export function buildValues({ reg, event, site: siteIn = "", bannerUrl, bannerAl
     "Banner": mode === "html" && banner
       ? `<img src="${escapeHtml(banner)}" alt="${escapeHtml(bannerAlt || event.title || "")}" width="800" style="display:block;width:100%;max-width:800px;height:auto;border:0;margin:0 0 20px 0;">`
       : "",
+    "QR Code": mode === "html" && qrUrl ? qrBlock(qrUrl, reg.ticket_number ?? "") : "",
+    "QR Code URL": qrUrl ?? "",
     "Banner URL": banner,
     "Logo URL": absoluteUrl("/email/logo.png", DEFAULT_SITE),
     "Facebook Icon URL": absoluteUrl("/email/facebook.png", DEFAULT_SITE),
@@ -207,7 +225,7 @@ export interface Template { subject: string; html_body: string; text_body: strin
 export function renderEmail(tpl: Template, src: MergeSource) {
   return {
     subject: renderTemplate(tpl.subject, buildValues(src, "text"), "text").replace(/[\r\n]+/g, " ").trim(),
-    html: renderTemplate(tpl.html_body, buildValues(src, "html"), "html"),
+    html: renderTemplate(src.ensureQr && src.qrUrl ? withQrBlock(tpl.html_body) : tpl.html_body, buildValues(src, "html"), "html"),
     text: renderTemplate(tpl.text_body, buildValues(src, "text"), "text"),
   };
 }

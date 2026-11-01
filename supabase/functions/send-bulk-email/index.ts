@@ -2,7 +2,7 @@
 // Recipients are resolved on the server in a stable order and sent in small chunks; the browser
 // calls again with next_offset until it is null (keeps each call well under the function time limit).
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { getCaller, resolveBanner, sendRegistrationEmail, serviceClient, siteUrl, sleep } from "../_shared/send.ts";
+import { getCaller, resolveBanner, sendRegistrationEmail, serviceClient, siteUrl, sleep, ticketQrUrl } from "../_shared/send.ts";
 import { renderEmail, SAMPLE_EXTRA, SAMPLE_REG } from "../_shared/merge.ts";
 import { sendMail } from "../_shared/mailer.ts";
 
@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const to = String(b.test_to).trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return json({ error: "Invalid test address" }, 400);
     let status = "sent", error: string | null = null;
-    try { const bn = await resolveBanner(db, event); await sendMail({ to, ...renderEmail(tpl, { reg: SAMPLE_REG, event, site: siteUrl(), bannerUrl: bn.url, bannerAlt: bn.alt, extra: SAMPLE_EXTRA }) }); }
+    try { const bn = await resolveBanner(db, event); const qrUrl = await ticketQrUrl(db, `sample-${event.id}`, SAMPLE_REG.ticket_number).catch(() => null); await sendMail({ to, ...renderEmail(tpl, { reg: SAMPLE_REG, event, site: siteUrl(), bannerUrl: bn.url, bannerAlt: bn.alt, qrUrl, extra: SAMPLE_EXTRA }) }); }
     catch (e) { status = "failed"; error = String((e as Error).message).slice(0, 500); }
     await db.from("email_logs").insert({ registration_id: null, recipient: to, kind: "test", status, error });
     return json({ status, error }, status === "sent" ? 200 : 502);

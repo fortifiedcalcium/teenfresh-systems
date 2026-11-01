@@ -11,6 +11,7 @@ import DataTable from "../../components/DataTable.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import Alert from "../../components/Alert.jsx";
 import { FORMATS, wrapSelection } from "../../lib/formatText.js";
+import { qrDataUrl } from "../../lib/qrImage.js";
 import { IconRefresh, IconSave, IconSend } from "../../components/NavIcons.jsx";
 
 /** HTML editor + merge-field chips + live preview. Used for both the saved template and the one-off bulk message. */
@@ -27,7 +28,7 @@ function FormatToolbar({ onFormat }) {
   );
 }
 
-function Editor({ draft, setDraft, event }) {
+function Editor({ draft, setDraft, event, ensureQr = false }) {
   const refs = { html_body: useRef(null), text_body: useRef(null), subject: useRef(null) };
   const [focus, setFocus] = useState("html_body");
 
@@ -56,7 +57,8 @@ function Editor({ draft, setDraft, event }) {
   const [banner, setBanner] = useState(null);
   useEffect(() => { fetchEventImages(event.id).then((imgs) => { const r = imgs.email_banner || imgs.banner; setBanner(r ? { url: imageUrl(r), alt: r.alt_text } : null); }); }, [event.id]);
   // the preview uses the same merge code as the Edge Functions, with a sample attendee and sample payment details
-  const preview = useMemo(() => renderEmail(draft, { reg: SAMPLE_REG, event, site: window.location.origin, bannerUrl: banner?.url ?? event.banner_url, bannerAlt: banner?.alt, extra: SAMPLE_EXTRA }), [draft, event, banner]);
+  const qrUrl = useMemo(() => { try { return qrDataUrl(SAMPLE_REG.ticket_number); } catch { return null; } }, []);
+  const preview = useMemo(() => renderEmail(draft, { reg: SAMPLE_REG, event, qrUrl, ensureQr, site: window.location.origin, bannerUrl: banner?.url ?? event.banner_url, bannerAlt: banner?.alt, extra: SAMPLE_EXTRA }), [draft, event, banner, qrUrl, ensureQr]);
   const [view, setView] = useState("html");
   return (
     <div className="grid gap-4 xl:grid-cols-2">
@@ -70,7 +72,7 @@ function Editor({ draft, setDraft, event }) {
         <div><label className="label" htmlFor="subj">Subject</label><input id="subj" ref={refs.subject} className="input" value={draft.subject} onFocus={() => setFocus("subject")} onChange={(e) => setDraft({ ...draft, subject: e.target.value })} /></div>
         <div><label className="label" htmlFor="html">HTML body</label><FormatToolbar onFormat={format} /><textarea id="html" onKeyDown={onKey} ref={refs.html_body} rows={14} className="input font-mono text-xs" value={draft.html_body} onFocus={() => setFocus("html_body")} onChange={(e) => setDraft({ ...draft, html_body: e.target.value })} /></div>
         <div><label className="label" htmlFor="txt">Plain-text body</label><textarea id="txt" ref={refs.text_body} rows={9} className="input font-mono text-xs" value={draft.text_body} onFocus={() => setFocus("text_body")} onChange={(e) => setDraft({ ...draft, text_body: e.target.value })} /></div>
-        <p className="text-xs text-ink-muted">Unknown fields are left blank, and every value is HTML-escaped before it is inserted.</p>
+        <p className="text-xs text-ink-muted">Unknown fields are left blank, and every value is HTML-escaped before it is inserted. {ensureQr && <>The ticket QR code is added automatically above the Terms; put <code>{"{{QR Code}}"}</code> where you want it to appear instead.</>}</p>
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -128,7 +130,7 @@ function TemplateTab({ event }) {
     <div className="space-y-4">
       <div><label htmlFor="tpl-kind" className="label">Email</label>
         <select id="tpl-kind" className="input max-w-lg" value={kind} onChange={(e) => setKind(e.target.value)}>{KINDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
-      <Editor draft={draft} setDraft={setDraft} event={event} />
+      <Editor draft={draft} setDraft={setDraft} event={event} ensureQr={kind === "confirmation"} />
       <div className="flex flex-wrap items-center gap-2 border-t border-link pt-4">
         <button className="btn-primary" onClick={save} disabled={!!busy}><IconSave />{busy === "save" ? "Saving…" : "Save template"}</button>
         <input type="email" className="input max-w-xs" aria-label="Send test to" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
