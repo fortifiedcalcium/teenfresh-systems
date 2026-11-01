@@ -1,4 +1,8 @@
 import { z } from "zod";
+
+// Zod 4 probes for `new Function` to speed up parsing; our Content Security Policy forbids eval, so turn that off
+// (otherwise the browser reports a script-src violation on every page that loads a form).
+z.config({ jitless: true });
 import { isUnusualReferenceLength, isValidReference, normalizeFacebook, normalizePhone, normalizeX, parseAmount } from "./payment.js";
 
 /* One zod schema per step of the registration form. The browser checks each step as you move forward;

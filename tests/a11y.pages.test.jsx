@@ -759,6 +759,8 @@ describe("admin pages", () => {
     await new Promise((r) => requestAnimationFrame(() => r())); // the editor re-selects the inserted text
     await user.click(screen.getByRole("button", { name: /^Underline/ }));
     expect(body.value).not.toContain("<u>");
+    await new Promise((r) => requestAnimationFrame(() => r()));
+    body.setSelectionRange(0, 0);
     await user.click(screen.getByRole("button", { name: /^Bold/ }));
     expect(body.value).toContain("<strong>bold text</strong>");
     body.focus();
