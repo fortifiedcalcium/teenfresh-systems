@@ -76,6 +76,7 @@ beforeAll(async () => {
   await db.exec(read("002_registration_payments.sql"));
   await db.exec(read("003_kits.sql"));
   await db.exec(read("004_change_log.sql"));
+  await db.exec(read("005_underpayment_top_up.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -301,10 +302,13 @@ describe("review_payment", () => {
     await asUser("kim");   // someone else cannot resubmit it
     await fails(db.query("select public.resubmit_payment($1,'x y',105,'9990001112223',$2)", [a.payment_id, rcpt("kim")]), "INVALID_PAYMENT");
     await asUser("jack");
-    await fails(db.query("select public.resubmit_payment($1,'Juan D.',50,'9990001112223',$2)", [a.payment_id, rcpt("jack")]), "AMOUNT_TOO_LOW");
-    await db.query("select public.resubmit_payment($1,'Juan D.',105,'9990001112223',$2)", [a.payment_id, rcpt("jack")]);
+    // only the missing 5 is needed (not the full fee again), and it is added to what was paid before
+    await fails(db.query("select public.resubmit_payment($1,'Juan D.',4.99,'9990001112223',$2)", [a.payment_id, rcpt("jack")]), "AMOUNT_TOO_LOW");
+    await db.query("select public.resubmit_payment($1,'Juan D.',5,'9990001112223',$2)", [a.payment_id, rcpt("jack")]);
     p = await row("select * from public.payments where id = $1", [a.payment_id]);
     expect(p).toMatchObject({ status: "pending", reference_number: "9990001112223", amount_due: null, review_note: null, resubmission_count: 1 });
+    expect(Number(p.amount_paid)).toBe(105);                    // 100 paid before + 5 now
+    expect(p.amount_history.map(Number)).toEqual([100]);        // the earlier total is kept for the admin
     expect(p.reference_history).toEqual([oldRef]);
     expect(p.receipt_history).toEqual([oldReceipt]);
     await review("admin", a.payment_id, "verified");
@@ -523,14 +527,28 @@ describe("kits: choosing a kit, a quantity, and paying quantity x price", () => 
     expect(b.status).toBe("confirmed"); expect(b.ticket_number).toMatch(/^T\d{3}-\d{6}$/);
   });
 
-  it("resubmitting an underpaid payment needs at least the forms' total", async () => {
+  it("an underpaid payment is topped up with only the missing amount; a rejected one needs a full payment again", async () => {
     const ev = await mkEvent({ fee: 0 });
     const kit = await mkKit(ev, { price: 100 });
+    // underpaid: 2 x 100 = 200 was sent, 5 is missing (the bank took a fee)
     await asUser("hank"); const a = await submit("hank", ev, { x: "res_k", kit, qty: 2, amount: 200 });
     await review("admin", a.payment_id, "underpaid", "Fee deducted", false, 5);
     await asUser("hank");
-    await fails(db.query("select public.resubmit_payment($1,'Juan D.',150,'7770001112223',$2)", [a.payment_id, rcpt("hank")]), "AMOUNT_TOO_LOW");   // 2 x 100 = 200
-    await db.query("select public.resubmit_payment($1,'Juan D.',205,'7770001112223',$2)", [a.payment_id, rcpt("hank")]);
+    await fails(db.query("select public.resubmit_payment($1,'Juan D.',4,'7770001112223',$2)", [a.payment_id, rcpt("hank")]), "AMOUNT_TOO_LOW");
+    await db.query("select public.resubmit_payment($1,'Juan D.',5,'7770001112223',$2)", [a.payment_id, rcpt("hank")]);
+    let p = await row("select * from public.payments where id = $1", [a.payment_id]);
+    expect(Number(p.amount_paid)).toBe(205); expect(p.status).toBe("pending");
+    await review("admin", a.payment_id, "verified");            // 205 covers the 200 the two kits cost
+
+    // rejected: the slot was released, so a full payment for the forms is needed again and replaces the old amount
+    const ev2 = await mkEvent({ fee: 0 }), kit2 = await mkKit(ev2, { price: 100 });
+    await asUser("ivy"); const b = await submit("ivy", ev2, { x: "res_r", kit: kit2, qty: 2, amount: 200 });
+    await review("admin", b.payment_id, "rejected", "Receipt unreadable");
+    await asUser("ivy");
+    await fails(db.query("select public.resubmit_payment($1,'Ivy R.',150,'7770001119999',$2)", [b.payment_id, rcpt("ivy")]), "AMOUNT_TOO_LOW");
+    await db.query("select public.resubmit_payment($1,'Ivy R.',200,'7770001119999',$2)", [b.payment_id, rcpt("ivy")]);
+    p = await row("select * from public.payments where id = $1", [b.payment_id]);
+    expect(Number(p.amount_paid)).toBe(200);                    // replaced, not added
   });
 
   it("events without kit options keep the single flat fee and refuse a quantity or kit", async () => {
@@ -649,5 +667,17 @@ describe("004 change log", () => {
     expect(roles.length).toBe(2);
     expect(roles[0].changes.role.new).toBe("admin");
     expect((await db.query("select count(*)::int as n from public.change_log where table_name = 'profiles' and action = 'insert'")).rows[0].n).toBe(0);
+  });
+});
+
+describe("005 underpayment email", () => {
+  it("the underpaid email tells people to send only the remaining amount (new and existing events)", async () => {
+    await asSuper();
+    const d = (await db.query("select * from public.default_email_template('payment_underpaid')")).rows[0];
+    for (const body of [d.html_body, d.text_body]) { expect(body).toContain("send only the remaining"); expect(body).toContain("{{Amount Due}}"); expect(body).not.toContain("resubmit your payment with the new receipt"); }
+    const ev = await mkEvent();
+    const t = (await db.query("select html_body, text_body from public.email_templates where event_id = $1 and kind = 'payment_underpaid'", [ev])).rows[0];
+    expect(t.html_body).toContain("send only the remaining");
+    expect(t.text_body).toContain("You do not need to pay the full amount again");
   });
 });

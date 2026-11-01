@@ -2,7 +2,21 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups.
+
+## [1.2.0] - 2026-11-01
+
+### Changed
+- **Underpayment now means "send only what is missing".** When an admin marks a payment underpaid (for example 95 of 100, with 5 due), the attendee is asked for just the missing amount, not the full amount again. The Resubmit dialog says how much they have paid and how much is missing, prefills the amount, and accepts anything from the missing amount upward.
+- The amount sent is **added** to what was paid before (95 + 5 = 100) before the admin verifies. A **rejected** payment still needs a full payment for the forms, and replaces the old amount as before.
+- The underpaid email says to send only the remaining amount (`PHP {{Amount Due}}`) and that the full amount does not need to be paid again. Existing events get the new wording automatically; a template you rewrote yourself is left alone.
+
+### Added
+- `payments.amount_history`: the earlier totals are kept (like the receipt and reference history), and the admin's payment review shows them as "Earlier totals".
+- Migration `supabase/migrations/005_underpayment_top_up.sql` (run it before deploying this version).
+
+### Fixed
+- An underpaid attendee who lacked only a few pesos had to pay the full fee again.
 
 ## [1.1.0] - 2026-11-01
 

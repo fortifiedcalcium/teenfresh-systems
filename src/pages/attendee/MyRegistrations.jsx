@@ -31,6 +31,11 @@ function ResubmitDialog({ reg, onClose, onDone }) {
   const toast = useToast();
   const pay = reg.payments;
   const payTotal = reg.payTotal || Number(reg.events?.registration_fee || 0);   // what the forms on this payment add up to
+  const underpaid = pay.status === "underpaid";
+  const paidSoFar = Number(pay.amount_paid || 0);
+  // Underpaid: only the missing amount is sent now (and added to what was paid before). Rejected: a full payment again.
+  const missing = underpaid ? Math.max(Number(pay.amount_due ?? payTotal - paidSoFar), 0) : 0;
+  const minAmount = underpaid ? Math.max(missing, 0.01) : payTotal;
   const [file, setFile] = useState(null);
   const [receiptError, setReceiptError] = useState("");
   const [serverError, setServerError] = useState("");
@@ -38,8 +43,8 @@ function ResubmitDialog({ reg, onClose, onDone }) {
   const [focusSignal, bumpFocus] = useErrorFocus();
   const { register, handleSubmit, formState: { errors, submitCount } } = useForm({
     shouldFocusError: false,
-    defaultValues: { reuse_payment_id: "", sender_name: pay.sender_name || "", amount_paid: "", reference_number: "", notes: "" },
-    resolver: zodResolver(makeStep3Schema(payTotal)),
+    defaultValues: { reuse_payment_id: "", sender_name: pay.sender_name || "", amount_paid: underpaid ? missing.toFixed(2) : "", reference_number: "", notes: "" },
+    resolver: zodResolver(makeStep3Schema(minAmount)),
   });
 
   const submit = handleSubmit(async (v) => {
@@ -61,12 +66,14 @@ function ResubmitDialog({ reg, onClose, onDone }) {
     <Modal title={pay.status === "underpaid" ? "Send the missing amount" : "Resubmit your payment"} onClose={onClose} wide>
       <form onSubmit={(e) => e.preventDefault()} className="space-y-4" noValidate>
         {pay.status === "underpaid"
-          ? <Alert tone="warn">Remaining amount due: <strong>{peso(pay.amount_due)}</strong>. {pay.review_note} Send it by GCash, then enter the <strong>total you have paid</strong> (including the first payment) and attach the new receipt.</Alert>
+          ? <Alert tone="warn">You have paid {peso(paidSoFar)} of {peso(payTotal)}. <strong>Send only the missing {peso(missing)}</strong> by GCash. You do not need to pay the full amount again. {pay.review_note} Then enter the amount you just sent and the reference number of that transfer, and attach its receipt.</Alert>
           : <Alert tone="bad">Your payment was not verified. Reason: <strong>{pay.review_note}</strong>. Attach a correct receipt and enter the details of the payment.</Alert>}
-        <p className="text-sm text-ink-muted">The total must be at least {peso(payTotal)}, what the form{reg.formsOnPayment === 1 ? "" : "s"} on this payment add{reg.formsOnPayment === 1 ? "s" : ""} up to.</p>
-        <ErrorSummary errors={{ ...errors, ...(receiptError ? { receipt: { message: receiptError } } : {}) }} labels={{ sender_name: "Name of sender", amount_paid: "Total amount paid", reference_number: "Reference number", receipt: "Payment receipt" }} submitCount={submitCount} focusSignal={focusSignal} fieldIds={{ receipt: "resub-receipt" }} />
+        <p className="text-sm text-ink-muted">{underpaid
+          ? <>Send at least {peso(missing)}. It is added to the {peso(paidSoFar)} you already paid, so your total becomes at least {peso(paidSoFar + missing)}.</>
+          : <>The total must be at least {peso(payTotal)}, what the form{reg.formsOnPayment === 1 ? "" : "s"} on this payment add{reg.formsOnPayment === 1 ? "s" : ""} up to.</>}</p>
+        <ErrorSummary errors={{ ...errors, ...(receiptError ? { receipt: { message: receiptError } } : {}) }} labels={{ sender_name: "Name of sender", amount_paid: underpaid ? "Amount you are sending now" : "Total amount paid", reference_number: "Reference number", receipt: "Payment receipt" }} submitCount={submitCount} focusSignal={focusSignal} fieldIds={{ receipt: "resub-receipt" }} />
         <Field id="resub-sender" label="Name of Sender" required error={errors.sender_name?.message}><input className="input" {...register("sender_name")} /></Field>
-        <Field id="resub-amount" label="Total Amount Paid" required error={errors.amount_paid?.message}><input className="input" inputMode="decimal" {...register("amount_paid")} /></Field>
+        <Field id="resub-amount" label={underpaid ? "Amount You Are Sending Now" : "Total Amount Paid"} required hint={underpaid ? `At least ${peso(missing)}` : undefined} error={errors.amount_paid?.message}><input className="input" inputMode="decimal" {...register("amount_paid")} /></Field>
         <Field id="resub-ref" label="Reference Number (of the new transfer)" required hint="Digits only" error={errors.reference_number?.message}><input className="input" inputMode="numeric" autoComplete="off" {...register("reference_number")} /></Field>
         <FileUpload id="resub-receipt" file={file} onChange={(f) => { setFile(f); setReceiptError(""); }} error={receiptError} />
         {serverError && <Alert tone="bad">{serverError}</Alert>}

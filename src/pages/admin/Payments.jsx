@@ -122,7 +122,7 @@ function ReviewDialog({ payment, onClose, onChanged, inline = false }) {
           <h3 id="det-h" className="text-lg">Details</h3>
           <dl className="space-y-1 text-sm">
             {[["Status", <Badge key="s" tone={TONE[payment.status]}>{LABEL[payment.status]}</Badge>], ["Sender", payment.sender_name], ["Submitted by", payment.sender_profile ? `${payment.sender_profile.full_name || ""} ${payment.sender_profile.email}` : "—"],
-              ["Amount paid", peso(paid)], [`Expected (${forms.length} form${forms.length === 1 ? "" : "s"})`, peso(expected)], ["Reference", <span key="r" className="font-mono">{payment.reference_number}</span>], ["Submitted", fmtDateTime(payment.created_at)],
+              ["Amount paid", peso(paid)], ...(payment.amount_history?.length ? [["Earlier totals", payment.amount_history.map((a) => peso(a)).join(", ") + " (each resubmission adds to the total)"]] : []), [`Expected (${forms.length} form${forms.length === 1 ? "" : "s"})`, peso(expected)], ["Reference", <span key="r" className="font-mono">{payment.reference_number}</span>], ["Submitted", fmtDateTime(payment.created_at)],
               ...(payment.amount_due ? [["Amount due", peso(payment.amount_due)]] : []), ...(payment.review_note ? [["Note", payment.review_note]] : []), ...(payment.resubmission_count ? [["Resubmitted", `${payment.resubmission_count} time(s)`]] : [])]
               .map(([k, v]) => <div key={k} className="flex flex-wrap justify-between gap-2"><dt className="font-semibold">{k}</dt><dd className="text-right">{v}</dd></div>)}
           </dl>

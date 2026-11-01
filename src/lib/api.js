@@ -51,7 +51,7 @@ const ERRORS = {
   INVALID_NOTES: "Notes can be 500 characters at most.",
   INVALID_SENDER: "Enter the name of the GCash sender.",
   INVALID_AMOUNT: "That amount is not valid.",
-  AMOUNT_TOO_LOW: "The amount paid is lower than the registration fee. Transaction fees are not covered.",
+  AMOUNT_TOO_LOW: "The amount is lower than what is required. Transaction fees are not covered.",
   INVALID_REFERENCE: "The reference number must be 8 to 20 digits.",
   DUPLICATE_REFERENCE: "That reference number was already used. If you paid once for several forms, choose “Use the payment details from one of my earlier forms”.",
   INVALID_RECEIPT: "The receipt upload was not accepted. Attach it again and retry.",

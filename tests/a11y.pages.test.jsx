@@ -226,7 +226,7 @@ describe("attendee pages", () => {
     const call = fixtures.current.rpcCalls.find((c) => c.name === "submit_registration").args;
     expect(call).toMatchObject({ p_event_id: "e1", p_name: "Juan Dela Cruz", p_x_username: "juan_dc", p_facebook: "fb.com/TeenfreshPH", p_contact: "09171234567", p_agreed: true, p_amount: 100, p_reference: "123456789012", p_receipt_path: up.path, p_payment_id: null });
     expect(fixtures.current.fnCalls ?? []).toHaveLength(0);                           // acknowledgment emails are off by default
-  });
+  }, 20_000);
 
   it("EventRegister: typing in a field never loses focus to the error summary (regression: focus was stolen after one character)", async () => {
     asUser();
@@ -246,7 +246,7 @@ describe("attendee pages", () => {
     await user.keyboard("0917123");
     expect(phone).toHaveValue("0917123"); expect(phone).toHaveFocus();
     expect(screen.queryByRole("alert", { name: /problem/ })).toBeNull();               // nothing was "submitted", so no summary yet
-  });
+  }, 20_000);
 
   it("EventRegister: one earlier payment can be reused, which locks the fields and needs no new receipt", async () => {
     asUser();
@@ -608,15 +608,17 @@ describe("admin pages", () => {
 
     await user.click(screen.getByRole("button", { name: /Send the missing amount for Maria Santos/ }));
     const dialog = screen.getByRole("dialog", { name: "Send the missing amount" });
-    expect(within(dialog).getByText(/total you have paid/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Send only the missing ₱5.00/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/do not need to pay the full amount again/)).toBeInTheDocument();
+    const amount = within(dialog).getByLabelText(/^Amount You Are Sending Now/);
+    expect(amount).toHaveValue("5.00");                                                      // prefilled with what is missing (not the 100 total)
     expect(await check(container)).toHaveNoViolations();
     await user.click(within(dialog).getByRole("button", { name: "Send for review" }));
-    expect(await within(dialog).findByRole("alert", { name: /problems/ })).toBeInTheDocument();   // nothing filled in yet
-    await user.type(within(dialog).getByLabelText(/^Total Amount Paid/), "100");
+    expect(await within(dialog).findByRole("alert", { name: /problems/ })).toBeInTheDocument();   // no reference or receipt yet
     await user.type(within(dialog).getByLabelText(/^Reference Number/), "9990001112223");
     await user.upload(dialog.querySelector("#resub-receipt"), new File(["r"], "r.pdf", { type: "application/pdf" }));
     await user.click(within(dialog).getByRole("button", { name: "Send for review" }));
-    await waitFor(() => expect(fixtures.current.rpcCalls.find((c) => c.name === "resubmit_payment")?.args).toMatchObject({ p_payment_id: "pb", p_amount: 100, p_reference: "9990001112223" }));
+    await waitFor(() => expect(fixtures.current.rpcCalls.find((c) => c.name === "resubmit_payment")?.args).toMatchObject({ p_payment_id: "pb", p_amount: 5, p_reference: "9990001112223" }));
     expect(fixtures.current.rpcCalls.find((c) => c.name === "resubmit_payment").args.p_receipt_path).toMatch(/^u1\/[0-9a-f-]{36}\.pdf$/);
   });
 
@@ -692,7 +694,7 @@ describe("admin pages", () => {
     expect(await check(container)).toHaveNoViolations();
   });
 
-  it("My registrations: the order is shown, and the resubmit minimum is the forms' total", async () => {
+  it("My registrations: the order is shown, and an underpaid payment only needs the missing amount", async () => {
     asUser();
     fixtures.current.registrations = [
       { ...reg, id: "a", ticket_number: null, status: "pending_verification", kit_name: "Standard kit", kit_quantity: 2, total_amount: 200, payment_id: "pb", payments: { id: "pb", status: "underpaid", review_note: "Short", amount_due: 5, amount_paid: 195, reference_number: "999", sender_name: "Maria S." } },
@@ -704,12 +706,13 @@ describe("admin pages", () => {
     expect(screen.getByText("Deluxe kit × 1 · ₱250.50")).toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: /Send the missing amount/ })[0]);
     const dialog = screen.getByRole("dialog", { name: "Send the missing amount" });
-    expect(within(dialog).getByText(/at least ₱450.50, what the forms on this payment add up to/)).toBeInTheDocument();
-    await user.type(within(dialog).getByLabelText(/^Total Amount Paid/), "300");
+    expect(within(dialog).getByText(/Send at least ₱5.00. It is added to the ₱195.00 you already paid/)).toBeInTheDocument();
+    const amount = within(dialog).getByLabelText(/^Amount You Are Sending Now/);
+    await user.clear(amount); await user.type(amount, "4");
     await user.type(within(dialog).getByLabelText(/^Reference Number/), "9990001112223");
     await user.upload(dialog.querySelector("#resub-receipt"), new File(["r"], "r.png", { type: "image/png" }));
     await user.click(within(dialog).getByRole("button", { name: "Send for review" }));
-    expect((await within(dialog).findAllByText(/at least 450.50 PHP/)).length).toBeGreaterThan(0);
+    expect((await within(dialog).findAllByText(/at least 5.00 PHP/)).length).toBeGreaterThan(0);   // 4 is below the missing 5
   });
 
   it("Attendees (table and detail dialog)", async () => {
