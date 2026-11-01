@@ -7,7 +7,7 @@ import TermsBox from "../../components/TermsBox.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { IconSend } from "../../components/NavIcons.jsx";
+import { IconSend, IconTicket } from "../../components/NavIcons.jsx";
 
 export default function MyTicket() {
   const { id } = useParams();
@@ -38,7 +38,7 @@ export default function MyTicket() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      <h1 className="text-2xl">My ticket</h1>
+      <h1 className="flex items-center gap-2 text-2xl"><IconTicket />My ticket</h1>
       <TicketCard registration={reg} event={event} />
       {reg.status === "confirmed" && reg.ticket_number && (
         <div className="card space-y-3 p-4 text-sm">

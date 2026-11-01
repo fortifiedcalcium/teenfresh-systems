@@ -6,9 +6,10 @@ import { fmtDateTime } from "../../lib/availability.js";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import Badge from "../../components/Badge.jsx";
 import { peso } from "../../lib/payment.js";
+import { IconCheckCircle, IconClock, IconDashboard, IconInbox, IconPercent, IconTicket, IconUserCheck, IconUsers, IconWallet, IconXCircle } from "../../components/NavIcons.jsx";
 
-const Stat = ({ label, value, sub, tone = "text-ink" }) => (
-  <div className="card p-4"><dt className="text-xs font-bold uppercase tracking-wide text-ink-muted">{label}</dt><dd className={`mt-1 text-3xl font-extrabold ${tone}`}>{value}</dd>{sub && <dd className="text-xs text-ink-muted">{sub}</dd>}</div>
+const Stat = ({ label, value, sub, icon: Icon, tone = "text-ink" }) => (
+  <div className="card p-4"><dt className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-ink-muted">{Icon && <Icon />}{label}</dt><dd className={`mt-1 text-3xl font-extrabold ${tone}`}>{value}</dd>{sub && <dd className="text-xs text-ink-muted">{sub}</dd>}</div>
 );
 
 /** Bar chart: bars are `link` or `brand-blue` + a 2px ink outline (3:1 non-text contrast), every bar prints its value,
@@ -92,19 +93,19 @@ export default function Dashboard() {
   if (!m) return <Loading label="Loading dashboard…" className="p-12" />;
   return (
     <div className="space-y-6">
-      <div><h1 className="text-2xl">Dashboard</h1><p className="text-ink-muted">{event.title}</p></div>
+      <div><h1 className="flex items-center gap-2 text-2xl"><IconDashboard />Dashboard</h1><p className="text-ink-muted">{event.title}</p></div>
       <section aria-labelledby="stats-h">
         <h2 id="stats-h" className="sr-only">Key numbers</h2>
         <dl className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <Stat label="Capacity" value={event.capacity} />
-          <Stat label="Slots used" value={m.registered} sub={`${Math.round((m.registered / event.capacity) * 100)}% full (pending + confirmed)`} />
-          <Stat label="Pending verification" value={m.pending} tone={m.pending ? "text-warning-ink" : "text-ink"} sub="payments to review" />
-          <Stat label="Confirmed" value={m.confirmed} tone="text-success" />
-          <Stat label="Rejected" value={m.rejected} tone={m.rejected ? "text-danger" : "text-ink"} />
-          <Stat label="Total verified" value={peso(verifiedAmount)} sub="payments marked verified" />
-          <Stat label="Checked in" value={m.checked} tone="text-success" />
-          <Stat label="Slots remaining" value={m.remaining} tone={m.remaining === 0 ? "text-danger" : "text-ink"} />
-          <Stat label="Check-in rate" value={`${m.rate}%`} sub="of confirmed" />
+          <Stat icon={IconUsers} label="Capacity" value={event.capacity} />
+          <Stat icon={IconTicket} label="Slots used" value={m.registered} sub={`${Math.round((m.registered / event.capacity) * 100)}% full (pending + confirmed)`} />
+          <Stat icon={IconClock} label="Pending verification" value={m.pending} tone={m.pending ? "text-warning-ink" : "text-ink"} sub="payments to review" />
+          <Stat icon={IconCheckCircle} label="Confirmed" value={m.confirmed} tone="text-success" />
+          <Stat icon={IconXCircle} label="Rejected" value={m.rejected} tone={m.rejected ? "text-danger" : "text-ink"} />
+          <Stat icon={IconWallet} label="Total verified" value={peso(verifiedAmount)} sub="payments marked verified" />
+          <Stat icon={IconUserCheck} label="Checked in" value={m.checked} tone="text-success" />
+          <Stat icon={IconInbox} label="Slots remaining" value={m.remaining} tone={m.remaining === 0 ? "text-danger" : "text-ink"} />
+          <Stat icon={IconPercent} label="Check-in rate" value={`${m.rate}%`} sub="of confirmed" />
         </dl>
       </section>
       <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">

@@ -35,7 +35,7 @@ export default function Users() {
   ];
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold">Admin users</h1>
+      <h1 className="flex items-center gap-2 text-2xl font-extrabold"><IconShield />Admin users</h1>
       <div className="flex flex-wrap gap-2">
         <input className="input max-w-xs" placeholder="Search name or email" aria-label="Search users" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input max-w-[10rem]" aria-label="Role filter" value={role} onChange={(e) => setRole(e.target.value)}><option value="">All roles</option><option value="admin">Admins</option><option value="attendee">Attendees</option></select>

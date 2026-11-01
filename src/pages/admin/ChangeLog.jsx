@@ -4,6 +4,7 @@ import { useToast } from "../../components/Toast.jsx";
 import DataTable from "../../components/DataTable.jsx";
 import Alert from "../../components/Alert.jsx";
 import { fmtDateTime } from "../../lib/availability.js";
+import { IconHistory } from "../../components/NavIcons.jsx";
 
 const AREAS = { events: "Event", event_kits: "Kit", email_templates: "Email template", registrations: "Registration", payments: "Payment", profiles: "User role" };
 const VERBS = { insert: "Created", update: "Updated", delete: "Deleted" };
@@ -46,7 +47,7 @@ export default function ChangeLog() {
   ];
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold">Change log</h1>
+      <h1 className="flex items-center gap-2 text-2xl font-extrabold"><IconHistory />Change log</h1>
       <p className="text-sm text-ink-muted">Who changed what, newest first (the latest 1,000 changes). Contact details and payment references are recorded as “changed” without their values. Entries cannot be edited or deleted.</p>
       {failed && <Alert tone="bad"><strong>The change log is not set up yet.</strong> Run <code>004_change_log.sql</code> in the Supabase SQL Editor for this project, then reload.</Alert>}
       <div className="flex flex-wrap gap-2">

@@ -12,7 +12,7 @@ import Modal from "../../components/Modal.jsx";
 import Field from "../../components/Field.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import { Empty } from "../../components/Spinner.jsx";
-import { IconClose, IconDownload, IconEye, IconPencil, IconSave, IconSend, IconTrash, IconUndo, IconUserCheck, IconUserX, IconXCircle } from "../../components/NavIcons.jsx";
+import { IconClose, IconDownload, IconEye, IconPencil, IconSave, IconSend, IconTrash, IconUndo, IconUserCheck, IconUserX, IconUsers, IconXCircle } from "../../components/NavIcons.jsx";
 
 const EMAIL_BADGE = { sent: "badge-ok", failed: "badge-bad", none: "badge-neutral" };
 const STATUS_BADGE = { pending_verification: ["badge-warn", "pending verification"], confirmed: ["badge-ok", "confirmed"], rejected: ["badge-bad", "rejected"], cancelled: ["badge-bad", "cancelled"] };
@@ -107,7 +107,7 @@ export default function Attendees() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl">Attendees</h1>
+        <h1 className="flex items-center gap-2 text-2xl"><IconUsers />Attendees</h1>
         <div className="flex flex-wrap gap-2"><button className="btn-secondary" onClick={resendFailed} disabled={busy || !rows}><IconSend />Resend all failed</button><button className="btn-primary" onClick={exportCsv} disabled={!shown.length}><IconDownload />Export CSV</button></div>
       </div>
       <div className="flex flex-wrap gap-2">

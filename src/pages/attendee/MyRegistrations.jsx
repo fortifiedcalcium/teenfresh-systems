@@ -101,7 +101,7 @@ export default function MyRegistrations() {
   if (rows === null) return <Loading label="Loading your registrations…" className="p-12" />;
   return (
     <div>
-      <h1 className="mb-4 text-2xl">My registrations</h1>
+      <h1 className="mb-4 flex items-center gap-2 text-2xl"><IconTicket />My registrations</h1>
       {error && <Alert tone="bad" className="mb-3">{error}</Alert>}
       {rows.length === 0 ? <Empty>You haven&apos;t registered for any event yet. <Link to="/">Browse events</Link></Empty> : (
         <ul className="space-y-3">

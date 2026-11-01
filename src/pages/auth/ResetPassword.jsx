@@ -7,7 +7,7 @@ import PasswordInput from "../../components/PasswordInput.jsx";
 import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import AuthShell from "./AuthShell.jsx";
-import { IconKey } from "../../components/NavIcons.jsx";
+import { IconAlert, IconKey } from "../../components/NavIcons.jsx";
 
 export default function ResetPassword() {
   const { session, loading, updatePassword } = useAuth();
@@ -24,11 +24,11 @@ export default function ResetPassword() {
   };
 
   // The reset link signs the user in (recovery session); without one there is nothing to reset.
-  if (loading) return <AuthShell title="Reset password"><Loading /></AuthShell>;
-  if (!session) return <AuthShell title="Link expired"><p className="text-center">This reset link is invalid or has expired. <Link to="/forgot-password">Request a new one</Link>.</p></AuthShell>;
+  if (loading) return <AuthShell icon={IconKey} title="Reset password"><Loading /></AuthShell>;
+  if (!session) return <AuthShell icon={IconAlert} title="Link expired"><p className="text-center">This reset link is invalid or has expired. <Link to="/forgot-password">Request a new one</Link>.</p></AuthShell>;
 
   return (
-    <AuthShell title="Choose a new password">
+    <AuthShell icon={IconKey} title="Choose a new password">
       <form onSubmit={handleSubmit(onSubmit, bumpFocus)} className="space-y-4" noValidate>
         <ErrorSummary errors={errors} submitCount={submitCount} focusSignal={focusSignal} extra={error} labels={{ password: "New password", confirm: "Confirm new password" }} />
         <div>

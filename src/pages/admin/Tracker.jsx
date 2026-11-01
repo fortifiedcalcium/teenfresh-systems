@@ -6,7 +6,7 @@ import { downloadCsv } from "../../lib/csv.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import DataTable from "../../components/DataTable.jsx";
 import { Empty } from "../../components/Spinner.jsx";
-import { IconDownload } from "../../components/NavIcons.jsx";
+import { IconChecklist, IconDownload, IconHistory } from "../../components/NavIcons.jsx";
 
 const RESULT_BADGE = { success: "badge-ok", duplicate: "badge-warn", invalid: "badge-bad" };
 
@@ -63,7 +63,7 @@ export default function Tracker() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl">Attendance</h1><span className="badge badge-ok">Live updates</span></div>
+        <div className="flex flex-wrap items-center gap-2"><h1 className="flex items-center gap-2 text-2xl"><IconChecklist />Attendance</h1><span className="badge badge-ok">Live updates</span></div>
         {tab === "list" && <button className="btn-primary" onClick={exportCsv} disabled={!shown.length}><IconDownload />Export CSV</button>}
       </div>
       <div className="grid grid-cols-3 gap-3 text-center">
@@ -72,7 +72,7 @@ export default function Tracker() {
         <div className="card p-3"><p className="text-2xl font-extrabold text-warning-ink">{counts.out}</p><p className="text-xs text-ink-muted">Not yet arrived</p></div>
       </div>
       <div className="flex gap-2" role="tablist">
-        {[["list", "Attendance list"], ["log", "Scan audit log"]].map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "btn-primary" : "btn-secondary"} onClick={() => setTab(k)}>{l}</button>)}
+        {[["list", "Attendance list", IconChecklist], ["log", "Scan audit log", IconHistory]].map(([k, l, I]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "btn-primary" : "btn-secondary"} onClick={() => setTab(k)}><I />{l}</button>)}
       </div>
       {tab === "list" ? (
         <>

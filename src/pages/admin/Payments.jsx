@@ -14,7 +14,7 @@ import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import { Lightbox } from "../../components/EventImage.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
-import { IconAlert, IconCheckCircle, IconDownload, IconEye, IconSend, IconXCircle } from "../../components/NavIcons.jsx";
+import { IconAlert, IconCheckCircle, IconDownload, IconEye, IconSend, IconWallet, IconXCircle } from "../../components/NavIcons.jsx";
 
 const TONE = { pending: "warn", verified: "ok", underpaid: "warn", rejected: "bad" };
 const LABEL = { pending: "Pending", verified: "Verified", underpaid: "Underpaid", rejected: "Rejected" };
@@ -190,7 +190,7 @@ export default function Payments() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl">Payments</h1>
+        <h1 className="flex items-center gap-2 text-2xl"><IconWallet />Payments</h1>
         <button className="btn-secondary" disabled={!shown.length} onClick={() => downloadCsv(`payments-${event.ticket_prefix}.csv`, ["Sender", "Email", "Amount paid", "Reference", "Status", "Forms", "Submitted"], shown.map((p) => [p.sender_name, p.sender_profile?.email, p.amount_paid, p.reference_number, p.status, (p.registrations || []).map((r) => `${r.name} (@${r.x_username})`).join("; "), fmtDateTime(p.created_at)]))}><IconDownload />Export CSV</button>
       </div>
       <div className="flex flex-wrap gap-2">

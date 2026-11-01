@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { takeDestination } from "./Login.jsx";
-import { IconLogIn } from "../../components/NavIcons.jsx";
+import { IconAlert, IconLogIn } from "../../components/NavIcons.jsx";
 
 /** Landing page for the email-verification link and the Google OAuth redirect.
  *  The Supabase client exchanges the ?code= for a session by itself; we just wait for it. */
@@ -21,7 +21,7 @@ export default function Callback() {
     <main id="main-content" className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
       {urlError || timedOut ? (
         <>
-          <h1 className="text-xl">Sign in did not complete</h1>
+          <h1 className="flex items-center justify-center gap-2 text-xl"><IconAlert />Sign in did not complete</h1>
           <p role="alert" className="max-w-md text-danger">{urlError || "The sign-in took too long. Please try again."}</p>
           <Link className="btn-primary" to="/login"><IconLogIn />Back to sign in</Link>
         </>

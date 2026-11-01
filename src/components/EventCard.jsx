@@ -5,7 +5,7 @@ import Badge from "./Badge.jsx";
 import EventImage from "./EventImage.jsx";
 import { eventStatus, fmtDate, fmtDeadline, fmtTimeRange, STATUS_TONE } from "../lib/availability.js";
 import { peso, priceRange } from "../lib/payment.js";
-import { IconTicket } from "./NavIcons.jsx";
+import { IconCalendar, IconClock, IconLock, IconMapPin, IconPackage, IconTicket, IconWallet } from "./NavIcons.jsx";
 
 export default function EventCard({ event, registered, bannerImage, onChanged, kits = [] }) {
   const st = eventStatus(event, registered);
@@ -22,11 +22,11 @@ export default function EventCard({ event, registered, bannerImage, onChanged, k
         </div>
         {event.subtitle && <p className="-mt-1 line-clamp-2 text-sm text-ink-muted" title={event.subtitle}>{event.subtitle}</p>}
         <dl className="space-y-1 text-sm text-ink-muted">
-          <div className="flex gap-2"><dt className="font-semibold">Date:</dt><dd>{fmtDate(event.event_date)}</dd></div>
-          <div className="flex gap-2"><dt className="font-semibold">Time:</dt><dd>{fmtTimeRange(event.event_date, event.ends_at)}</dd></div>
-          {event.venue && <div className="flex gap-2"><dt className="font-semibold">Venue:</dt><dd className="line-clamp-2" title={event.venue}>{event.venue}</dd></div>}
-          <div className="flex gap-2"><dt className="font-semibold">{kits.length ? "Kits:" : "Fee:"}</dt><dd>{kits.length ? `${priceRange(kits)} each${event.fee_note ? ` (${event.fee_note})` : ""}` : fee > 0 ? `${peso(fee)}${event.fee_note ? ` (${event.fee_note})` : ""}` : event.price_info || "Free"}</dd></div>
-          {event.registration_deadline && <div className="flex gap-2"><dt className="font-semibold">Registration closes:</dt><dd>{fmtDeadline(event.registration_deadline)}</dd></div>}
+          <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconCalendar />Date:</dt><dd>{fmtDate(event.event_date)}</dd></div>
+          <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconClock />Time:</dt><dd>{fmtTimeRange(event.event_date, event.ends_at)}</dd></div>
+          {event.venue && <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconMapPin />Venue:</dt><dd className="line-clamp-2" title={event.venue}>{event.venue}</dd></div>}
+          <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold">{kits.length ? <IconPackage /> : <IconWallet />}{kits.length ? "Kits:" : "Fee:"}</dt><dd>{kits.length ? `${priceRange(kits)} each${event.fee_note ? ` (${event.fee_note})` : ""}` : fee > 0 ? `${peso(fee)}${event.fee_note ? ` (${event.fee_note})` : ""}` : event.price_info || "Free"}</dd></div>
+          {event.registration_deadline && <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconLock />Registration closes:</dt><dd>{fmtDeadline(event.registration_deadline)}</dd></div>}
         </dl>
         <div className="mt-auto space-y-2">
           <AvailabilityBar registered={registered} capacity={event.capacity} label={`Slots taken for ${event.title}`} />

@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import { SkipLink } from "../../a11y.jsx";
 import logo from "../../logo/teenfresh-logo.png";
 
-export default function AuthShell({ title, subtitle, children }) {
+export default function AuthShell({ title, subtitle, icon: Icon, children }) {
   return (
     <>
       <SkipLink />
     <div className="flex min-h-screen items-center justify-center bg-brand-blush px-4 py-10">
       <main id="main-content" tabIndex={-1} className="card w-full max-w-md p-6">
         <Link to="/" className="mb-4 flex min-h-target items-center justify-center" aria-label="Teenfresh Events, home"><img src={logo} alt="" width="235" height="50" className="h-[50px] w-auto" /></Link>
-        <h1 className="text-center text-xl font-bold">{title}</h1>
+        <h1 className="flex items-center justify-center gap-2 text-center text-xl font-bold">{Icon && <Icon />}{title}</h1>
         {subtitle && <p className="mt-1 text-center text-sm text-ink-muted">{subtitle}</p>}
         <div className="mt-5">{children}</div>
       </main>

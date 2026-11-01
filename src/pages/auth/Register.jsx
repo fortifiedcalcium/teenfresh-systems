@@ -7,7 +7,7 @@ import PasswordInput from "../../components/PasswordInput.jsx";
 import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import AuthShell, { GoogleButton } from "./AuthShell.jsx";
 import { rememberDestination } from "./Login.jsx";
-import { IconUserPlus } from "../../components/NavIcons.jsx";
+import { IconMail, IconUserPlus } from "../../components/NavIcons.jsx";
 
 export default function Register() {
   const { signUp, signInWithGoogle } = useAuth();
@@ -29,13 +29,13 @@ export default function Register() {
 
   if (done) {
     return (
-      <AuthShell title="Check your email">
+      <AuthShell icon={IconMail} title="Check your email">
         <p role="status" className="text-center">We sent a verification link to <strong>{getValues("email")}</strong>. Open it to activate your account, then <Link to="/login" state={{ from }}>sign in</Link>.</p>
       </AuthShell>
     );
   }
   return (
-    <AuthShell title="Create an account" subtitle="One account lets you register and keep your tickets.">
+    <AuthShell icon={IconUserPlus} title="Create an account" subtitle="One account lets you register and keep your tickets.">
       <form onSubmit={handleSubmit(onSubmit, bumpFocus)} className="space-y-4" noValidate>
         <ErrorSummary errors={errors} submitCount={submitCount} focusSignal={focusSignal} extra={error} labels={{ fullName: "Full name", email: "Email", password: "Password", confirm: "Confirm password" }} />
         <Field id="fullName" label="Full name" required error={errors.fullName?.message}>

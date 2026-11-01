@@ -4,6 +4,7 @@ import EventCard from "../../components/EventCard.jsx";
 import Alert from "../../components/Alert.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { useAnnounce } from "../../a11y.jsx";
+import { IconCalendar } from "../../components/NavIcons.jsx";
 
 export default function Home() {
   const [events, setEvents] = useState(null);
@@ -51,7 +52,7 @@ export default function Home() {
 
   return (
     <div>
-      <h1 className="mb-1 text-3xl">Upcoming events</h1>
+      <h1 className="mb-1 flex items-center gap-2 text-3xl"><IconCalendar />Upcoming events</h1>
       <p className="mb-6 text-ink-muted">Pick an event and reserve your slot.</p>
       {error && <Alert tone="bad" className="mb-4">{error}</Alert>}
       {events === null ? (

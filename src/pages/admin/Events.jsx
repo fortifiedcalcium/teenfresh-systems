@@ -12,7 +12,7 @@ import KitsTab from "./KitsTab.jsx";
 import { Empty } from "../../components/Spinner.jsx";
 import { fmtDateTime } from "../../lib/availability.js";
 import { peso } from "../../lib/payment.js";
-import { IconClose, IconLock, IconPencil, IconPlus, IconSave, IconTrash, IconUnlock } from "../../components/NavIcons.jsx";
+import { IconCalendar, IconClose, IconImage, IconInfo, IconLock, IconPackage, IconPencil, IconPlus, IconSave, IconTrash, IconUnlock } from "../../components/NavIcons.jsx";
 
 // <input type="datetime-local"> works in local time; the database stores an absolute instant.
 const toLocalInput = (iso) => { if (!iso) return ""; const d = new Date(iso); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
@@ -107,7 +107,7 @@ export default function Events() {
   const current = form?.id ? events.find((e) => e.id === form.id) : null;
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between"><h1 className="text-2xl">Events</h1><button className="btn-primary" onClick={() => open(null)}><IconPlus />New event</button></div>
+      <div className="flex items-center justify-between"><h1 className="flex items-center gap-2 text-2xl"><IconCalendar />Events</h1><button className="btn-primary" onClick={() => open(null)}><IconPlus />New event</button></div>
       {events.length === 0 ? <Empty>No events yet.</Empty> : (
         <ul className="space-y-3">
           {events.map((e) => (
@@ -131,8 +131,8 @@ export default function Events() {
       {form && (
         <Modal title={form.id ? "Edit event" : "New event"} onClose={() => setForm(null)} wide>
           <div role="tablist" aria-label="Event sections" className="mb-4 flex gap-2">
-            {[["details", "Details"], ["kits", "Kits"], ["media", "Media"]].map(([k, l]) => (
-              <button key={k} role="tab" id={`tab-${k}`} aria-selected={tab === k} aria-controls={`panel-${k}`} className={tab === k ? "btn-primary" : "btn-secondary"} disabled={k !== "details" && !form.id} onClick={() => setTab(k)}>{l}</button>
+            {[["details", "Details", IconInfo], ["kits", "Kits", IconPackage], ["media", "Media", IconImage]].map(([k, l, I]) => (
+              <button key={k} role="tab" id={`tab-${k}`} aria-selected={tab === k} aria-controls={`panel-${k}`} className={tab === k ? "btn-primary" : "btn-secondary"} disabled={k !== "details" && !form.id} onClick={() => setTab(k)}><I />{l}</button>
             ))}
             {!form.id && <p className="self-center text-sm text-ink-muted">Save the event first to add kits and images.</p>}
           </div>

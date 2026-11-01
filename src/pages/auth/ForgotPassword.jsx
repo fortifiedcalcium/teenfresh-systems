@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import Field from "../../components/Field.jsx";
 import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import AuthShell from "./AuthShell.jsx";
-import { IconSend } from "../../components/NavIcons.jsx";
+import { IconMail, IconSend } from "../../components/NavIcons.jsx";
 
 export default function ForgotPassword() {
   const { resetPassword } = useAuth();
@@ -22,7 +22,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <AuthShell title="Forgot your password?" subtitle="Enter your email and we will send you a reset link.">
+    <AuthShell icon={IconMail} title="Forgot your password?" subtitle="Enter your email and we will send you a reset link.">
       {sent ? (
         <p role="status" className="text-center">If an account exists for that address, a reset link is on its way. <Link to="/login">Back to sign in</Link></p>
       ) : (

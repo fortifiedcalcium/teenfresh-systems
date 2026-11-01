@@ -1,4 +1,5 @@
 import React from "react";
+import { IconInbox } from "./NavIcons.jsx";
 
 export function Spinner({ className = "h-5 w-5" }) {
   return <span aria-hidden="true" className={`inline-block animate-spin rounded-full border-2 border-brand-sky border-t-link ${className}`} />;
@@ -13,4 +14,4 @@ export function FullPageSpinner({ label = "Loading…" }) {
   return <div className="flex min-h-screen items-center justify-center"><Loading label={label} /></div>;
 }
 
-export const Empty = ({ children }) => <div className="rounded-lg border border-dashed border-link bg-white p-8 text-center text-sm text-ink">{children}</div>;
+export const Empty = ({ children }) => <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-link bg-white p-8 text-center text-sm text-ink"><span className="text-link"><IconInbox /></span>{children}</div>;

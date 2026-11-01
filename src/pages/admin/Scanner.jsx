@@ -5,7 +5,7 @@ import { friendlyError } from "../../lib/api.js";
 import { feedback } from "../../lib/beep.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import QrScanner from "../../components/QrScanner.jsx";
-import { IconClose, IconSearch, IconUserCheck, IconVolume } from "../../components/NavIcons.jsx";
+import { IconClose, IconScan, IconSearch, IconUserCheck, IconVolume } from "../../components/NavIcons.jsx";
 
 // Result panels: surface colour + icon + big text. Sound and vibration are extras, never the only cue (1.4.1).
 const PANEL = {
@@ -75,7 +75,7 @@ export default function Scanner() {
   const p = result && PANEL[result.result];
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl">QR Scanner</h1>
+      <h1 className="flex items-center gap-2 text-2xl"><IconScan />QR Scanner</h1>
 
       <section aria-labelledby="scan-h" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

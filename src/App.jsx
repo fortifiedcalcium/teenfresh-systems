@@ -16,6 +16,7 @@ import Home from "./pages/attendee/Home.jsx";
 import EventRegister from "./pages/attendee/EventRegister.jsx";
 import MyRegistrations from "./pages/attendee/MyRegistrations.jsx";
 import MyTicket from "./pages/attendee/MyTicket.jsx";
+import { IconAlert } from "./components/NavIcons.jsx";
 const Dashboard = lazy(() => import("./pages/admin/Dashboard.jsx"));
 const Events = lazy(() => import("./pages/admin/Events.jsx"));
 const Attendees = lazy(() => import("./pages/admin/Attendees.jsx"));
@@ -29,7 +30,7 @@ const ChangeLog = lazy(() => import("./pages/admin/ChangeLog.jsx"));
 function SetupNotice() {
   return (
     <main id="main-content" className="mx-auto max-w-xl p-8">
-      <h1 className="mb-2 text-xl font-bold">Supabase is not configured</h1>
+      <h1 className="mb-2 flex items-center gap-2 text-xl font-bold"><IconAlert />Supabase is not configured</h1>
       <p className="text-ink-muted">Copy <code>.env.example</code> to <code>.env</code>, fill in <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>, then restart <code>npm run dev</code>.</p>
     </main>
   );

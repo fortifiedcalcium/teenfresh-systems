@@ -12,7 +12,7 @@ import { Empty, Loading } from "../../components/Spinner.jsx";
 import Alert from "../../components/Alert.jsx";
 import { FORMATS, wrapSelection } from "../../lib/formatText.js";
 import { qrDataUrl } from "../../lib/qrImage.js";
-import { IconRefresh, IconSave, IconSend } from "../../components/NavIcons.jsx";
+import { IconCode, IconFileText, IconHistory, IconLink, IconMail, IconParagraph, IconRefresh, IconSave, IconSend } from "../../components/NavIcons.jsx";
 
 /** HTML editor + merge-field chips + live preview. Used for both the saved template and the one-off bulk message. */
 function FormatToolbar({ onFormat }) {
@@ -21,7 +21,7 @@ function FormatToolbar({ onFormat }) {
     <div role="toolbar" aria-label="Text formatting for the HTML body" aria-controls="html" className="mb-1 flex flex-wrap gap-2">
       {Object.entries(FORMATS).map(([k, f]) => (
         <button key={k} type="button" className="btn-secondary" aria-label={f.key ? `${f.label} (Ctrl+${f.key.toUpperCase()})` : f.label} onClick={() => onFormat(k)}>
-          {glyph[k] ? <span aria-hidden="true" className="font-serif text-base leading-none">{glyph[k]}</span> : f.label}
+          {glyph[k] ? <span aria-hidden="true" className="font-serif text-base leading-none">{glyph[k]}</span> : <>{k === "link" ? <IconLink /> : <IconParagraph />}{f.label}</>}
         </button>
       ))}
     </div>
@@ -77,7 +77,7 @@ function Editor({ draft, setDraft, event, ensureQr = false }) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <p className="label mb-0">Live preview <span className="font-normal text-ink-muted">(sample attendee)</span></p>
-          <div className="flex gap-1">{["html", "text"].map((v) => <button key={v} type="button" className={view === v ? "btn-primary px-3 py-1" : "btn-secondary px-3 py-1"} onClick={() => setView(v)}>{v === "html" ? "HTML" : "Plain text"}</button>)}</div>
+          <div className="flex gap-1">{["html", "text"].map((v) => <button key={v} type="button" className={view === v ? "btn-primary px-3 py-1" : "btn-secondary px-3 py-1"} onClick={() => setView(v)}>{v === "html" ? <IconCode /> : <IconFileText />}{v === "html" ? "HTML" : "Plain text"}</button>)}</div>
         </div>
         <p className="rounded-lg bg-brand-ivory p-2 text-sm"><strong>Subject:</strong> {preview.subject}</p>
         {view === "html"
@@ -262,9 +262,9 @@ export default function EmailTemplates() {
   if (!event) return <Empty>Create an event first.</Empty>;
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold">Email</h1>
+      <h1 className="flex items-center gap-2 text-2xl font-extrabold"><IconMail />Email</h1>
       <div className="flex flex-wrap gap-2" role="tablist">
-        {[["template", "Confirmation template"], ["bulk", "Bulk mail merge"], ["logs", "Email logs"]].map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "btn-primary" : "btn-secondary"} onClick={() => setTab(k)}>{l}</button>)}
+        {[["template", "Confirmation template", IconMail], ["bulk", "Bulk mail merge", IconSend], ["logs", "Email logs", IconHistory]].map(([k, l, I]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "btn-primary" : "btn-secondary"} onClick={() => setTab(k)}><I />{l}</button>)}
       </div>
       {tab === "template" && <TemplateTab event={event} />}
       {tab === "bulk" && <BulkTab event={event} />}

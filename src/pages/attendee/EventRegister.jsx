@@ -26,7 +26,7 @@ import ContactLinks from "../../components/ContactLinks.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import { useAnnounce } from "../../a11y.jsx";
-import { IconArrowLeft, IconArrowRight, IconPencil, IconPlus, IconSend, IconTicket } from "../../components/NavIcons.jsx";
+import { IconArrowLeft, IconArrowRight, IconCheckCircle, IconClock, IconPencil, IconPlus, IconSend, IconTicket } from "../../components/NavIcons.jsx";
 
 const DEFAULTS = { email: "", agree: false, name: "", x_username: "", facebook_url: "", contact_number: "", kit_id: "", quantity: "1", reuse_payment_id: "", sender_name: "", amount_paid: "", reference_number: "", notes: "" };
 const FIELD_LABELS = { email: "Email", agree: "Confirmation", name: "Name", x_username: "X/Twitter username", facebook_url: "Facebook profile link", contact_number: "Contact number", kit_id: "Kit", quantity: "Quantity", sender_name: "Name of sender", amount_paid: "Amount paid", reference_number: "Reference number", receipt: "Payment receipt", notes: "Notes" };
@@ -184,7 +184,7 @@ export default function EventRegister() {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
         <div className={`alert ${confirmed ? "alert-ok" : "alert-info"} block`} role="status">
-          <h1 ref={doneRef} tabIndex={-1} className="text-xl">{confirmed ? "You're registered!" : "Registration received"}</h1>
+          <h1 ref={doneRef} tabIndex={-1} className="flex items-center justify-center gap-2 text-xl">{confirmed ? <IconCheckCircle /> : <IconClock />}{confirmed ? "You're registered!" : "Registration received"}</h1>
           <p className="mt-1"><Badge tone={confirmed ? "ok" : "warn"}>{confirmed ? "Confirmed" : "Pending verification"}</Badge></p>
           {confirmed ? (
             <p className="mt-2">Your ticket number is <strong className="font-mono">{done.ticket_number}</strong>. Keep the QR code below and the confirmation email we are sending to {done.email}.</p>
@@ -206,7 +206,7 @@ export default function EventRegister() {
   if (!st.canRegister) {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
-        <h1 className="text-2xl">Register</h1>
+        <h1 className="flex items-center gap-2 text-2xl"><IconTicket />Register</h1>
         <EventHeader event={event} st={st} kits={kits} />
         <Alert tone="bad"><strong>{st.label}.</strong> {st.reason} <Link to="/">Back to events</Link></Alert>
       </div>
@@ -227,7 +227,7 @@ export default function EventRegister() {
   const privacy = <p className="text-sm text-ink-muted">Privacy: your name, contact details and payment receipt are used only to verify your registration. Only the organizers can see them (Data Privacy Act of 2012).</p>;
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-2xl">Register</h1>
+      <h1 className="flex items-center gap-2 text-2xl"><IconTicket />Register</h1>
       <EventHeader event={event} st={st} kits={kits} />
       <Stepper steps={steps} current={stepIndex} />
 

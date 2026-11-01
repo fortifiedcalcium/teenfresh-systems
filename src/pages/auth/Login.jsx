@@ -31,7 +31,7 @@ export default function Login() {
   };
 
   return (
-    <AuthShell title="Sign in" subtitle="Sign in to register for events and see your tickets.">
+    <AuthShell icon={IconLogIn} title="Sign in" subtitle="Sign in to register for events and see your tickets.">
       {sessionEnded && <Alert tone="warn" className="mb-4">Your session ended. Please sign in again to continue.</Alert>}
       <form onSubmit={handleSubmit(onSubmit, bumpFocus)} className="space-y-4" noValidate>
         <ErrorSummary errors={errors} submitCount={submitCount} focusSignal={focusSignal} extra={error} labels={{ email: "Email", password: "Password" }} />
