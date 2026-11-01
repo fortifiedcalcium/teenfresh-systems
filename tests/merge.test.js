@@ -56,9 +56,9 @@ describe("the seeded confirmation email", () => {
   it("puts the terms in a left-bordered block and the images at absolute URLs", () => {
     expect(mail.html).toContain("border-left:3px solid #dadce0");
     expect(mail.html).toContain('src="https://app.example.com/banners/ivemon.png"');
-    expect(mail.html).toContain('src="https://app.example.com/email/logo.png"');
-    expect(mail.html).toContain('src="https://app.example.com/email/facebook.png"');
-    expect(mail.html).toContain('src="https://app.example.com/email/x.png"');
+    expect(mail.html).toContain('src="https://teenfresh-events.web.app/email/logo.png"');
+    expect(mail.html).toContain('src="https://teenfresh-events.web.app/email/facebook.png"');
+    expect(mail.html).toContain('src="https://teenfresh-events.web.app/email/x.png"');
     expect(mail.html).toContain("/TeenfreshPH</a>");
     expect(mail.html).toContain("@TeenfreshPH</a>");
   });
@@ -105,9 +105,15 @@ describe("signature images", () => {
       expect(html).toBe('<img src="https://teenfresh-events.web.app/email/logo.png"><img src="https://teenfresh-events.web.app/email/facebook.png"><img src="https://teenfresh-events.web.app/email/x.png">');
     }
   });
-  it("use the configured site when it is set, without a double slash", async () => {
+  it("ignore a stale PUBLIC_SITE_URL: the brand images always load from the live site", async () => {
     const { renderEmail } = await import("../supabase/functions/_shared/merge.ts");
-    const html = renderEmail({ subject: "s", html_body: sig, text_body: "t" }, { ...base, site: "https://events.example.com/" }).html;
-    expect(html).toContain('src="https://events.example.com/email/logo.png"');
+    const html = renderEmail({ subject: "s", html_body: sig, text_body: "t" }, { ...base, site: "https://old-project.vercel.app/" }).html;
+    expect(html).toContain('src="https://teenfresh-events.web.app/email/logo.png"');
+    expect(html).not.toContain("vercel");
+  });
+  it("other links still use the configured site", async () => {
+    const { renderEmail } = await import("../supabase/functions/_shared/merge.ts");
+    const html = renderEmail({ subject: "s", html_body: "{{Site URL}}", text_body: "t" }, { ...base, site: "https://events.example.com/" }).html;
+    expect(html).toBe("https://events.example.com");
   });
 });

@@ -155,8 +155,9 @@ export interface MergeSource {
 const money = (v: unknown) => (v == null || v === "" ? "" : Number(v).toFixed(2));
 
 /** One value map per mode, because {{Terms}}, {{Banner}} and {{Contact Links}} differ between html and text. */
-/** Where the logo, social icons and banners are hosted. Email clients cannot load a relative path like /email/logo.png,
- *  so when the PUBLIC_SITE_URL secret is missing the signature lost its logo and icons. This fallback keeps them working. */
+/** Where the logo and social icons of the signature are hosted. Email clients cannot load a relative path, and a stale
+ *  PUBLIC_SITE_URL secret (e.g. the old Vercel address) points at a site that no longer serves them, so the signature
+ *  lost its logo and icons. These brand images therefore always come from here; PUBLIC_SITE_URL still builds other links. */
 export const DEFAULT_SITE = "https://teenfresh-events.web.app";
 
 export function buildValues({ reg, event, site: siteIn = "", bannerUrl, bannerAlt, extra = {} }: MergeSource, mode: "html" | "text"): MergeValues {
@@ -190,9 +191,9 @@ export function buildValues({ reg, event, site: siteIn = "", bannerUrl, bannerAl
       ? `<img src="${escapeHtml(banner)}" alt="${escapeHtml(bannerAlt || event.title || "")}" width="800" style="display:block;width:100%;max-width:800px;height:auto;border:0;margin:0 0 20px 0;">`
       : "",
     "Banner URL": banner,
-    "Logo URL": absoluteUrl("/email/logo.png", site),
-    "Facebook Icon URL": absoluteUrl("/email/facebook.png", site),
-    "X Icon URL": absoluteUrl("/email/x.png", site),
+    "Logo URL": absoluteUrl("/email/logo.png", DEFAULT_SITE),
+    "Facebook Icon URL": absoluteUrl("/email/facebook.png", DEFAULT_SITE),
+    "X Icon URL": absoluteUrl("/email/x.png", DEFAULT_SITE),
     "Site URL": site,
     "Reference Number": extra.reference_number ?? "",
     "Amount Paid": money(extra.amount_paid),
