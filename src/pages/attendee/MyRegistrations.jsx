@@ -140,11 +140,14 @@ export default function MyRegistrations() {
                     </dl>
                     {r.status === "pending_verification" && !needsAction && <p className="text-sm text-ink-muted">Your payment is being verified. A confirmation email will be sent within 48 to 72 hours.</p>}
                     {needsAction && (
-                      <Alert tone={p.status === "underpaid" ? "warn" : "bad"}>
-                        <p className="font-semibold">{p.status === "underpaid" ? `Payment incomplete: ${peso(p.amount_due)} still due.` : "Payment rejected."}</p>
-                        {p.review_note && <p>{p.review_note}</p>}
-                        <button className="btn-primary mt-2 w-full" onClick={() => setResubmit(r)}><IconUpload />{p.status === "underpaid" ? "Send the missing amount" : "Upload a new receipt"}{" "}<span className="sr-only">for {r.name}</span></button>
-                      </Alert>
+                      <>
+                        <Alert tone={p.status === "underpaid" ? "warn" : "bad"}>
+                          <p className="font-semibold">{p.status === "underpaid" ? `Payment incomplete: ${peso(p.amount_due)} still due.` : "Payment rejected."}</p>
+                          {p.review_note && <p>{p.review_note}</p>}
+                        </Alert>
+                        {/* the button sits below the message, not inside it, so the message colour is not its background */}
+                        <button className="btn-primary mt-auto w-full" onClick={() => setResubmit(r)}><IconUpload />{p.status === "underpaid" ? "Send the missing amount" : "Upload a new receipt"}{" "}<span className="sr-only">for {r.name}</span></button>
+                      </>
                     )}
                     {r.status === "confirmed" && (
                       <div className="mt-auto">
