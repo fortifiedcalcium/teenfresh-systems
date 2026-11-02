@@ -7,7 +7,7 @@ export default function TicketCard({ registration, event }) {
   const confirmed = registration.status === "confirmed" && registration.ticket_number;
   return (
     <div className="card mx-auto max-w-md p-6 text-center">
-      <h2 className="text-lg font-bold">{event?.title}</h2>
+      <h2 className="text-lg font-black">{event?.title}</h2>
       {confirmed ? <div className="my-4"><TicketQr ticketNumber={registration.ticket_number} /></div>
         : <p className={`alert ${registration.status === "pending_verification" ? "alert-warn" : "alert-bad"} my-6 justify-center font-semibold`}>{registration.status === "pending_verification" ? "Your ticket will appear here once your payment is verified." : registration.status === "rejected" ? "This registration was rejected." : "This registration was cancelled."}</p>}
       <dl className="space-y-1 text-left text-sm">

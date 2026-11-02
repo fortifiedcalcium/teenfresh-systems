@@ -34,7 +34,7 @@ export default {
       },
     },
     extend: {
-      fontFamily: { sans: ['"Source Sans 3"', "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"] },
+      fontFamily: { sans: ['"Matahari"', "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"] },
       minHeight: { target: "2.75rem" }, // 44px touch target
       minWidth: { target: "2.75rem" },
     },

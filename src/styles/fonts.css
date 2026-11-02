@@ -1,0 +1,9 @@
+/* Matahari, the Teenfresh font, from src/WOFF (WOFF2). Only the files listed here are bundled; the rest of the folder is not shipped.
+   Weights match what the app uses: 400 text, 600 semibold, 700 headings and buttons, 800 emphasis, 900 Black for titles; the Oblique files give real italics. */
+@font-face { font-family: "Matahari"; src: url("../WOFF/Matahari-400Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Matahari"; src: url("../WOFF/Matahari-600SemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Matahari"; src: url("../WOFF/Matahari-700Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Matahari"; src: url("../WOFF/Matahari-800ExtraBold.woff2") format("woff2"); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Matahari"; src: url("../WOFF/Matahari-400RegularOblique.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Matahari"; src: url("../WOFF/Matahari-700BoldOblique.woff2") format("woff2"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Matahari"; src: url("../WOFF/Matahari-900Black.woff2") format("woff2"); font-weight: 900; font-style: normal; font-display: swap; }

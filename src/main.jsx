@@ -5,10 +5,6 @@ import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./components/Toast.jsx";
 import { LiveRegionProvider } from "./a11y.jsx";
-import "@fontsource/source-sans-3/400.css";
-import "@fontsource/source-sans-3/600.css";
-import "@fontsource/source-sans-3/700.css";
-import "@fontsource/source-sans-3/800.css";
 import "./index.css";
 
 createRoot(document.getElementById("root")).render(

@@ -262,7 +262,7 @@ export default function EmailTemplates() {
   if (!event) return <Empty>Create an event first.</Empty>;
   return (
     <div className="space-y-4">
-      <h1 className="flex items-center gap-2 text-2xl font-extrabold"><IconMail />Email</h1>
+      <h1 className="flex items-center gap-2 text-2xl font-black"><IconMail />Email</h1>
       <div className="flex flex-wrap gap-2" role="tablist">
         {[["template", "Confirmation template", IconMail], ["bulk", "Bulk mail merge", IconSend], ["logs", "Email logs", IconHistory]].map(([k, l, I]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "btn-primary" : "btn-secondary"} onClick={() => setTab(k)}><I />{l}</button>)}
       </div>

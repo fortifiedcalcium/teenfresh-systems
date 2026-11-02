@@ -1,4 +1,5 @@
 @import "./styles/tokens.css";
+@import "./styles/fonts.css";
 @import "./styles/admin-nav.css";
 @import "./styles/ticket.css";
 @tailwind base;
@@ -8,7 +9,7 @@
 @layer base {
   html { font-size: 100%; scroll-padding-top: 6rem; /* 2.4.11: sticky headers never hide the focused element */ }
   body { @apply bg-brand-blush font-sans text-base text-ink antialiased; line-height: 1.5; }
-  h1, h2, h3, h4 { @apply font-bold text-ink; }
+  h1, h2, h3, h4 { @apply font-black text-ink; }   /* titles use the Black weight (900) */
   /* 1.4.1: links are always underlined, never distinguished by colour alone */
   a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab) { @apply text-link underline underline-offset-2; }
   a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):hover { text-decoration-thickness: 2px; }
@@ -50,6 +51,8 @@
 
   /* Badges always carry an icon AND text. The icon is CSS content with an empty alt so it is not read twice. */
   .badge { @apply inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-transparent px-2.5 py-0.5 text-xs font-bold; }
+  /* the ✓ ✕ ● marks are not in Matahari: draw them with the system font, at a steady size, instead of a tiny fallback glyph */
+  .badge::before, .alert::before { font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif; font-size: 1em; line-height: 1; }
   .badge::before { content: "●" / ""; }
   .badge-ok { @apply bg-brand-mint text-success; } .badge-ok::before { content: "✓" / ""; }
   .badge-warn { @apply bg-brand-cream text-warning-ink; } .badge-warn::before { content: "!" / ""; font-weight: 800; }

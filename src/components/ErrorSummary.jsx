@@ -28,7 +28,7 @@ export default function ErrorSummary({ errors, labels = {}, focusSignal = 0, fie
 
   return (
     <div ref={ref} tabIndex={-1} role="alert" className="alert alert-bad block" aria-labelledby="error-summary-title">
-      <h2 id="error-summary-title" className="text-base font-bold text-danger">There {items.length === 1 ? "is 1 problem" : `are ${items.length} problems`} with your submission</h2>
+      <h2 id="error-summary-title" className="text-base font-black text-danger">There {items.length === 1 ? "is 1 problem" : `are ${items.length} problems`} with your submission</h2>
       <ul className="mt-1 list-disc pl-5">
         {items.map((i) => (
           <li key={i.name}>

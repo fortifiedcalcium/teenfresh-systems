@@ -164,7 +164,7 @@ export default function MyRegistrations() {
                   }
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <h2 id={titleId} className="line-clamp-2 min-w-0 flex-1 text-lg font-bold leading-snug" title={ev?.title}>{ev?.title}</h2>
+                    <h2 id={titleId} className="line-clamp-2 min-w-0 flex-1 text-lg font-black leading-snug" title={ev?.title}>{ev?.title}</h2>
                     <Badge tone={s.tone}>{s.label}</Badge>
                   </div>
                   <dl className="space-y-1 text-sm text-ink-muted">

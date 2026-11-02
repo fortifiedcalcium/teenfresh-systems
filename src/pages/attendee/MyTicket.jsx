@@ -42,7 +42,7 @@ export default function MyTicket() {
       <TicketCard registration={reg} event={event} />
       {reg.status === "confirmed" && reg.ticket_number && (
         <div className="card space-y-3 p-4 text-sm">
-          <h2 className="text-lg font-bold">Can't attend? Transfer your slot</h2>
+          <h2 className="text-lg font-black">Can't attend? Transfer your slot</h2>
           <p className="text-ink">Your confirmation email is your ticket. To transfer your slot, forward that email to the new owner. We are not responsible for unauthorized leaks of your ticket. Keep it confidential.</p>
           <button className="btn-secondary" onClick={resend} disabled={sending}><IconSend />{sending ? "Sending…" : "Email me my confirmation again"}</button>
         </div>

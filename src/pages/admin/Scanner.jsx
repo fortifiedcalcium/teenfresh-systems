@@ -92,7 +92,7 @@ export default function Scanner() {
       {p && (
         <section aria-label="Scan result" className={`result-sheet rounded-2xl border-4 p-6 text-center ${p.cls}`}>
           <p className="text-5xl font-extrabold" aria-hidden="true">{p.icon}</p>
-          <h2 className="mt-1 text-3xl font-extrabold" style={{ color: "inherit" }}>{p.title}</h2>
+          <h2 className="mt-1 text-3xl font-black" style={{ color: "inherit" }}>{p.title}</h2>
           {result.result === "invalid" ? (
             <p className="mt-2 text-lg">{result.message || REASON[result.reason] || REASON.not_found}<br /><span className="font-mono text-base">{result.ticket_number}</span></p>
           ) : (
@@ -103,7 +103,7 @@ export default function Scanner() {
               {result.kit_name && <p className="text-xl font-bold">Kit: {kitLabel(result.kit_name, result.kit_quantity)}</p>}
               {result.result === "duplicate" && <p className="mt-2 text-lg font-bold">First scanned {fmtDateTime(result.checked_in_at)}{result.checked_in_by_name ? ` by ${result.checked_in_by_name}` : ""}</p>}
               <fieldset className="mx-auto mt-4 flex max-w-md flex-wrap justify-center gap-x-6 rounded-xl border-2 border-current bg-white p-3 text-left text-base text-ink">
-                <legend className="px-2 text-sm font-bold">After check-in</legend>
+                <legend className="px-2 text-sm font-black">After check-in</legend>
                 <label className="flex min-h-target items-center gap-2"><input type="checkbox" className="check" checked={flags.receipt} onChange={(e) => updateFlag("receipt", e.target.checked)} /> Receipt verified (₱200 or more)</label>
                 <label className="flex min-h-target items-center gap-2"><input type="checkbox" className="check" checked={flags.kit} onChange={(e) => updateFlag("kit", e.target.checked)} /> Kit claimed</label>
               </fieldset>

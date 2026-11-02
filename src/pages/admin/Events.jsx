@@ -117,7 +117,7 @@ export default function Events() {
           {events.map((e) => (
             <li key={e.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
               <div>
-                <h2 className="font-bold">{e.title}</h2>
+                <h2 className="font-black">{e.title}</h2>
                 <p className="text-sm text-ink-muted">{fmtDateTime(e.event_date)} · {e.venue || "No venue"} · capacity {e.capacity} · {Number(e.registration_fee) > 0 ? peso(e.registration_fee) : "free"}</p>
                 {e.registration_deadline && <p className="text-sm text-ink-muted">Registration closes {fmtDateTime(e.registration_deadline)}</p>}
                 <span className={`badge mt-1 ${e.registration_open ? "badge-ok" : "badge-bad"}`}>{e.registration_open ? "Registration open" : "Registration closed"}</span>
@@ -145,7 +145,7 @@ export default function Events() {
             <div id="panel-details" role="tabpanel" aria-labelledby="tab-details">
             <form onSubmit={save} className="space-y-5" noValidate>
               {error && <Alert tone="bad">{error}</Alert>}
-              <fieldset className="space-y-4"><legend className="text-lg font-bold">Basics</legend>
+              <fieldset className="space-y-4"><legend className="text-lg font-black">Basics</legend>
                 <Field id="title" label="Title" required><input className="input" value={form.title} onChange={set("title")} /></Field>
                 <Field id="subtitle" label="Subtitle"><input className="input" value={form.subtitle} onChange={set("subtitle")} /></Field>
                 <Field id="description" label="Description"><textarea className="input" rows={2} value={form.description} onChange={set("description")} /></Field>
@@ -163,7 +163,7 @@ export default function Events() {
                 <Field id="kit" label="Kit inclusions" hint="One per line, for example (1) Cupsleeve"><textarea className="input" rows={3} value={form.kit_inclusions} onChange={set("kit_inclusions")} /></Field>
               </fieldset>
 
-              <fieldset className="space-y-4"><legend className="text-lg font-bold">Fee and payment (GCash)</legend>
+              <fieldset className="space-y-4"><legend className="text-lg font-black">Fee and payment (GCash)</legend>
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field id="fee" label="Registration fee (PHP)" hint="Used only when the event has no kits (see the Kits tab). 0 = free event: no payment step, tickets are issued immediately"><input type="number" min="0" step="0.01" className="input" value={form.registration_fee} onChange={set("registration_fee")} /></Field>
                   <Field id="fee_note" label="Fee note" hint="Shown after the fee, for example: exclusive of food and drinks"><input className="input" value={form.fee_note} onChange={set("fee_note")} /></Field>
@@ -173,12 +173,12 @@ export default function Events() {
                 <p className="text-sm text-ink-muted">The GCash number is shown to every visitor of the registration form, like on a public form.</p>
               </fieldset>
 
-              <fieldset className="space-y-4"><legend className="text-lg font-bold">Terms and contact</legend>
+              <fieldset className="space-y-4"><legend className="text-lg font-black">Terms and contact</legend>
                 <Field id="terms_html" label="Terms and Conditions" hint="Format it with the buttons, no HTML needed. Shown on the form and merged into the confirmation email as {{Terms}}"><TermsEditor id="terms_html" value={form.terms_html} onChange={(v) => setForm((f) => ({ ...f, terms_html: v }))} /></Field>
                 <Field id="contact" label="Contact links" hint="One per line: Label | URL. Facebook, X, Instagram, TikTok, Gmail (mailto:you@example.com)"><textarea className="input font-mono text-sm" rows={5} value={form.contact_links} onChange={set("contact_links")} /></Field>
               </fieldset>
 
-              <fieldset className="space-y-3"><legend className="text-lg font-bold">Emails and privacy</legend>
+              <fieldset className="space-y-3"><legend className="text-lg font-black">Emails and privacy</legend>
                 <label className="flex min-h-target items-center gap-3 text-sm"><input type="checkbox" className="check" checked={form.send_ack_email} onChange={set("send_ack_email")} /> Send a "We received your registration" email right after someone submits (off by default)</label>
                 <Field id="retention" label="Delete payment receipts this many days after the event" hint="Empty = keep them. Run scripts/purge-receipts.mjs (see the README) to carry it out."><input type="number" min="0" className="input" value={form.receipt_retention_days} onChange={set("receipt_retention_days")} /></Field>
               </fieldset>

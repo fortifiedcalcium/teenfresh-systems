@@ -31,7 +31,7 @@ const Profile = lazy(() => import("./pages/admin/Profile.jsx"));
 function SetupNotice() {
   return (
     <main id="main-content" className="mx-auto max-w-xl p-8">
-      <h1 className="mb-2 flex items-center gap-2 text-xl font-bold"><IconAlert />Supabase is not configured</h1>
+      <h1 className="mb-2 flex items-center gap-2 text-xl font-black"><IconAlert />Supabase is not configured</h1>
       <p className="text-ink-muted">Copy <code>.env.example</code> to <code>.env</code>, fill in <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>, then restart <code>npm run dev</code>.</p>
     </main>
   );

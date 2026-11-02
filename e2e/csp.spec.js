@@ -53,8 +53,8 @@ test.describe("security headers", () => {
     }
     await page.goto("/");
     await expect(page.locator("img[alt='']").first()).toBeVisible();                         // the logo (a bundled asset) still loads
-    // fonts: Source Sans 3 is served from the app itself
-    expect(await page.evaluate(async () => { await document.fonts.ready; return document.fonts.check("16px 'Source Sans 3'"); })).toBe(true);
+    // fonts: Matahari (src/WOFF) is served from the app itself
+    expect(await page.evaluate(async () => { await document.fonts.ready; return document.fonts.check("16px Matahari"); })).toBe(true);
     expect(await violations()).toEqual([]);
   });
 

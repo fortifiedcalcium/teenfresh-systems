@@ -30,7 +30,6 @@
         "npm:@axe-core/playwright@^4.14.0",
         "npm:@electric-sql/pglite@~0.5.14",
         "npm:@eslint/js@^9.39.5",
-        "npm:@fontsource/source-sans-3@^5.3.1",
         "npm:@hookform/resolvers@^5.9.2",
         "npm:@lhci/cli@~0.15.1",
         "npm:@playwright/test@^1.64.1",

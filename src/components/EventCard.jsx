@@ -26,7 +26,7 @@ export default function EventCard({ event, registered, bannerImage, onChanged, k
       <EventImage slot="banner" event={event} image={bannerImage} onChanged={onChanged} lightbox={false} fit="cover" className="!rounded-none !border-0" />
       <div className="flex flex-1 flex-col p-4">
         <div className={`flex items-start justify-between gap-3 ${event.subtitle ? "mb-1" : "mb-4"}`}>
-          <h2 id={`title-${event.id}`} className="line-clamp-2 min-w-0 flex-1 text-lg font-bold leading-snug" title={event.title}>{event.title}</h2>
+          <h2 id={`title-${event.id}`} className="line-clamp-2 min-w-0 flex-1 text-lg font-black leading-snug" title={event.title}>{event.title}</h2>
           <Badge tone={STATUS_TONE[st.key]}>{st.label}</Badge>
         </div>
         {event.subtitle && <p className="mb-4 line-clamp-2 text-sm text-ink-muted" title={event.subtitle}>{event.subtitle}</p>}

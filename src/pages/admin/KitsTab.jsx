@@ -80,7 +80,7 @@ export default function KitsTab({ event }) {
           return (
             <li key={r.key}>
               <fieldset className="card space-y-3 p-4">
-                <legend className="px-1 text-lg font-bold">Kit {i + 1}{r.name ? `: ${r.name}` : ""}</legend>
+                <legend className="px-1 text-lg font-black">Kit {i + 1}{r.name ? `: ${r.name}` : ""}</legend>
                 <div className="grid gap-3 md:grid-cols-2">
                   {field("name", "Name (required)", { maxLength: 80 })}
                   {field("unit_price", "Price per kit, PHP (required)", { inputMode: "decimal" }, r.unit_price && !e.unit_price && Number(r.unit_price) > 0 ? `${peso(r.unit_price)} each` : "Amount per kit, for example 100")}

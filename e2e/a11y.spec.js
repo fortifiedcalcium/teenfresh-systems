@@ -269,6 +269,6 @@ test.describe("WCAG behaviours", () => {
     await as(null);
     await page.goto("/login");
     expect(await page.evaluate(() => parseFloat(getComputedStyle(document.body).fontSize))).toBeGreaterThanOrEqual(16);
-    expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toContain("Source Sans 3");
+    expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toContain("Matahari");
   });
 });

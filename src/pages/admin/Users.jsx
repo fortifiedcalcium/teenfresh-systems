@@ -36,7 +36,7 @@ export default function Users() {
   ];
   return (
     <div className="space-y-4">
-      <h1 className="flex items-center gap-2 text-2xl font-extrabold"><IconShield />Admin users</h1>
+      <h1 className="flex items-center gap-2 text-2xl font-black"><IconShield />Admin users</h1>
       <FilterBar activeCount={role ? 1 : 0}
         search={<input className="input w-full md:w-72" placeholder="Search name or email" aria-label="Search users" value={q} onChange={(e) => setQ(e.target.value)} />}>
         <select className="input max-w-[10rem]" aria-label="Role filter" value={role} onChange={(e) => setRole(e.target.value)}><option value="">All roles</option><option value="admin">Admins</option><option value="attendee">Attendees</option></select>

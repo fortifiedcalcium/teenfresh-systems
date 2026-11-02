@@ -54,7 +54,7 @@ function Shell({ inline, title, onClose, children }) {
   if (!inline) return <Modal title={title} onClose={onClose} wide>{children}</Modal>;
   return (
     <section aria-label={title} className="card p-4">
-      <div className="mb-3 flex items-start justify-between gap-2"><h2 className="text-lg font-bold">{title}</h2><button type="button" className="btn-secondary" onClick={onClose} aria-label="Close review"><IconClose /></button></div>
+      <div className="mb-3 flex items-start justify-between gap-2"><h2 className="text-lg font-black">{title}</h2><button type="button" className="btn-secondary" onClick={onClose} aria-label="Close review"><IconClose /></button></div>
       {children}
     </section>
   );
