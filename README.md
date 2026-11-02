@@ -11,6 +11,7 @@ supabase/migrations/004_change_log.sql              admin Change log: who change
 supabase/migrations/005_underpayment_top_up.sql     underpayment: pay only the missing amount (run fifth)
 supabase/migrations/006_one_kit_per_form.sql        one form = one kit, no quantity (run sixth)
 supabase/migrations/007_free_reference_number.sql   reference number typed freely (run seventh)
+supabase/migrations/008_banner_coming_soon.sql        "Coming soon" banner switch (run eighth)
 supabase/functions/send-confirmation-email   ticket email on verification / resend / test email
 supabase/functions/send-payment-email        underpaid, rejected and "we received your registration" emails
 supabase/functions/send-bulk-email           admin bulk mail merge
@@ -32,6 +33,7 @@ The app targets **WCAG 2.2 AA** with the Teenfresh palette (brand colours as sur
 6. **SQL Editor** → new query → paste all of `supabase/migrations/005_underpayment_top_up.sql` → **Run** (once, after the fourth file). After an underpayment the attendee sends only the missing amount, and it is added to what they paid before.
 7. **SQL Editor** → new query → paste all of `supabase/migrations/006_one_kit_per_form.sql` → **Run** (once, after the fifth file). Every kit then allows one per form.
 8. **SQL Editor** → new query → paste all of `supabase/migrations/007_free_reference_number.sql` → **Run** (once, after the sixth file). The reference number can then be typed as the banking app shows it.
+9. **SQL Editor** → new query → paste all of `supabase/migrations/008_banner_coming_soon.sql` → **Run** (once, after the seventh file). Admins can then show “Coming soon” instead of a banner image (Admin → Events → Edit → Media).
 
 ## 2. Auth providers
 **Authentication → Providers → Email**: enable, and keep **Confirm email** on (sign-up sends a verification link).

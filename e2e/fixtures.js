@@ -16,7 +16,7 @@ const reg = { id: "r1", event_id: "e1", user_id: "u1", name: "Juan Dela Cruz", x
 const profiles = [{ id: "u1", email: "juan@example.com", full_name: "Juan Dela Cruz", role: "attendee", created_at: future }, { id: "u2", email: "admin@example.com", full_name: "Admin", role: "admin", created_at: future }];
 
 const TABLES = {
-  events: [ev, { ...ev, id: "e2", title: "A sold-out event", registration_fee: 0 }, { ...ev, id: "e3", title: "A closed event", registration_deadline: new Date(Date.now() - 864e5).toISOString() }],
+  events: [ev, { ...ev, id: "e2", title: "A sold-out event", registration_fee: 0, banner_coming_soon: true }, { ...ev, id: "e3", title: "A closed event", registration_deadline: new Date(Date.now() - 864e5).toISOString() }],
   event_kits: [
     { id: "ka", event_id: "e1", name: "Standard kit", description: "(1) Cupsleeve, (1) Trading Card, (2) Mezastar Tags", unit_price: 100, max_per_order: 5, active: true, sort_order: 0, created_at: future },
     { id: "kb", event_id: "e1", name: "Deluxe kit", description: "Everything in the Standard kit plus a poster", unit_price: 250.5, max_per_order: 2, active: true, sort_order: 1, created_at: future },

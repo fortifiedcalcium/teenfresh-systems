@@ -79,6 +79,7 @@ beforeAll(async () => {
   await db.exec(read("005_underpayment_top_up.sql"));
   await db.exec(read("006_one_kit_per_form.sql"));
   await db.exec(read("007_free_reference_number.sql"));
+  await db.exec(read("008_banner_coming_soon.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -709,5 +710,19 @@ describe("007 free reference number", () => {
     expect(b.payment_id).toBeTruthy();
     await fails(submit("alice", ev, { x: "ref_c", ref: "GC-2024-ab12" }), "DUPLICATE_REFERENCE");
     await fails(submit("alice", ev, { x: "ref_d", ref: "GC-2024 -ab12" }), "DUPLICATE_REFERENCE");   // spaces are ignored when comparing
+  });
+});
+
+describe("008 banner coming soon", () => {
+  it("defaults to off, and only an admin can switch it on", async () => {
+    await asSuper();
+    const ev = await mkEvent();
+    expect((await db.query("select banner_coming_soon from public.events where id = $1", [ev])).rows[0].banner_coming_soon).toBe(false);
+    await asUser("alice");
+    await db.query("update public.events set banner_coming_soon = true where id = $1", [ev]);
+    expect((await db.query("select banner_coming_soon from public.events where id = $1", [ev])).rows[0].banner_coming_soon).toBe(false);   // RLS: no row was updated
+    await asUser("admin");
+    await db.query("update public.events set banner_coming_soon = true where id = $1", [ev]);
+    expect((await db.query("select banner_coming_soon from public.events where id = $1", [ev])).rows[0].banner_coming_soon).toBe(true);
   });
 });

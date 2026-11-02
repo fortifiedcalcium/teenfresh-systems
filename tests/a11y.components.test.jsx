@@ -299,6 +299,14 @@ describe("images, uploads and the new form pieces", () => {
     expect(await check(container)).toHaveNoViolations();
   });
 
+  it("EventImage: a banner switched to Coming soon shows the panel instead of the image or the upload button", async () => {
+    const { container } = wrap(<EventImage slot="banner" event={{ ...ev, banner_coming_soon: true }} image={{ id: "i", storage_path: "e/b.png" }} />);
+    expect(screen.getByText("Coming soon")).toBeInTheDocument();
+    expect(container.querySelector("[data-coming-soon] img")).toHaveAttribute("alt", "");
+    expect(container.querySelector("img[alt*='Home page banner']")).toBeNull();
+    expect(await check(container)).toHaveNoViolations();
+  });
+
   it("EventHeader shows the facts as real text, with a maps link", async () => {
     const { container } = wrap(<EventHeader event={ev} st={{ canRegister: true, slotsLeft: 7 }} />);
     expect(screen.getByText("1 Form = 1 Entry")).toBeInTheDocument();

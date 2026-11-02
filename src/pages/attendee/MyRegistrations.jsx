@@ -95,7 +95,7 @@ export default function MyRegistrations() {
 
   const load = useCallback(async () => {
     const { data, error: e } = await supabase.from("registrations")
-      .select("*, events(title,event_date,venue,registration_fee), payments(id,status,review_note,amount_due,amount_paid,reference_number,sender_name)")
+      .select("*, events(title,event_date,venue,registration_fee,banner_coming_soon), payments(id,status,review_note,amount_due,amount_paid,reference_number,sender_name)")
       // "My" registrations: ask for my own rows explicitly. The database already hides other people's rows from attendees, but
       // admins are allowed to read everything, so without this filter an admin saw every user's registrations on this page.
       .eq("user_id", user.id)
@@ -131,7 +131,7 @@ export default function MyRegistrations() {
                 <Ticket
                   status={kind}
                   labelledBy={titleId}
-                  image={<EventImage slot="banner" event={{ id: r.event_id, title: ev?.title }} image={banners[r.event_id]} lightbox={false} fit="cover" className="!rounded-none !border-0" />}
+                  image={<EventImage slot="banner" event={{ id: r.event_id, title: ev?.title, banner_coming_soon: ev?.banner_coming_soon }} image={banners[r.event_id]} lightbox={false} fit="cover" className="!rounded-none !border-0" />}
                   stub={
                     kind === "confirmed" ? (
                       <TicketStub label="Ticket no.">

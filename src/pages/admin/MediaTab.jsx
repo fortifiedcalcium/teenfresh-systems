@@ -4,9 +4,11 @@ import { fmtDateTime } from "../../lib/availability.js";
 import { useToast } from "../../components/Toast.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import { Loading } from "../../components/Spinner.jsx";
+import { supabase } from "../../lib/supabaseClient.js";
+import { ComingSoonBanner } from "../../components/EventImage.jsx";
 import { IconSave, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
-function SlotCard({ event, slot, row, reload }) {
+function SlotCard({ event, slot, row, reload, onEventChanged }) {
   const spec = SLOTS[slot];
   const toast = useToast();
   const [alt, setAlt] = useState(row?.alt_text || "");
@@ -17,16 +19,31 @@ function SlotCard({ event, slot, row, reload }) {
   const url = imageUrl(row);
   const inputId = `file-${slot}`;
 
+  const isBanner = slot === "banner";
+  const soon = isBanner && !!event.banner_coming_soon;
+  const setSoon = (on) => run(async () => {
+    const { error } = await supabase.from("events").update({ banner_coming_soon: on }).eq("id", event.id);
+    if (error) throw new Error(error.message);
+    onEventChanged?.();
+  }, on ? "The banner now shows “Coming soon”" : "The banner shows the image again");
+
   const run = async (fn, ok) => { setBusy(true); try { await fn(); toast(ok, "success"); reload(); } catch (e) { toast(e.message, "error"); } finally { setBusy(false); } };
 
   return (
     <li className="card space-y-3 p-4">
       <div><h3 className="text-lg">{spec.label}</h3><p className="text-sm text-ink-muted">{spec.where}</p></div>
       <div className="mx-auto max-w-[14rem] overflow-hidden rounded-lg border border-link bg-brand-sky" style={{ aspectRatio: spec.ratio }}>
-        {url && !broken
+        {soon ? <ComingSoonBanner ratio="16 / 9" className="h-full" />
+          : url && !broken
           ? <img src={url} alt={alt || `${spec.label} preview`} onError={() => setBroken(true)} className="h-full w-full object-contain" />
           : <div className="flex h-full items-center justify-center p-3 text-center text-sm font-semibold">{broken ? "The image could not be loaded" : spec.placeholder}</div>}
       </div>
+      {isBanner && (
+        <label className="flex items-start gap-2 text-sm font-semibold">
+          <input type="checkbox" className="check mt-0.5" checked={soon} disabled={busy} onChange={(e) => setSoon(e.target.checked)} />
+          <span>Show “Coming soon” instead of a banner image<span className="block font-normal text-ink-muted">Attendees see a Coming soon panel on the event card. Any uploaded image is kept and returns when this is off.</span></span>
+        </label>
+      )}
       <p className="text-sm">Recommended: {spec.recommended}. JPG, PNG or WebP, 5 MB at most.{row && <> Last updated {fmtDateTime(row.updated_at)}.</>}</p>
       <div className="flex flex-wrap gap-2">
         <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" className="file-input sr-only" disabled={busy}
@@ -49,7 +66,7 @@ function SlotCard({ event, slot, row, reload }) {
   );
 }
 
-export default function MediaTab({ event }) {
+export default function MediaTab({ event, onEventChanged }) {
   const [rows, setRows] = useState(null);
   const reload = useCallback(async () => setRows(await fetchEventImages(event.id)), [event.id]);
   useEffect(() => { reload(); }, [reload]);
@@ -57,7 +74,7 @@ export default function MediaTab({ event }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-ink-muted">Replace any image here at any time. Changes show up straight away; no redeploy is needed. Until an image is uploaded, a placeholder is shown.</p>
-      <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{SLOT_KEYS.map((slot) => <SlotCard key={slot} event={event} slot={slot} row={rows[slot]} reload={reload} />)}</ul>
+      <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{SLOT_KEYS.map((slot) => <SlotCard key={slot} event={event} slot={slot} row={rows[slot]} reload={reload} onEventChanged={onEventChanged} />)}</ul>
     </div>
   );
 }

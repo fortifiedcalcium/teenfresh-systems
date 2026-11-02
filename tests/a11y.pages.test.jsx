@@ -471,6 +471,17 @@ describe("admin pages", () => {
     expect(within(dialog).getByText("Event poster image coming soon")).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
   });
+  it("Media tab: the banner can be switched to \"Coming soon\" instead of an image", async () => {
+    const user = userEvent.setup();
+    admin(<Events />); await settled("Events");
+    await user.click(screen.getByRole("button", { name: /Edit IVEMON: ODD PLATINUM/ }));
+    const dialog = screen.getByRole("dialog", { name: "Edit event" });
+    await user.click(within(dialog).getByRole("tab", { name: "Media" }));
+    const box = await within(dialog).findByRole("checkbox", { name: /Show .Coming soon. instead of a banner image/ });
+    expect(box).not.toBeChecked();
+    await user.click(box);
+    await waitFor(() => expect(fixtures.current.writes.some((w) => w.table === "events" && w.op === "update" && w.args[0].banner_coming_soon === true)).toBe(true));
+  });
   it("Media tab: upload, replace, alt text and remove for an image slot", async () => {
     const user = userEvent.setup();
     fixtures.current.event_images = [{ id: "i1", event_id: "e1", slot: "poster", storage_path: "e1/old.png", alt_text: "Old alt", updated_at: future }];

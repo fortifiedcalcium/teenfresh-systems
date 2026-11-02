@@ -4,12 +4,24 @@ import { imageUrl, SLOTS, uploadEventImage } from "../lib/eventImages.js";
 import Modal from "./Modal.jsx";
 import { useToast } from "./Toast.jsx";
 import { IconUpload } from "./NavIcons.jsx";
+import logoImg from "../logo/teenfresh-logo.png";
 
 const ImageIcon = () => (
   <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="1.8" /><path d="m21 16-5-5-8 8" />
   </svg>
 );
+
+/** The "Coming soon" panel that stands in for a banner (events.banner_coming_soon). Same aspect ratio as the banner,
+ *  so the cards stay equal. The words are real text; the logo is decoration. */
+export function ComingSoonBanner({ className = "", ratio = SLOTS.banner.ratio }) {
+  return (
+    <div className={`flex flex-col items-center justify-center gap-2 bg-brand-sky p-4 text-center text-ink ${className}`} style={{ aspectRatio: ratio }} data-coming-soon="true">
+      <img src={logoImg} alt="" className="h-12 w-auto max-w-[70%] object-contain" />
+      <p className="text-2xl font-bold uppercase tracking-widest">Coming soon</p>
+    </div>
+  );
+}
 
 /** One image slot of an event. Shows the uploaded image, or a placeholder that reserves the exact aspect ratio
  *  (no layout shift) when there is none or it fails to load. Admins get an "Upload image" button on the placeholder.
@@ -34,6 +46,8 @@ export default function EventImage({ slot, event, image, onChanged, lightbox = t
     catch (e) { toast(e.message, "error"); }
     finally { setBusy(false); }
   };
+
+  if (slot === "banner" && event?.banner_coming_soon) return <ComingSoonBanner className={`rounded-lg border border-link ${className}`} />;
 
   if (!url || failed) {
     return (

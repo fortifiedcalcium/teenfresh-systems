@@ -188,7 +188,7 @@ export default function Events() {
             </div>
           )}
           {tab === "kits" && current && <div id="panel-kits" role="tabpanel" aria-labelledby="tab-kits"><KitsTab event={current} /></div>}
-          {tab === "media" && current && <div id="panel-media" role="tabpanel" aria-labelledby="tab-media"><MediaTab event={current} /></div>}
+          {tab === "media" && current && <div id="panel-media" role="tabpanel" aria-labelledby="tab-media"><MediaTab event={current} onEventChanged={reloadEvents} /></div>}
         </Modal>
       )}
       {deleting && <ConfirmDialog title="Delete this event?" confirmLabel="Delete event" onCancel={() => setDeleting(null)} onConfirm={remove}>Delete <strong>{deleting.title}</strong> and ALL its registrations, payments and images? This cannot be undone. Receipt files in storage are not removed automatically.</ConfirmDialog>}
