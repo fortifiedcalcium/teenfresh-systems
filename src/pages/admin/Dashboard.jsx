@@ -6,7 +6,7 @@ import { fmtDateTime } from "../../lib/availability.js";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import Badge from "../../components/Badge.jsx";
 import { peso } from "../../lib/payment.js";
-import { IconCheckCircle, IconClock, IconDashboard, IconInbox, IconPercent, IconTicket, IconUserCheck, IconUsers, IconWallet, IconXCircle } from "../../components/NavIcons.jsx";
+import { IconCheckCircle, IconClock, IconDashboard, IconInbox, IconTicket, IconUserCheck, IconUsers, IconWallet, IconXCircle } from "../../components/NavIcons.jsx";
 
 const Stat = ({ label, value, sub, icon: Icon, tone = "text-ink" }) => (
   <div className="card p-4"><dt className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-ink-muted">{Icon && <Icon />}{label}</dt><dd className={`mt-1 text-3xl font-extrabold ${tone}`}>{value}</dd>{sub && <dd className="text-xs text-ink-muted">{sub}</dd>}</div>
@@ -82,7 +82,6 @@ export default function Dashboard() {
     checked.forEach((r) => { const h = new Date(r.checked_in_at).toLocaleTimeString("en-US", { hour: "numeric", timeZone: "Asia/Manila" }); byHour.set(h, (byHour.get(h) || 0) + 1); });
     return {
       registered: used, confirmed: confirmed.length, pending: pending.length, rejected: rejected.length, checked: checked.length, remaining: Math.max(event.capacity - used, 0),
-      rate: confirmed.length ? Math.round((checked.length / confirmed.length) * 100) : 0,
       kits: [...kitMap.values()].sort((a, b) => a.name.localeCompare(b.name)),
       days: [...byDay].map(([k, v]) => ({ label: k.slice(5), value: v })),
       hours: [...byHour].map(([k, v]) => ({ label: k, value: v })),
@@ -105,7 +104,6 @@ export default function Dashboard() {
           <Stat icon={IconWallet} label="Total verified" value={peso(verifiedAmount)} sub="payments marked verified" />
           <Stat icon={IconUserCheck} label="Checked in" value={m.checked} tone="text-success" />
           <Stat icon={IconInbox} label="Slots remaining" value={m.remaining} tone={m.remaining === 0 ? "text-danger" : "text-ink"} />
-          <Stat icon={IconPercent} label="Check-in rate" value={`${m.rate}%`} sub="of confirmed" />
         </dl>
       </section>
       <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
