@@ -109,7 +109,7 @@ export default function MyRegistrations() {
   }, [user.id]);
   useEffect(() => { load(); }, [load]);
 
-  if (rows === null) return <Loading label="Loading your registrations…" className="p-12" />;
+  if (rows === null) return <Loading label="Loading your registrations…" className="p-12" logo />;
   return (
     <div>
       <h1 className="mb-4 flex items-center gap-2 text-2xl"><IconTicket />My registrations</h1>

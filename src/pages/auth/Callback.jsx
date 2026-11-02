@@ -26,7 +26,7 @@ export default function Callback() {
           <Link className="btn-primary" to="/login"><IconLogIn />Back to sign in</Link>
         </>
       ) : (
-        <Loading label="Signing you in…" />
+        <Loading label="Signing you in…" logo />
       )}
     </main>
   );

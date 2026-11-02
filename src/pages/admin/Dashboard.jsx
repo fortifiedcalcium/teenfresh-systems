@@ -90,7 +90,7 @@ export default function Dashboard() {
   }, [rows, event]);
 
   if (!event) return <Empty>Create an event first (Events page).</Empty>;
-  if (!m) return <Loading label="Loading dashboard…" className="p-12" />;
+  if (!m) return <Loading label="Loading dashboard…" className="p-12" logo />;
   return (
     <div className="space-y-6">
       <div><h1 className="flex items-center gap-2 text-2xl"><IconDashboard />Dashboard</h1><p className="text-ink-muted">{event.title}</p></div>

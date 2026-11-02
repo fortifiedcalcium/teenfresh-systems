@@ -174,7 +174,7 @@ export default function EventRegister() {
 
   const another = () => { reset({ ...DEFAULTS, email: user?.email || "" }); setFile(null); setDone(null); setEmailState("idle"); setServerError(""); stepRef.current = "info"; setStepKey("info"); };
 
-  if (event === undefined) return <Loading label="Loading event…" className="p-12" />;
+  if (event === undefined) return <Loading label="Loading event…" className="p-12" logo />;
   if (event === null) return <p className="text-center">Event not found. <Link to="/">Back to events</Link></p>;
 
   // ---------------------------------------------------------------- status page (after submit)

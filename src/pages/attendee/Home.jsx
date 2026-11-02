@@ -56,7 +56,7 @@ export default function Home() {
       <p className="mb-6 text-ink-muted">Pick an event and reserve your slot.</p>
       {error && <Alert tone="bad" className="mb-4">{error}</Alert>}
       {events === null ? (
-        <Loading label="Loading events…" className="p-12" />
+        <Loading label="Loading events…" className="p-12" logo />
       ) : events.length === 0 ? (
         <Empty>No events yet. Check back soon!</Empty>
       ) : (
