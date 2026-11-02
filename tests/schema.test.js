@@ -78,6 +78,7 @@ beforeAll(async () => {
   await db.exec(read("004_change_log.sql"));
   await db.exec(read("005_underpayment_top_up.sql"));
   await db.exec(read("006_one_kit_per_form.sql"));
+  await db.exec(read("007_free_reference_number.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -164,8 +165,8 @@ describe("submit_registration", () => {
     await fails(submit("carol", ev, { notes: "x".repeat(501) }), "INVALID_NOTES");
     await fails(submit("carol", ev, { sender: "" }), "INVALID_SENDER");
     await fails(submit("carol", ev, { amount: 99.99 }), "AMOUNT_TOO_LOW");
-    await fails(submit("carol", ev, { ref: "123" }), "INVALID_REFERENCE");
-    await fails(submit("carol", ev, { ref: "12345678901234567890123" }), "INVALID_REFERENCE");
+    await fails(submit("carol", ev, { ref: "   " }), "INVALID_REFERENCE");
+    await fails(submit("carol", ev, { ref: "a".repeat(65) }), "INVALID_REFERENCE");
     await fails(submit("carol", ev, { receipt: "carol/receipt.jpg" }), "INVALID_RECEIPT");
     await fails(submit("carol", ev, { receipt: `${ids.bob}/${randomUUID()}.jpg` }), "INVALID_RECEIPT");   // someone else's folder
     await fails(submit("carol", ev, { receipt: `${ids.carol}/${randomUUID()}.exe` }), "INVALID_RECEIPT");
@@ -693,5 +694,20 @@ describe("006 one kit per form", () => {
     await fails(submit("alice", ev, { x: "solo_a", kit: kit.id, qty: 2, amount: 200 }), "INVALID_QUANTITY");
     const ok = await submit("alice", ev, { x: "solo_a", kit: kit.id, qty: 1, amount: 100 });
     expect(await regRow(ok.registration_id)).toMatchObject({ kit_name: "Solo kit", kit_quantity: 1 });
+  });
+});
+
+describe("007 free reference number", () => {
+  it("accepts a reference exactly as the bank shows it (letters, hyphens, short or long), still refuses duplicates", async () => {
+    await asSuper();
+    const ev = await mkEvent();
+    await asUser("alice");
+    const a = await submit("alice", ev, { x: "ref_a", ref: "GC-2024-ab12" });
+    const pay = (await db.query("select reference_number from public.payments where id = $1", [a.payment_id])).rows[0];
+    expect(pay.reference_number).toBe("GC-2024-ab12");                                         // hyphens and letters are kept
+    const b = await submit("alice", ev, { x: "ref_b", ref: "42" });                            // a short one is fine too
+    expect(b.payment_id).toBeTruthy();
+    await fails(submit("alice", ev, { x: "ref_c", ref: "GC-2024-ab12" }), "DUPLICATE_REFERENCE");
+    await fails(submit("alice", ev, { x: "ref_d", ref: "GC-2024 -ab12" }), "DUPLICATE_REFERENCE");   // spaces are ignored when comparing
   });
 });

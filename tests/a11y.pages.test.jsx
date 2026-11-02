@@ -185,7 +185,7 @@ describe("attendee pages", () => {
     await user.type(screen.getByLabelText(/^Amount Paid/), "50");
     await user.type(screen.getByLabelText(/^Reference Number/), "123456789012");
     await user.upload(container.querySelector("#receipt"), new File(["r"], "gcash.png", { type: "image/png" }));
-    expect(await screen.findByText(/usually 13 digits/)).toBeInTheDocument();       // a warning, not an error
+    expect(screen.queryByText(/usually 13 digits/)).not.toBeInTheDocument();         // no length warning: any reference is fine
     await user.click(screen.getByRole("button", { name: "Review registration" }));
     expect((await screen.findAllByText(/at least 100.00 PHP/)).length).toBeGreaterThan(0);
     await user.clear(screen.getByLabelText(/^Amount Paid/)); await user.type(screen.getByLabelText(/^Amount Paid/), "100");

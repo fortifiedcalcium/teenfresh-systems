@@ -10,6 +10,7 @@ supabase/migrations/003_kits.sql                    kit options and price per ki
 supabase/migrations/004_change_log.sql              admin Change log: who changed what (run fourth)
 supabase/migrations/005_underpayment_top_up.sql     underpayment: pay only the missing amount (run fifth)
 supabase/migrations/006_one_kit_per_form.sql        one form = one kit, no quantity (run sixth)
+supabase/migrations/007_free_reference_number.sql   reference number typed freely (run seventh)
 supabase/functions/send-confirmation-email   ticket email on verification / resend / test email
 supabase/functions/send-payment-email        underpaid, rejected and "we received your registration" emails
 supabase/functions/send-bulk-email           admin bulk mail merge
@@ -30,6 +31,7 @@ The app targets **WCAG 2.2 AA** with the Teenfresh palette (brand colours as sur
 5. **SQL Editor** → new query → paste all of `supabase/migrations/004_change_log.sql` → **Run** (once, after the third file). It adds **Admin → Change log**, filled by database triggers; contact details and payment references are logged as “changed” without their values.
 6. **SQL Editor** → new query → paste all of `supabase/migrations/005_underpayment_top_up.sql` → **Run** (once, after the fourth file). After an underpayment the attendee sends only the missing amount, and it is added to what they paid before.
 7. **SQL Editor** → new query → paste all of `supabase/migrations/006_one_kit_per_form.sql` → **Run** (once, after the fifth file). Every kit then allows one per form.
+8. **SQL Editor** → new query → paste all of `supabase/migrations/007_free_reference_number.sql` → **Run** (once, after the sixth file). The reference number can then be typed as the banking app shows it.
 
 ## 2. Auth providers
 **Authentication → Providers → Email**: enable, and keep **Confirm email** on (sign-up sends a verification link).

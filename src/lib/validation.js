@@ -3,7 +3,7 @@ import { z } from "zod";
 // Zod 4 probes for `new Function` to speed up parsing; our Content Security Policy forbids eval, so turn that off
 // (otherwise the browser reports a script-src violation on every page that loads a form).
 z.config({ jitless: true });
-import { isUnusualReferenceLength, isValidReference, normalizeFacebook, normalizePhone, normalizeX, parseAmount } from "./payment.js";
+import { isValidReference, normalizeFacebook, normalizePhone, normalizeX, parseAmount } from "./payment.js";
 
 /* One zod schema per step of the registration form. The browser checks each step as you move forward;
    the submit_registration function repeats every check on the server. */
@@ -53,12 +53,11 @@ export const makeStep3Schema = (total) =>
     if (!v.amount_paid) issue("amount_paid", "Enter the amount you paid");
     else if (Number.isNaN(amount)) issue("amount_paid", "Enter the amount as a number with at most 2 decimals, like 100 or 100.00");
     else if (amount < total) issue("amount_paid", `The amount must be at least ${total.toFixed(2)} PHP. Convenience or transaction fees are not covered by the kit price.`);
-    if (!v.reference_number) issue("reference_number", "Enter the GCash reference number");
-    else if (!isValidReference(v.reference_number)) issue("reference_number", "The reference number must be 8 to 20 digits, with no letters");
+    if (!v.reference_number) issue("reference_number", "Enter the reference number from your banking app");
+    else if (!isValidReference(v.reference_number)) issue("reference_number", "The reference number can be at most 64 characters, with no spaces or special control characters");
   });
 
 /** `ctx` = { kits, total }: the event's kit options and what this form costs right now */
 export const stepSchemaFor = (key, ctx = {}) =>
   key === "info" ? step1Schema : key === "participant" ? step2Schema : key === "kit" ? makeKitSchema(ctx.kits) : key === "payment" ? makeStep3Schema(ctx.total ?? 0) : z.object({});
 
-export { isUnusualReferenceLength };

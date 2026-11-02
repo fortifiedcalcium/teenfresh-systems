@@ -2,7 +2,19 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely.
+
+## [1.4.0] - 2026-11-02
+
+### Changed
+- **The reference number is free text.** People can type it exactly as their banking app shows it: letters, digits and hyphens, 1 to 64 characters. Before, only 8 to 20 digits were accepted and hyphens were removed. Spaces are still removed. The same reference still cannot be used twice for one event.
+- The field uses the normal keyboard (it was the number pad), with a hint "Type it exactly as your banking app shows it". This applies to the registration form and to resubmitting a payment.
+
+### Removed
+- The "digits only, 8 to 20" rule in the form, the database and the error message, and the warning that GCash references are usually 13 digits.
+
+### Upgrade notes
+- Run `supabase/migrations/007_free_reference_number.sql` in the SQL Editor of project `fnhamldmvpdcygjbzdls`. Until it runs, the database still refuses references that are not 8 to 20 digits. Saved payments are not changed.
 
 ## [1.3.0] - 2026-11-02
 

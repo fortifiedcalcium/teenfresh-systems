@@ -19,10 +19,10 @@ export function normalizeFacebook(v) {
   return m ? "https://www.facebook.com/" + m[1] : null;
 }
 
-export const normalizeReference = (v) => String(v ?? "").replace(/[\s-]/g, "");
-export const isValidReference = (v) => /^\d{8,20}$/.test(normalizeReference(v));
-/** GCash reference numbers are usually 13 digits: a different length is a warning, not an error */
-export const isUnusualReferenceLength = (v) => isValidReference(v) && normalizeReference(v).length !== 13;
+/** The reference number is kept as the banking app shows it: letters, digits and hyphens are all fine; only spaces are removed. */
+export const MAX_REFERENCE = 64;
+export const normalizeReference = (v) => String(v ?? "").replace(/\s/g, "");
+export const isValidReference = (v) => { const r = normalizeReference(v); return r.length >= 1 && r.length <= MAX_REFERENCE && ![...r].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127); };
 
 export const parseAmount = (v) => {
   const s = String(v ?? "").replace(/[₱,\s]/g, "");

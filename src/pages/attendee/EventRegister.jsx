@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { supabase } from "../../lib/supabaseClient.js";
 import { callFunction, friendlyError } from "../../lib/api.js";
-import { stepSchemaFor, isUnusualReferenceLength } from "../../lib/validation.js";
+import { stepSchemaFor } from "../../lib/validation.js";
 import { eventStatus } from "../../lib/availability.js";
 import { fetchEventImages } from "../../lib/eventImages.js";
 import { normalizeFacebook, normalizePhone, normalizeReference, normalizeX, orderTotal, parseAmount, peso, receiptPath, reusablePayments, balanceLeft, validateReceiptFile, formatBytes } from "../../lib/payment.js";
@@ -141,7 +141,6 @@ export default function EventRegister() {
   };
   const onNext = handleSubmit(() => { if (checkReceipt()) next(); else bumpFocus(); }, () => { checkReceipt(); bumpFocus(); });
 
-  const refNumber = watch("reference_number");
   const notesLength = (watch("notes") || "").length;
 
   const submitAll = async () => {
@@ -330,10 +329,9 @@ export default function EventRegister() {
             <Field id="amount_paid" label="Amount Paid" required hint={`At least ${peso(total)}${kitMode && order.kit ? ` (${order.kit.name})` : ""}. Convenience or transaction fees are not covered. Send enough so that the kit price is complete.`} error={errors.amount_paid?.message}>
               <input className="input" inputMode="decimal" readOnly={!!reuseId} {...register("amount_paid")} />
             </Field>
-            <Field id="reference_number" label="Reference Number" required hint="Digits only, from your GCash receipt" error={errors.reference_number?.message}>
-              <input className="input" inputMode="numeric" autoComplete="off" readOnly={!!reuseId} {...register("reference_number")} />
+            <Field id="reference_number" label="Reference Number" required hint="Type it exactly as your banking app shows it" error={errors.reference_number?.message}>
+              <input className="input" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={80} readOnly={!!reuseId} {...register("reference_number")} />
             </Field>
-            {isUnusualReferenceLength(refNumber) && !reuseId && <Alert tone="warn">GCash reference numbers are usually 13 digits. Yours has {normalizeReference(refNumber).length}. You can still continue, but please double-check it.</Alert>}
 
             {reuseId ? (
               <div className="rounded-lg border border-link p-3 text-sm"><p className="font-semibold">Payment receipt</p><p>Already submitted with your earlier form. No new file is needed.</p></div>

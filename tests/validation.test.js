@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { step1Schema, step2Schema, makeStep3Schema, makeKitSchema, stepSchemaFor } from "../src/lib/validation.js";
-import { balanceLeft, kitLabel, orderTotal, priceRange, isUnusualReferenceLength, isValidReference, normalizeFacebook, normalizePhone, normalizeReference, normalizeX, parseAmount, reusablePayments, validateReceiptFile, MAX_RECEIPT_BYTES } from "../src/lib/payment.js";
+import { balanceLeft, kitLabel, orderTotal, priceRange, isValidReference, normalizeFacebook, normalizePhone, normalizeReference, normalizeX, parseAmount, reusablePayments, validateReceiptFile, MAX_RECEIPT_BYTES } from "../src/lib/payment.js";
 
 // the first message per field, which is what the form shows (react-hook-form keeps the first error of a field)
 const issues = (schema, value) => { const r = schema.safeParse(value); return r.success ? {} : r.error.issues.reduce((o, i) => (i.path[0] in o ? o : { ...o, [i.path[0]]: i.message }), {}); };
@@ -23,14 +23,11 @@ describe("normalisers (mirror the database functions)", () => {
     expect(normalizeFacebook("facebook.com/profile.php?id=100012345")).toBe("https://www.facebook.com/profile.php?id=100012345");
     for (const bad of ["", "teenfresh", "twitter.com/x", "https://evil.com/facebook.com/x", "facebook.com", "facebook.com/", "javascript:alert(1)", "fb.com/<script>", "notfacebook.com/x", "facebook.com.evil.com/x", "fb.com/has space"]) expect(normalizeFacebook(bad), bad).toBeNull();
   });
-  it("reference number: digits only after stripping spaces and dashes, 8 to 20; 13 is usual, other lengths only warn", () => {
-    expect(normalizeReference("1234 5678-9012 3")).toBe("1234567890123");
-    expect(isValidReference("1234567890123")).toBe(true);
-    expect(isValidReference("12345678")).toBe(true);
-    for (const bad of ["1234567", "123456789012345678901", "12345678a", "", "abc"]) expect(isValidReference(bad), bad).toBe(false);
-    expect(isUnusualReferenceLength("1234567890123")).toBe(false);
-    expect(isUnusualReferenceLength("123456789012")).toBe(true);
-    expect(isUnusualReferenceLength("abc")).toBe(false);
+  it("reference number: entered as the banking app shows it; only spaces are removed; 1 to 64 characters", () => {
+    expect(normalizeReference("1234 5678-9012 3")).toBe("12345678-90123");
+    expect(normalizeReference(" AB-12 cd ")).toBe("AB-12cd");
+    for (const ok of ["1234567890123", "12345678", "123", "7", "GC-2024-ab12", "0x9F3A", "REF#12/34", "a".repeat(64)]) expect(isValidReference(ok), ok).toBe(true);
+    for (const bad of ["", "   ", "a".repeat(65), "ab\u0007cd"]) expect(isValidReference(bad), bad).toBe(false);
   });
   it("amount: a number with at most 2 decimals", () => {
     expect(parseAmount("100")).toBe(100); expect(parseAmount("100.50")).toBe(100.5); expect(parseAmount("₱1,000.00")).toBe(1000);
@@ -92,10 +89,10 @@ describe("step 3: payment", () => {
     expect(issues(s, { ...ok, amount_paid: "abc" }).amount_paid).toMatch(/number/);
     expect(issues(s, { ...ok, amount_paid: "1.234" }).amount_paid).toMatch(/2 decimals/);
   });
-  it("the reference number must be 8 to 20 digits; 12 digits is allowed (only a warning in the UI)", () => {
-    expect(issues(s, { ...ok, reference_number: "123" }).reference_number).toMatch(/8 to 20 digits/);
-    expect(issues(s, { ...ok, reference_number: "12ab5678" }).reference_number).toMatch(/digits/);
-    expect(issues(s, { ...ok, reference_number: "123456789012" })).toEqual({});
+  it("the reference number is free text: required, at most 64 characters, any letters, digits or symbols", () => {
+    expect(issues(s, { ...ok, reference_number: "" }).reference_number).toMatch(/Enter the reference number/);
+    expect(issues(s, { ...ok, reference_number: "a".repeat(65) }).reference_number).toMatch(/64 characters/);
+    for (const r of ["123", "12ab5678", "GC-2024-ab12", "123456789012"]) expect(issues(s, { ...ok, reference_number: r }), r).toEqual({});
   });
   it("notes are limited to 500 characters", () => {
     expect(issues(s, { ...ok, notes: "x".repeat(500) })).toEqual({});
