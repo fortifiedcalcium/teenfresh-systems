@@ -7,7 +7,7 @@ import Field from "../../components/Field.jsx";
 import Alert from "../../components/Alert.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import TermsEditor from "../../components/TermsEditor.jsx";
-import { htmlToText, textToHtml } from "../../lib/terms.js";
+import { sanitize } from "../../components/SafeHtml.jsx";
 import MediaTab from "./MediaTab.jsx";
 import KitsTab from "./KitsTab.jsx";
 import { Empty } from "../../components/Spinner.jsx";
@@ -32,8 +32,11 @@ const toForm = (e) => ({
   hashtags: (e.hashtags || []).join(" "), kit_inclusions: (e.kit_inclusions || []).join("\n"),
   payment_account_name: e.payment_account_name || "", payment_account_number: e.payment_account_number || "",
   contact_links: (e.contact_links || []).map((l) => `${l.label} | ${l.url}`).join("\n"),
-  receipt_retention_days: e.receipt_retention_days ?? "", terms_html: htmlToText(e.terms_html),
+  receipt_retention_days: e.receipt_retention_days ?? "", terms_html: e.terms_html || "",
 });
+
+/** sanitized Terms HTML, or null when the editor holds no text */
+const cleanTerms = (html) => { const c = sanitize(html).trim(); return c.replace(/<[^>]*>|&nbsp;|\s/g, "") ? c : null; };
 
 /** "Facebook | https://..." lines -> [{label, url}], or an error message */
 function parseLinks(text) {
@@ -85,7 +88,7 @@ export default function Events() {
       hashtags: form.hashtags.split(/[\s,]+/).filter(Boolean), kit_inclusions: form.kit_inclusions.split("\n").map((s) => s.trim()).filter(Boolean),
       payment_account_name: form.payment_account_name.trim() || null, payment_account_number: form.payment_account_number.trim() || null,
       contact_links: parsed.links, registration_open: form.registration_open, send_ack_email: form.send_ack_email,
-      receipt_retention_days: days, terms_html: textToHtml(form.terms_html) || null,
+      receipt_retention_days: days, terms_html: cleanTerms(form.terms_html),
     };
     const { data, error: err } = form.id ? await supabase.from("events").update(row).eq("id", form.id).select().single() : await supabase.from("events").insert(row).select().single();
     setSaving(false);
@@ -171,7 +174,7 @@ export default function Events() {
               </fieldset>
 
               <fieldset className="space-y-4"><legend className="text-lg font-bold">Terms and contact</legend>
-                <Field id="terms_html" label="Terms and Conditions" hint="Type plain text, no HTML needed. Shown on the form and merged into the confirmation email as {{Terms}}"><TermsEditor id="terms_html" value={form.terms_html} onChange={(v) => setForm((f) => ({ ...f, terms_html: v }))} /></Field>
+                <Field id="terms_html" label="Terms and Conditions" hint="Format it with the buttons, no HTML needed. Shown on the form and merged into the confirmation email as {{Terms}}"><TermsEditor id="terms_html" value={form.terms_html} onChange={(v) => setForm((f) => ({ ...f, terms_html: v }))} /></Field>
                 <Field id="contact" label="Contact links" hint="One per line: Label | URL. Facebook, X, Instagram, TikTok, Gmail (mailto:you@example.com)"><textarea className="input font-mono text-sm" rows={5} value={form.contact_links} onChange={set("contact_links")} /></Field>
               </fieldset>
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { check } from "./helpers/a11y.js";
@@ -284,15 +284,18 @@ describe("images, uploads and the new form pieces", () => {
     expect(calls).toEqual(["inner"]);                                                         // the outer dialog stays
   });
 
-  it("TermsEditor: plain text in, formatted preview out", async () => {
-    const user = userEvent.setup();
-    function Host() { const [v, setV] = React.useState('Hello <script>alert(1)</script>'); return <><label htmlFor="t">Terms</label><TermsEditor id="t" value={v} onChange={setV} /></>; }
+  it("TermsEditor: visual editor emits sanitized HTML", async () => {
+    let out = "";
+    function Host() { const [v, setV] = React.useState('<p>Hello</p><script>alert(1)</script>'); return <TermsEditor id="t" value={v} onChange={(h) => { out = h; setV(h); }} />; }
     const { container } = wrap(<Host />);
-    expect(container.querySelector(".safe-html script")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Numbered list" }));
-    expect(screen.getByLabelText("Terms").value).toMatch(/^1\. /);
-    expect(container.querySelector(".safe-html ol")).not.toBeNull();
+    const box = screen.getByRole("textbox", { name: "Terms and Conditions" });
+    expect(box.innerHTML).toBe("<p>Hello</p>");                                              // script removed on load
+    box.innerHTML = '<p>Rules</p><ol><li>One <b onclick="x()">two</b></li></ol><img src=x onerror=alert(1)>';
+    fireEvent.input(box);
+    expect(out).toBe("<p>Rules</p><ol><li>One <b>two</b></li></ol>");
     expect(screen.getByRole("toolbar", { name: "Formatting" })).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Link" }));
+    expect(screen.getByLabelText("Link address")).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
   });
 

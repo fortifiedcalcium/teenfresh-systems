@@ -1,51 +1,86 @@
-import React, { useMemo, useRef } from "react";
-import SafeHtml from "./SafeHtml.jsx";
+import React, { useEffect, useRef, useState } from "react";
+import { sanitize } from "./SafeHtml.jsx";
 import { IconLink, IconList, IconParagraph } from "./NavIcons.jsx";
-import { wrapSelection } from "../lib/formatText.js";
-import { textToHtml } from "../lib/terms.js";
 
-const wrap = (open, close, placeholder) => (v, s, e) => wrapSelection(v, s, e, open, close, placeholder);
-/** Puts a prefix in front of every selected line ("- " or "1. "), or removes it again when they all have it. */
-const prefixLines = (numbered) => (v, s, e) => {
-  const from = v.lastIndexOf("\n", s - 1) + 1, nl = v.indexOf("\n", e), to = nl === -1 ? v.length : nl;
-  const lines = v.slice(from, to).split("\n");
-  const has = (l) => (numbered ? /^\d+[.)]\s/ : /^[-*]\s/).test(l);
-  const next = lines.every(has) ? lines.map((l) => l.replace(numbered ? /^\d+[.)]\s/ : /^[-*]\s/, "")) : lines.map((l, i) => (has(l) ? l : `${numbered ? `${i + 1}. ` : "- "}${l}`));
-  const text = next.join("\n");
-  return { value: v.slice(0, from) + text + v.slice(to), start: from, end: from + text.length };
-};
-
+const exec = (cmd, arg) => document.execCommand?.(cmd, false, arg);
 const BUTTONS = [
-  ["Bold", wrap("**", "**", "bold text"), <b key="b" aria-hidden="true" className="font-serif text-base leading-none">B</b>],
-  ["Italic", wrap("*", "*", "italic text"), <i key="i" aria-hidden="true" className="font-serif text-base leading-none">I</i>],
-  ["Bulleted list", prefixLines(false), <IconList key="u" />],
-  ["Numbered list", prefixLines(true), <IconParagraph key="p" />],
-  ["Link", (v, s, e) => { const t = v.slice(s, e) || "link text"; return { value: `${v.slice(0, s)}[${t}](https://)${v.slice(e)}`, start: s + t.length + 3, end: s + t.length + 11 }; }, <IconLink key="k" />],
+  ["Bold", () => exec("bold"), <b key="b" aria-hidden="true" className="font-serif text-base leading-none">B</b>],
+  ["Italic", () => exec("italic"), <i key="i" aria-hidden="true" className="font-serif text-base leading-none">I</i>],
+  ["Underline", () => exec("underline"), <u key="u" aria-hidden="true" className="font-serif text-base leading-none">U</u>],
+  ["Bulleted list", () => exec("insertUnorderedList"), <IconList key="ul" />],
+  ["Numbered list", () => exec("insertOrderedList"), <IconParagraph key="ol" />],
+  ["Clear formatting", () => { exec("removeFormat"); exec("unlink"); }, <span key="c" aria-hidden="true" className="font-serif text-base leading-none">T<sub>x</sub></span>],
 ];
 
-/** A plain-text editor for the Terms: no HTML to type. Blank line = new paragraph, "- " = bullet, "1. " = number,
- *  **bold**, *italic*, [text](https://link). The preview shows exactly what attendees will see; the text is turned into
- *  sanitized HTML once, when the event is saved. */
+/** A built-in visual editor for the Terms: type, select text and press Bold / lists / Link. No HTML to write.
+ *  What it produces is passed through the same whitelist sanitizer as the attendee page and the email. */
 export default function TermsEditor({ id, value, onChange }) {
   const ref = useRef(null);
-  const html = useMemo(() => textToHtml(value), [value]);
-  const apply = (make) => {
-    const el = ref.current;
-    const r = make(value, el.selectionStart, el.selectionEnd);
-    onChange(r.value);
-    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(r.start, r.end); });
+  const last = useRef(null);            // the last HTML this editor itself emitted
+  const saved = useRef(null);           // the selection, kept while the link box has focus
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [url, setUrl] = useState("https://");
+  const urlRef = useRef(null);
+  useEffect(() => { if (linkOpen) urlRef.current?.focus(); }, [linkOpen]);
+
+  // load / reload when the value changes from outside (opening another event), not on every keystroke
+  useEffect(() => {
+    if (ref.current && value !== last.current) { ref.current.innerHTML = sanitize(value); last.current = value; }
+  }, [value]);
+
+  const emit = () => {
+    const html = sanitize(ref.current.innerHTML);
+    if (html !== ref.current.innerHTML) {            // something the whitelist refuses (e.g. a dropped image): remove it from the box too
+      ref.current.innerHTML = html;
+      const r = document.createRange(); r.selectNodeContents(ref.current); r.collapse(false);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    }
+    last.current = html;
+    onChange(html);
   };
+  const run = (fn) => { ref.current.focus(); fn(); emit(); };
+  const openLink = () => {
+    const sel = window.getSelection();
+    saved.current = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    setLinkOpen(true);
+  };
+  const applyLink = () => {
+    const href = /^(https?:|mailto:)/i.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
+    ref.current.focus();
+    const sel = window.getSelection();
+    if (saved.current) { sel.removeAllRanges(); sel.addRange(saved.current); }
+    if (sel.isCollapsed) exec("insertHTML", `<a href="${href.replace(/"/g, "%22")}">${href.replace(/[<>&]/g, "")}</a>`);
+    else exec("createLink", href);
+    setLinkOpen(false); setUrl("https://"); emit();
+  };
+
   return (
     <div className="space-y-2">
       <div role="toolbar" aria-label="Formatting" aria-controls={id} className="flex flex-wrap gap-2">
-        {BUTTONS.map(([label, make, icon]) => <button key={label} type="button" className="btn-secondary" onClick={() => apply(make)}>{icon}{label}</button>)}
+        {BUTTONS.map(([label, fn, icon]) => (
+          <button key={label} type="button" className="btn-secondary" onMouseDown={(e) => e.preventDefault()} onClick={() => run(fn)}>{icon}{label}</button>
+        ))}
+        <button type="button" className="btn-secondary" aria-expanded={linkOpen} onMouseDown={(e) => e.preventDefault()} onClick={openLink}><IconLink />Link</button>
       </div>
-      <textarea id={id} ref={ref} rows={12} className="input text-sm" value={value} onChange={(e) => onChange(e.target.value)} aria-describedby={`${id}-help`} spellCheck />
-      <p id={`${id}-help`} className="text-xs text-ink-muted">Just type. Leave a blank line between paragraphs. Start a line with <code>- </code> for bullets or <code>1. </code> for numbers. Use <code>**bold**</code>, <code>*italic*</code> and <code>[text](https://link)</code>.</p>
-      <div>
-        <p className="label">Preview (what attendees see)</p>
-        <div className="rounded-lg border border-link bg-brand-ivory p-3 text-sm"><SafeHtml html={html} /></div>
-      </div>
+      {linkOpen && (
+        <div className="flex flex-wrap items-end gap-2 rounded-lg border border-link bg-brand-ivory p-3">
+          <div className="min-w-0 flex-1">
+            <label htmlFor={`${id}-url`} className="label">Link address</label>
+            <input id={`${id}-url`} className="input" type="url" value={url} ref={urlRef} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyLink(); } if (e.key === "Escape") setLinkOpen(false); }} />
+          </div>
+          <button type="button" className="btn-primary" onClick={applyLink}>Add link</button>
+          <button type="button" className="btn-secondary" onClick={() => setLinkOpen(false)}>Cancel</button>
+        </div>
+      )}
+      <div
+        id={id} ref={ref} role="textbox" aria-multiline="true" aria-label="Terms and Conditions" aria-describedby={`${id}-help`} tabIndex={0}
+        contentEditable suppressContentEditableWarning
+        className="input safe-html min-h-48 overflow-auto bg-white text-sm"
+        onFocus={() => exec("defaultParagraphSeparator", "p")}
+        onInput={emit}
+        onPaste={(e) => { e.preventDefault(); exec("insertText", e.clipboardData.getData("text/plain")); }}
+      />
+      <p id={`${id}-help`} className="text-xs text-ink-muted">Type here and format it like a normal document. Select text, then press a button above. Pasted text keeps no outside styling.</p>
     </div>
   );
 }
