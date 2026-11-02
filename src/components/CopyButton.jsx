@@ -3,7 +3,7 @@ import { useAnnounce } from "../a11y.jsx";
 import { IconAlert, IconCheck, IconCopy } from "./NavIcons.jsx";
 
 /** Copies text and says so out loud: the live region announces "copied", and the label changes for everyone else. */
-export default function CopyButton({ text, label = "Copy number", what = "GCash number" }) {
+export default function CopyButton({ text, label = "Copy number", what = "GCash number", iconOnly = false }) {
   const announce = useAnnounce();
   const [state, setState] = useState("idle"); // idle | copied | failed
   const timer = useRef(null);
@@ -25,8 +25,8 @@ export default function CopyButton({ text, label = "Copy number", what = "GCash 
   };
 
   return (
-    <button type="button" className="btn-secondary" onClick={copy}>
-      {state === "copied" ? <><IconCheck />Copied</> : state === "failed" ? <><IconAlert />Copy failed</> : <><IconCopy />{label}</>}
+    <button type="button" className={iconOnly ? "btn-secondary min-w-target shrink-0 px-2" : "btn-secondary"} onClick={copy}>
+      {iconOnly ? <>{state === "copied" ? <IconCheck /> : state === "failed" ? <IconAlert /> : <IconCopy />}<span className="sr-only">{state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : label}</span></> : state === "copied" ? <><IconCheck />Copied</> : state === "failed" ? <><IconAlert />Copy failed</> : <><IconCopy />{label}</>}
     </button>
   );
 }

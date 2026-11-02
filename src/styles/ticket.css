@@ -1,0 +1,100 @@
+/* =====================================================================================
+   Ticket-shaped cards (My registrations).
+   Technique: the ticket is two stacked parts, the top ("body") and the bottom ("stub"). Each part is its own
+   masked box: the body has a half circle cut out of both bottom corners, the stub the same at both top corners.
+   Where they meet, the two half circles make one round notch on each side, always exactly on the perforation
+   line, however tall either part is (no measuring needed).
+   The outline follows the notches because it is a second, slightly larger mask behind the fill: the outer box
+   is the outline colour, the inner box (inset by --edge) is the fill, and its notch is larger by --edge.
+   The shadow is a drop-shadow filter on the whole ticket (a filter follows the cut-outs; box-shadow would not).
+   No hex values here: colours come from tokens.css.
+   ===================================================================================== */
+.ticket-grid { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px)  { .ticket-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .ticket-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1536px) { .ticket-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.ticket-li { display: flex; min-width: 0; width: 100%; max-width: 420px; margin-inline: auto; }
+@media (min-width: 640px) { .ticket-li { max-width: none; } }
+@media (min-width: 1536px) { .ticket-li { max-width: 360px; } }
+
+.ticket {
+  --notch: 12px; --edge: 1.5px; --corner: 16px; --perf-inset: 20px;
+  position: relative; display: flex; flex-direction: column; width: 100%;
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--ink) 24%, transparent));
+  transition: transform 150ms ease-out;
+}
+@media (max-width: 479px) { .ticket { --notch: 10px; } }
+
+/* Same row = same perforation line: with subgrid, the body rows and stub rows of the tickets in one row are
+   sized together. Without subgrid the body simply grows (flex) and the stub sits at the bottom. */
+@supports (grid-template-rows: subgrid) {
+  .ticket-li { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 0; }
+  .ticket { grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; row-gap: 0; }
+}
+
+.ticket__top, .ticket__bottom { min-width: 0; background: var(--link); display: flex; flex-direction: column; }
+.ticket__top { padding: var(--edge) var(--edge) 0; border-radius: var(--corner) var(--corner) 0 0; flex: 1 1 auto; }
+.ticket__bottom { padding: 0 var(--edge) var(--edge); border-radius: 0 0 var(--corner) var(--corner); }
+.ticket__fill { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; position: relative; }
+.ticket__top .ticket__fill { background: var(--white); border-radius: calc(var(--corner) - var(--edge)) calc(var(--corner) - var(--edge)) 0 0; overflow: hidden; }
+.ticket__bottom .ticket__fill { background: var(--brand-ivory); border-radius: 0 0 calc(var(--corner) - var(--edge)) calc(var(--corner) - var(--edge)); }
+
+/* The perforation: a dashed line along the top of the stub, stopping short of the notches */
+.ticket__bottom .ticket__fill::before {
+  content: ""; position: absolute; top: 0; left: var(--perf-inset); right: var(--perf-inset);
+  border-top: 2px dashed var(--ink-muted); pointer-events: none;
+}
+
+/* The cut-outs (progressive enhancement: without mask support the ticket is a normal rounded card) */
+@supports (mask-image: linear-gradient(black, black)) or (-webkit-mask-image: linear-gradient(black, black)) {
+  .ticket__top {
+    -webkit-mask: radial-gradient(circle var(--notch) at 0 100%, transparent 98%, black) left / 51% 100% no-repeat, radial-gradient(circle var(--notch) at 100% 100%, transparent 98%, black) right / 51% 100% no-repeat;
+            mask: radial-gradient(circle var(--notch) at 0 100%, transparent 98%, black) left / 51% 100% no-repeat, radial-gradient(circle var(--notch) at 100% 100%, transparent 98%, black) right / 51% 100% no-repeat;
+  }
+  .ticket__bottom {
+    -webkit-mask: radial-gradient(circle var(--notch) at 0 0, transparent 98%, black) left / 51% 100% no-repeat, radial-gradient(circle var(--notch) at 100% 0, transparent 98%, black) right / 51% 100% no-repeat;
+            mask: radial-gradient(circle var(--notch) at 0 0, transparent 98%, black) left / 51% 100% no-repeat, radial-gradient(circle var(--notch) at 100% 0, transparent 98%, black) right / 51% 100% no-repeat;
+  }
+  /* the fill sits --edge inside the outline, so its notch is --edge larger and centred on the outer edge */
+  .ticket__top .ticket__fill {
+    -webkit-mask: radial-gradient(circle calc(var(--notch) + var(--edge)) at calc(var(--edge) * -1) 100%, transparent 98%, black) left / 51% 100% no-repeat, radial-gradient(circle calc(var(--notch) + var(--edge)) at calc(100% + var(--edge)) 100%, transparent 98%, black) right / 51% 100% no-repeat;
+            mask: radial-gradient(circle calc(var(--notch) + var(--edge)) at calc(var(--edge) * -1) 100%, transparent 98%, black) left / 51% 100% no-repeat, radial-gradient(circle calc(var(--notch) + var(--edge)) at calc(100% + var(--edge)) 100%, transparent 98%, black) right / 51% 100% no-repeat;
+  }
+  .ticket__bottom .ticket__fill {
+    -webkit-mask: radial-gradient(circle calc(var(--notch) + var(--edge)) at calc(var(--edge) * -1) 0, transparent 98%, black) left / 51% 100% no-repeat, radial-gradient(circle calc(var(--notch) + var(--edge)) at calc(100% + var(--edge)) 0, transparent 98%, black) right / 51% 100% no-repeat;
+            mask: radial-gradient(circle calc(var(--notch) + var(--edge)) at calc(var(--edge) * -1) 0, transparent 98%, black) left / 51% 100% no-repeat, radial-gradient(circle calc(var(--notch) + var(--edge)) at calc(100% + var(--edge)) 0, transparent 98%, black) right / 51% 100% no-repeat;
+  }
+}
+
+.ticket__content { display: flex; flex: 1 1 auto; flex-direction: column; gap: 0.75rem; padding: 1.25rem 1.5rem 1.75rem; }   /* 24px from both edges, room above the notches */
+.ticket__stub { display: flex; flex-direction: column; gap: 0.75rem; padding: 1.75rem 1.5rem 1.25rem; }
+.ticket__label { font-size: 0.875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.ticket__number { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 18px; letter-spacing: 0.04em; color: var(--ink); overflow-wrap: anywhere; }
+
+/* VOID stamp on a rejected ticket: decorative (the badge and the message carry the meaning) */
+.ticket__stamp {
+  position: absolute; top: 14px; right: 14px; z-index: 1; transform: rotate(12deg); pointer-events: none;
+  border: 2px solid var(--danger); border-radius: 6px; background: var(--brand-blush); color: var(--danger);
+  padding: 0 0.5rem; font-size: 1.125rem; font-weight: 800; letter-spacing: 0.18em; line-height: 1.6;
+}
+
+/* Cancelled: quieter, but the text keeps its full contrast (no fading, no strike-through) */
+.ticket[data-status="cancelled"] .ticket__top .ticket__fill { background: var(--brand-ivory); }
+.ticket[data-status="cancelled"] img { filter: grayscale(1); }
+
+/* A gentle lift, only where hover exists and motion is welcome */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ticket:hover { transform: translateY(-2px); }
+}
+
+/* Forced colours: no mask, a plain bordered card (the system draws the colours) */
+@media (forced-colors: active) {
+  .ticket { filter: none; }
+  .ticket__top, .ticket__bottom, .ticket__top .ticket__fill, .ticket__bottom .ticket__fill { -webkit-mask: none; mask: none; }
+  .ticket__top, .ticket__bottom { padding: 0; border: 2px solid CanvasText; }
+  .ticket__top { border-bottom-width: 0; }
+  .ticket__bottom { border-top: 2px dashed CanvasText; }
+  .ticket__bottom .ticket__fill::before { display: none; }
+  .ticket__stamp { border-color: CanvasText; }
+}

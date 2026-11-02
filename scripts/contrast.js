@@ -39,8 +39,12 @@ export const APPROVED = [
   T("ink", "brand-cream", 4.5, "bottom bar: inactive label"), T("brand-ivory", "ink", 4.5, "bottom bar: active label on the ink pill"), T("ink", "brand-sky", 4.5, "bottom bar: pressed item"),
   T("ink", "brand-cream", 3, "bottom bar: inactive icon"), T("brand-ivory", "ink", 3, "bottom bar: active icon"),
   T("ink", "brand-blue", 4.5, "scan button icon on its fill"), T("brand-ivory", "ink", 4.5, "bottom bar: focus ring and text"), T("ink", "brand-coral", 4.5, "pending badge"),
+  // ticket cards (My registrations): ink on the white body and the ivory stub, the stub label, the VOID stamp
+  T("ink", "white", 4.5, "ticket body text"), T("ink", "brand-ivory", 4.5, "ticket stub text and ticket number"), T("ink-muted", "brand-ivory", 4.5, "ticket stub label"),
+  T("danger", "brand-blush", 4.5, "VOID stamp and rejected message in the stub"), T("warning-ink", "brand-cream", 4.5, "underpaid message in the stub"),
   // non-text (>= 3:1)
   T("link", "white", 3, "input / card border"), T("link", "brand-ivory", 3, "border"), T("link", "brand-sky", 3, "progress fill on track"),
+  T("ink-muted", "brand-ivory", 3, "ticket perforation"), T("ink-muted", "white", 3, "ticket perforation"), T("link", "brand-blush", 3, "ticket outline on the page"),
   T("ink", "white", 3, "focus ring"), T("ink", "brand-ivory", 3, "focus ring"), T("ink", "brand-cream", 3, "focus ring"), T("ink", "brand-sky", 3, "focus ring"), T("ink", "brand-blush", 3, "focus ring on the page background"), T("link", "brand-blush", 3, "border / icon on the page background"),
   T("ink", "brand-blue", 3, "button outline / chart outline"), T("ink", "brand-coral", 3, "chart outline"), T("brand-ivory", "ink", 3, "focus ring on ink surfaces"),
   T("danger", "white", 3, "invalid input border"), T("success", "brand-mint", 3, "alert bar"), T("warning-ink", "brand-cream", 3, "alert bar"), T("danger", "brand-blush", 3, "alert bar"),
