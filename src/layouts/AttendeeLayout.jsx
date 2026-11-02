@@ -33,10 +33,9 @@ export default function AttendeeLayout() {
       </header>
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-6"><Outlet /></main>
       <footer className="border-t-2 border-ink bg-brand-cream px-4 py-4 text-center text-sm">
-        <img src={logo} alt="Teenfresh" width="141" height="30" className="mx-auto mb-2 h-[30px] w-auto" loading="lazy" />
         <ul aria-label="Teenfresh on social media and support" className="flex flex-wrap items-center justify-center gap-x-6">
-          <li><a href="https://www.facebook.com/TeenfreshPH" className="inline-flex min-h-target items-center gap-2"><FacebookIcon />Facebook /TeenfreshPH</a></li>
-          <li><a href="https://x.com/TeenfreshPH" className="inline-flex min-h-target items-center gap-2"><XIcon />X @TeenfreshPH</a></li>
+          <li><a href="https://www.facebook.com/TeenfreshPH" className="inline-flex min-h-target items-center gap-2"><FacebookIcon /><span className="sr-only">Facebook </span>/TeenfreshPH</a></li>
+          <li><a href="https://x.com/TeenfreshPH" className="inline-flex min-h-target items-center gap-2"><XIcon /><span className="sr-only">X </span>@TeenfreshPH</a></li>
           <li><a href={SUPPORT ? `mailto:${SUPPORT}?subject=Accessibility%20issue` : "https://x.com/TeenfreshPH"} className="inline-flex min-h-target items-center gap-2"><MailIcon />Report an accessibility issue</a></li>
         </ul>
       </footer>

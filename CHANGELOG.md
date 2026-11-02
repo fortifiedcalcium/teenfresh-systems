@@ -2,7 +2,16 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer.
+
+## [1.2.1] - 2026-11-02
+
+### Removed
+- The Teenfresh logo from the public footer (the header logo stays).
+- The visible words "Facebook" and "X" in the footer social links.
+
+### Changed
+- The footer links now show only `/TeenfreshPH` and `@TeenfreshPH` beside their icons. "Facebook" and "X" remain in the link names for screen readers (hidden text), so the accessible names still contain the visible text.
 
 ## [1.2.0] - 2026-11-01
 
