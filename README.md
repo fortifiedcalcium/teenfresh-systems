@@ -1,4 +1,4 @@
-# Event Registration & Attendance
+# Teenfresh Events Systen
 
 React 18 + Vite + Tailwind front end, Supabase (Auth, Postgres, RLS, Realtime, Edge Functions) back end. Attendees fill in a 4-step form and pay by GCash with a receipt upload; an admin verifies the payment, which issues the ticket (QR code) and sends the confirmation email; admins scan tickets at the door and track attendance.
 
