@@ -72,6 +72,15 @@ export function orderTotal(values, kits, fee) {
   return { kit: null, qty: 1, unit: Number(fee || 0), total: Number(fee || 0) };
 }
 
+/** The kit prices as {lo, hi}: hi is null when every kit costs the same, null when there are no kits.
+ *  Lets the card keep each amount on one line and wrap only at "to". */
+export function priceBounds(kits) {
+  const prices = (kits || []).map((k) => Number(k.unit_price));
+  if (!prices.length) return null;
+  const lo = Math.min(...prices), hi = Math.max(...prices);
+  return { lo: peso(lo), hi: lo === hi ? null : peso(hi) };
+}
+
 /** "₱100.00" for one price, "₱100.00 to ₱250.00" for several, "" for none */
 export function priceRange(kits) {
   const prices = (kits || []).map((k) => Number(k.unit_price));

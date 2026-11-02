@@ -199,7 +199,7 @@ describe("attendee pages", () => {
     expect(screen.getByText("@juan_dc")).toBeInTheDocument();
     expect(screen.getByText("https://www.facebook.com/TeenfreshPH")).toBeInTheDocument();
     expect(screen.getByText("+639171234567")).toBeInTheDocument();
-    expect(screen.getByText("₱100.00")).toBeInTheDocument();
+    expect(screen.getAllByText("₱100.00").length).toBeGreaterThan(0);
     expect(screen.getByText(/gcash.png/)).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Edit / }).length).toBe(3);
     expect(await check(container)).toHaveNoViolations();
@@ -295,7 +295,7 @@ describe("attendee pages", () => {
     const user = userEvent.setup({ applyAccept: false });
     const { container } = page("/events/:id/register", <EventRegister />, "/events/e1/register");
     await screen.findByRole("heading", { level: 1, name: "Register" });
-    expect(screen.getByText(/Standard kit: ₱100.00/)).toBeInTheDocument();   // the header lists the kits as text
+    expect(screen.getByText((_, el) => el.tagName === "SPAN" && el.textContent === "Standard kit: ₱100.00")).toBeInTheDocument();   // the header lists the kits as text
     expect(screen.getAllByRole("listitem").some((li) => /(^|\s)Kit(\s|$)/.test(li.textContent))).toBe(true);   // the extra step is in the progress list
     await fillStep1(user); await screen.findByRole("heading", { level: 2, name: "Participant's information" }); await fillStep2(user);
 
@@ -304,7 +304,7 @@ describe("attendee pages", () => {
     await waitFor(() => expect(h).toHaveFocus());
     expect(screen.getByRole("radio", { name: /Standard kit/ })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /Deluxe kit/ })).toBeInTheDocument();
-    expect(screen.getByText("₱250.50")).toBeInTheDocument();
+    expect(screen.getAllByText("₱250.50").length).toBeGreaterThan(0);
     expect(screen.queryByLabelText(/Quantity/)).not.toBeInTheDocument();                     // one form = one kit: no quantity to enter
     expect(screen.getByText(/^(Total to pay|Choose a kit)/)).toHaveTextContent("Choose a kit to see the total.");
     expect(await check(container)).toHaveNoViolations();

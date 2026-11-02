@@ -77,6 +77,15 @@
   .safe-html > * + * { margin-top: 0.75rem; }
   .safe-html ol { list-style: decimal; padding-left: 1.5rem; } .safe-html ul { list-style: disc; padding-left: 1.5rem; }
   .safe-html li + li { margin-top: 0.75rem; } .safe-html a { text-decoration: underline; }
+  /* the event facts (EventCard, EventHeader): icon + one text block, top-aligned, same 12 px between rows */
+  .info-list { @apply grid gap-3 text-sm text-ink-muted; }
+  .info-row { @apply flex items-start gap-2.5; }
+  .info-icon { @apply shrink-0; width: 1.125rem; height: 1.125rem; margin-top: calc((1.5em - 1.125rem) / 2); }   /* centred on the FIRST line only */
+  .info-icon svg { width: 100%; height: 100%; }
+  .info-text { @apply m-0 min-w-0; line-height: 1.5; overflow-wrap: anywhere; }
+  .info-text strong { @apply font-bold; }
+  .nowrap { white-space: nowrap; }
+  .info-note { @apply block text-ink-muted; font-size: 0.9375rem; }
   .check { @apply h-6 w-6 shrink-0 rounded border border-link accent-[var(--link)]; }
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { step1Schema, step2Schema, makeStep3Schema, makeKitSchema, stepSchemaFor } from "../src/lib/validation.js";
-import { balanceLeft, kitLabel, orderTotal, priceRange, isValidReference, normalizeFacebook, normalizePhone, normalizeReference, normalizeX, parseAmount, reusablePayments, validateReceiptFile, MAX_RECEIPT_BYTES } from "../src/lib/payment.js";
+import { balanceLeft, kitLabel, orderTotal, priceRange, isValidReference, priceBounds, normalizeFacebook, normalizePhone, normalizeReference, normalizeX, parseAmount, reusablePayments, validateReceiptFile, MAX_RECEIPT_BYTES } from "../src/lib/payment.js";
 
 // the first message per field, which is what the form shows (react-hook-form keeps the first error of a field)
 const issues = (schema, value) => { const r = schema.safeParse(value); return r.success ? {} : r.error.issues.reduce((o, i) => (i.path[0] in o ? o : { ...o, [i.path[0]]: i.message }), {}); };
@@ -153,6 +153,11 @@ describe("order total (one kit per form)", () => {
     expect(priceRange([])).toBe("");
     expect(priceRange([KITS[0]])).toBe("₱100.00");
     expect(priceRange(KITS)).toBe("₱100.00 to ₱250.50");
+    // the card keeps each amount on one line and may wrap only at "to"
+    expect(priceBounds([])).toBeNull();
+    expect(priceBounds([KITS[0]])).toEqual({ lo: "₱100.00", hi: null });                       // one kit, or all the same price
+    expect(priceBounds([KITS[0], { ...KITS[0], id: "k9" }])).toEqual({ lo: "₱100.00", hi: null });   // min equals max
+    expect(priceBounds(KITS)).toEqual({ lo: "₱100.00", hi: "₱250.50" });                       // min less than max
   });
 });
 

@@ -313,7 +313,7 @@ describe("images, uploads and the new form pieces", () => {
     expect(screen.getByText(/LIMITED SLOTS ONLY/)).toBeInTheDocument();
     expect(screen.getByText("* Indicates required question")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Open in Google Maps/ })).toHaveAttribute("href", expect.stringContaining("google.com/maps/search"));
-    expect(screen.getByText("₱100.00 (exclusive of food and drinks)")).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el.classList.contains("info-text") && /Pre-registration fee:\s*₱100\.00 \(exclusive of food and drinks\)/.test(el.textContent))).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
   });
 });
