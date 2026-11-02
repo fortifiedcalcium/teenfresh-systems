@@ -46,7 +46,7 @@ const payment = (over = {}) => ({ id: "p1", event_id: "e1", user_id: "u1", sende
   sender_profile: { email: "juan@example.com", full_name: "Juan" }, registrations: [{ id: "r1", name: "Juan Dela Cruz", x_username: "juan", facebook_url: "https://www.facebook.com/juan", status: "pending_verification", ticket_number: null, kit_name: "Event kit", kit_quantity: 1, total_amount: 100 }], ...over });
 
 const kitA = { id: "ka", event_id: "e1", name: "Standard kit", description: "(1) Cupsleeve, (1) Trading Card", unit_price: 100, max_per_order: 5, active: true };
-const kitB = { id: "kb", event_id: "e1", name: "Deluxe kit", description: "Everything in Standard plus a poster", unit_price: 250.5, max_per_order: 2, active: true };
+const kitB = { id: "kb", event_id: "e1", name: "Deluxe kit", description: "Everything in Standard plus a poster", unit_price: 250.5, max_per_order: 1, active: true };
 
 beforeEach(() => {
   sessionStorage.clear();   // the registration form saves unsent progress there
@@ -287,26 +287,26 @@ describe("attendee pages", () => {
     expect(await screen.findByText(/already registered for this event/)).toBeInTheDocument();
   });
 
-  it("EventRegister with kits: choose a kit and a quantity, see the total, pay at least that, and send the order", async () => {
+  it("EventRegister with kits: choose one kit, see the total, pay at least that, and send the order", async () => {
     asUser();
     fixtures.current.payments = [];
     fixtures.current.event_kits = [kitA, kitB];
-    fixtures.current.rpc = { submit_registration: { registration_id: "rnew", payment_id: "pnew", status: "pending_verification", ticket_number: null, kit_name: "Deluxe kit", kit_quantity: 2, total_amount: 501 } };
+    fixtures.current.rpc = { submit_registration: { registration_id: "rnew", payment_id: "pnew", status: "pending_verification", ticket_number: null, kit_name: "Deluxe kit", kit_quantity: 1, total_amount: 250.5 } };
     const user = userEvent.setup({ applyAccept: false });
     const { container } = page("/events/:id/register", <EventRegister />, "/events/e1/register");
     await screen.findByRole("heading", { level: 1, name: "Register" });
-    expect(screen.getByText(/Standard kit: ₱100.00 each \(up to 5 per form\)/)).toBeInTheDocument();   // the header lists the kits as text
-    expect(screen.getAllByRole("listitem").some((li) => /Kit and quantity/.test(li.textContent))).toBe(true);   // the extra step is in the progress list
+    expect(screen.getByText(/Standard kit: ₱100.00/)).toBeInTheDocument();   // the header lists the kits as text
+    expect(screen.getAllByRole("listitem").some((li) => /(^|\s)Kit(\s|$)/.test(li.textContent))).toBe(true);   // the extra step is in the progress list
     await fillStep1(user); await screen.findByRole("heading", { level: 2, name: "Participant's information" }); await fillStep2(user);
 
     // the kit step
-    const h = await screen.findByRole("heading", { level: 2, name: "Kit and quantity" });
+    const h = await screen.findByRole("heading", { level: 2, name: "Kit" });
     await waitFor(() => expect(h).toHaveFocus());
     expect(screen.getByRole("radio", { name: /Standard kit/ })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /Deluxe kit/ })).toBeInTheDocument();
-    expect(screen.getByText("₱250.50 each")).toBeInTheDocument();
-    expect(screen.getByText("Up to 2 per form")).toBeInTheDocument();
-    expect(screen.getByText(/^(Total to pay|Choose a kit and a quantity)/)).toHaveTextContent("Choose a kit and a quantity to see the total.");
+    expect(screen.getByText("₱250.50")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Quantity/)).not.toBeInTheDocument();                     // one form = one kit: no quantity to enter
+    expect(screen.getByText(/^(Total to pay|Choose a kit)/)).toHaveTextContent("Choose a kit to see the total.");
     expect(await check(container)).toHaveNoViolations();
     await user.click(screen.getByRole("button", { name: "Next" }));                          // nothing chosen yet
     const summary = await screen.findByRole("alert", { name: /problem/ });
@@ -315,46 +315,37 @@ describe("attendee pages", () => {
     expect(await check(container)).toHaveNoViolations();
 
     await user.click(screen.getByRole("radio", { name: /Deluxe kit/ }));
-    expect(screen.getByLabelText(/^Quantity/)).toHaveAccessibleDescription("Up to 2 of this kit per form.");
-    expect(screen.getByText(/^(Total to pay|Choose a kit and a quantity)/)).toHaveTextContent("Total to pay: 1 × ₱250.50 = ₱250.50");
-    await user.click(screen.getByRole("button", { name: "Increase quantity" }));
-    expect(screen.getByLabelText(/^Quantity/)).toHaveValue(2);
-    expect(screen.getByText(/^(Total to pay|Choose a kit and a quantity)/)).toHaveTextContent("Total to pay: 2 × ₱250.50 = ₱501.00");
-    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeDisabled();       // at this kit's limit of 2
-    await user.clear(screen.getByLabelText(/^Quantity/)); await user.type(screen.getByLabelText(/^Quantity/), "3");
-    await user.click(screen.getByRole("button", { name: "Next" }));
-    expect(await screen.findAllByText(/up to 2 of this kit per form/)).not.toHaveLength(0);   // the limit is named in the error
-    await user.clear(screen.getByLabelText(/^Quantity/)); await user.type(screen.getByLabelText(/^Quantity/), "2");
-    await user.click(screen.getByRole("radio", { name: /Standard kit/ }));                   // switching kits keeps a valid quantity and re-prices
-    expect(screen.getByText(/^(Total to pay|Choose a kit and a quantity)/)).toHaveTextContent("Total to pay: 2 × ₱100.00 = ₱200.00");
+    expect(screen.getByText(/^(Total to pay|Choose a kit)/)).toHaveTextContent("Total to pay: ₱250.50");
+    await user.click(screen.getByRole("radio", { name: /Standard kit/ }));                   // switching kits re-prices
+    expect(screen.getByText(/^(Total to pay|Choose a kit)/)).toHaveTextContent("Total to pay: ₱100.00");
     await user.click(screen.getByRole("radio", { name: /Deluxe kit/ }));
     await user.click(screen.getByRole("button", { name: "Next" }));
 
     // payment: the amount to pay is the order's total
     await screen.findByRole("heading", { level: 2, name: "Payment" });
     expect(screen.getByText("Amount to pay:")).toBeInTheDocument();
-    expect(screen.getByText(/₱501.00 \(2 × Deluxe kit at ₱250.50\)/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Amount Paid/)).toHaveAccessibleDescription(/At least ₱501.00 \(2 × ₱250.50\)/);
+    expect(screen.getByText("Amount to pay:").parentElement).toHaveTextContent("₱250.50 (Deluxe kit)");
+    expect(screen.getByLabelText(/^Amount Paid/)).toHaveAccessibleDescription(/At least ₱250.50 \(Deluxe kit\)/);
     await user.type(screen.getByLabelText(/^Name of Sender/), "Juan D.");
-    await user.type(screen.getByLabelText(/^Amount Paid/), "500");
+    await user.type(screen.getByLabelText(/^Amount Paid/), "250");
     await user.type(screen.getByLabelText(/^Reference Number/), "1234567890123");
     await user.upload(container.querySelector("#receipt"), new File(["r"], "gcash.png", { type: "image/png" }));
     await user.click(screen.getByRole("button", { name: "Review registration" }));
-    expect((await screen.findAllByText(/at least 501.00 PHP/)).length).toBeGreaterThan(0);   // 500 is not enough for 2 x 250.50
-    await user.clear(screen.getByLabelText(/^Amount Paid/)); await user.type(screen.getByLabelText(/^Amount Paid/), "501");
+    expect((await screen.findAllByText(/at least 250.50 PHP/)).length).toBeGreaterThan(0);   // 250 is not enough for 250.50
+    await user.clear(screen.getByLabelText(/^Amount Paid/)); await user.type(screen.getByLabelText(/^Amount Paid/), "250.5");
     await user.click(screen.getByRole("button", { name: "Review registration" }));
 
     // review shows the order, and Edit goes back to it
     const reviewH = await screen.findByRole("heading", { level: 2, name: "Review and submit" });
     await waitFor(() => expect(reviewH).toHaveFocus());
-    const kitSection = screen.getByRole("region", { name: "Kit and quantity" });
-    expect(kitSection).toHaveTextContent("Deluxe kit"); expect(kitSection).toHaveTextContent("Quantity2"); expect(kitSection).toHaveTextContent("₱250.50"); expect(kitSection).toHaveTextContent("₱501.00");
+    const kitSection = screen.getByRole("region", { name: "Kit" });
+    expect(kitSection).toHaveTextContent("Deluxe kit"); expect(kitSection).not.toHaveTextContent("Quantity"); expect(kitSection).toHaveTextContent("₱250.50");
     expect(screen.getAllByRole("button", { name: /^Edit / }).length).toBe(4);
     expect(await check(container)).toHaveNoViolations();
     await user.click(screen.getByRole("button", { name: "Submit registration" }));
     await screen.findByRole("heading", { level: 1, name: "Registration received" });
     const call = fixtures.current.rpcCalls.find((c) => c.name === "submit_registration").args;
-    expect(call).toMatchObject({ p_kit_id: "kb", p_quantity: 2, p_amount: 501 });             // the browser sends the choice, never a price for the kit
+    expect(call).toMatchObject({ p_kit_id: "kb", p_quantity: 1, p_amount: 250.5 });             // the browser sends the choice, never a price for the kit
     expect(Object.keys(call)).not.toContain("p_unit_price"); expect(Object.keys(call)).not.toContain("p_total");
   });
 
@@ -362,22 +353,21 @@ describe("attendee pages", () => {
     asUser();
     fixtures.current.event_kits = [kitA];
     fixtures.current.payments = [
-      { id: "small", sender_name: "Small P.", amount_paid: 300, reference_number: "1110001112223", status: "pending", registrations: [{ id: "r1", status: "pending_verification", total_amount: 200 }] },   // 100 left
+      { id: "small", sender_name: "Small P.", amount_paid: 250, reference_number: "1110001112223", status: "pending", registrations: [{ id: "r1", status: "pending_verification", total_amount: 200 }] },   // 50 left
       { id: "big", sender_name: "Big P.", amount_paid: 1000, reference_number: "2220001112223", status: "verified", registrations: [{ id: "r2", status: "confirmed", total_amount: 100 }] },       // 900 left
     ];
     const user = userEvent.setup();
     page("/events/:id/register", <EventRegister />, "/events/e1/register");
     await screen.findByRole("heading", { level: 1, name: "Register" });
     await fillStep1(user); await screen.findByRole("heading", { level: 2, name: "Participant's information" }); await fillStep2(user);
-    await screen.findByRole("heading", { level: 2, name: "Kit and quantity" });
+    await screen.findByRole("heading", { level: 2, name: "Kit" });
     expect(screen.getByRole("radio", { name: /Standard kit/ })).toBeChecked();               // nothing to choose with one kit
-    await user.clear(screen.getByLabelText(/^Quantity/)); await user.type(screen.getByLabelText(/^Quantity/), "3");   // 300
     await user.click(screen.getByRole("button", { name: "Next" }));
     await screen.findByRole("heading", { level: 2, name: "Payment" });
     const select = screen.getByLabelText("Use the payment details from one of my earlier forms");
-    expect(select).toHaveTextContent("Big P."); expect(select).not.toHaveTextContent("Small P.");   // only 100 left on the small one, the order needs 300
+    expect(select).toHaveTextContent("Big P."); expect(select).not.toHaveTextContent("Small P.");   // only 50 left on the small one, the order needs 100
     expect(select).toHaveTextContent("₱900.00 left");
-    expect(screen.getByLabelText(/earlier forms/)).toHaveAccessibleDescription(/This form costs ₱300.00/);
+    expect(screen.getByLabelText(/earlier forms/)).toHaveAccessibleDescription(/This form costs ₱100.00/);
   });
 
   it("Kits tab: add, validate and save kits", async () => {
@@ -401,15 +391,15 @@ describe("attendee pages", () => {
     await user.click(screen.getByRole("button", { name: "Save kits" }));
     expect(await screen.findAllByText(/price above 0/)).not.toHaveLength(0);                  // 0 is not a price
     await user.clear(second.getByLabelText(/^Price per kit/)); await user.type(second.getByLabelText(/^Price per kit/), "250.5");
-    await user.clear(second.getByLabelText(/^Most one form/)); await user.type(second.getByLabelText(/^Most one form/), "2");
+    expect(second.queryByLabelText(/^Most one form/)).not.toBeInTheDocument();               // one form = one kit: no limit to set
     await user.clear(within(fieldsets[0]).getByLabelText(/^Price per kit/)); await user.type(within(fieldsets[0]).getByLabelText(/^Price per kit/), "120");
     await user.click(screen.getByRole("button", { name: "Save kits" }));
     await waitFor(() => expect((fixtures.current.writes || []).length).toBe(2));
     const [upd, ins] = fixtures.current.writes;
     expect(upd).toMatchObject({ table: "event_kits", op: "update" });
-    expect(upd.args[0]).toMatchObject({ name: "Standard kit", unit_price: 120, max_per_order: 5, sort_order: 0 });
+    expect(upd.args[0]).toMatchObject({ name: "Standard kit", unit_price: 120, max_per_order: 1, sort_order: 0 });
     expect(ins).toMatchObject({ table: "event_kits", op: "insert" });
-    expect(ins.args[0]).toMatchObject({ event_id: "e1", name: "Deluxe kit", unit_price: 250.5, max_per_order: 2, active: true, sort_order: 1 });
+    expect(ins.args[0]).toMatchObject({ event_id: "e1", name: "Deluxe kit", unit_price: 250.5, max_per_order: 1, active: true, sort_order: 1 });
   });
 
   it("Kits tab: removing a kit deletes it on save", async () => {
@@ -689,7 +679,7 @@ describe("admin pages", () => {
     expect(within(dialog).getByText("Expected (2 forms)")).toBeInTheDocument();
     expect(within(dialog).getByText("₱450.50")).toBeInTheDocument();
     expect(within(dialog).getByText("Standard kit × 2 = ₱200.00")).toBeInTheDocument();
-    expect(within(dialog).getByText("Deluxe kit × 1 = ₱250.50")).toBeInTheDocument();
+    expect(within(dialog).getByText("Deluxe kit = ₱250.50")).toBeInTheDocument();
     expect(within(dialog).getByText(/lower than expected \(₱450.50\)/)).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
   });
@@ -703,7 +693,7 @@ describe("admin pages", () => {
     const user = userEvent.setup();
     page("/my-registrations", <MyRegistrations />);
     expect(await screen.findByText("Standard kit × 2 · ₱200.00")).toBeInTheDocument();
-    expect(screen.getByText("Deluxe kit × 1 · ₱250.50")).toBeInTheDocument();
+    expect(screen.getByText("Deluxe kit · ₱250.50")).toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: /Send the missing amount/ })[0]);
     const dialog = screen.getByRole("dialog", { name: "Send the missing amount" });
     expect(within(dialog).getByText(/Send at least ₱5.00. It is added to the ₱195.00 you already paid/)).toBeInTheDocument();

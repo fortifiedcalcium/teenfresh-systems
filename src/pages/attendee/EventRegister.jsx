@@ -28,8 +28,8 @@ import { useToast } from "../../components/Toast.jsx";
 import { useAnnounce } from "../../a11y.jsx";
 import { IconArrowLeft, IconArrowRight, IconCheckCircle, IconClock, IconPencil, IconPlus, IconSend, IconTicket } from "../../components/NavIcons.jsx";
 
-const DEFAULTS = { email: "", agree: false, name: "", x_username: "", facebook_url: "", contact_number: "", kit_id: "", quantity: "1", reuse_payment_id: "", sender_name: "", amount_paid: "", reference_number: "", notes: "" };
-const FIELD_LABELS = { email: "Email", agree: "Confirmation", name: "Name", x_username: "X/Twitter username", facebook_url: "Facebook profile link", contact_number: "Contact number", kit_id: "Kit", quantity: "Quantity", sender_name: "Name of sender", amount_paid: "Amount paid", reference_number: "Reference number", receipt: "Payment receipt", notes: "Notes" };
+const DEFAULTS = { email: "", agree: false, name: "", x_username: "", facebook_url: "", contact_number: "", kit_id: "", reuse_payment_id: "", sender_name: "", amount_paid: "", reference_number: "", notes: "" };
+const FIELD_LABELS = { email: "Email", agree: "Confirmation", name: "Name", x_username: "X/Twitter username", facebook_url: "Facebook profile link", contact_number: "Contact number", kit_id: "Kit", sender_name: "Name of sender", amount_paid: "Amount paid", reference_number: "Reference number", receipt: "Payment receipt", notes: "Notes" };
 const FIELD_IDS = { agree: "agree", receipt: "receipt" };
 
 // Unsent progress lives in sessionStorage (this tab only). The receipt file is never stored.
@@ -98,13 +98,13 @@ export default function EventRegister() {
 
   const fee = Number(event?.registration_fee || 0);
   const kitMode = kits.length > 0;                       // the event offers kit options (otherwise: one flat fee, quantity 1)
-  const kitId = watch("kit_id"), quantityValue = watch("quantity");
-  const order = orderTotal({ kit_id: kitId, quantity: quantityValue }, kits, fee);
+  const kitId = watch("kit_id");
+  const order = orderTotal({ kit_id: kitId }, kits, fee);
   const total = order.total;
   const paid = kitMode || fee > 0;                       // is there a payment step at all
   const steps = useMemo(() => [
     { key: "info", label: "Event info and terms" }, { key: "participant", label: "Participant's information" },
-    ...(kitMode ? [{ key: "kit", label: "Kit and quantity" }] : []),
+    ...(kitMode ? [{ key: "kit", label: "Kit" }] : []),
     ...(paid ? [{ key: "payment", label: "Payment" }] : []), { key: "review", label: "Review and submit" },
   ], [paid, kitMode]);
   // with a single kit there is nothing to choose: select it
@@ -158,7 +158,7 @@ export default function EventRegister() {
       p_notes: v.notes || null, p_agreed: v.agree, p_payment_id: v.reuse_payment_id || null,
       p_sender_name: v.reuse_payment_id ? null : v.sender_name, p_amount: v.reuse_payment_id ? null : parseAmount(v.amount_paid),
       p_reference: v.reuse_payment_id ? null : v.reference_number, p_receipt_path: path,
-      p_kit_id: kitMode ? v.kit_id : null, p_quantity: kitMode ? Number(v.quantity) : 1,
+      p_kit_id: kitMode ? v.kit_id : null, p_quantity: 1,
     });
     setSubmitting(false);
     if (error) { setServerError(friendlyError(error)); return; }
@@ -218,7 +218,7 @@ export default function EventRegister() {
     ["info", "Event info and terms", [["Email", v.email], ["Terms and Conditions", "Agreed"]]],
     ["participant", "Participant's information", [["Name", v.name], ["X/Twitter Username", "@" + normalizeX(v.x_username)], ["Facebook Profile Link", normalizeFacebook(v.facebook_url) || v.facebook_url], ["Contact Number", normalizePhone(v.contact_number) || v.contact_number]]],
   ];
-  if (kitMode) reviewSections.push(["kit", "Kit and quantity", [["Kit", order.kit?.name || "Not chosen"], ["Quantity", order.qty ?? v.quantity], ["Price per kit", peso(order.unit)], ["Total to pay", peso(total)]]]);
+  if (kitMode) reviewSections.push(["kit", "Kit", [["Kit", order.kit?.name || "Not chosen"], ["Price", peso(order.unit)], ["Total to pay", peso(total)]]]);
   if (paid) {
     reviewSections.push(["payment", "Payment", reusedPayment
       ? [["Using the payment of", `${reusedPayment.sender_name}, ${peso(reusedPayment.amount_paid)}`], ["Reference Number", reusedPayment.reference_number], ["Notes", v.notes || "None"]]
@@ -289,9 +289,9 @@ export default function EventRegister() {
           </>
         )}
 
-        {/* ---------------------------------------------------- kit and quantity */}
+        {/* ---------------------------------------------------- kit (one per form) */}
         {current === "kit" && (
-          <KitOrder kits={kits} register={register} errors={errors} kitId={kitId} quantity={quantityValue} onQuantity={(q) => setValue("quantity", q, { shouldValidate: submitCount > 0 })} order={order} />
+          <KitOrder kits={kits} register={register} errors={errors} kitId={kitId} order={order} />
         )}
 
         {/* ---------------------------------------------------- payment */}
@@ -304,7 +304,7 @@ export default function EventRegister() {
                 <dl className="mt-2 space-y-2 text-sm">
                   <div className="flex flex-wrap gap-2"><dt className="font-semibold">G Cash:</dt><dd>{event.payment_account_name}</dd></div>
                   <div className="flex flex-wrap items-center gap-3"><dt className="font-semibold">Account number:</dt><dd className="font-mono text-lg font-bold">{event.payment_account_number}</dd>{event.payment_account_number && <dd><CopyButton text={event.payment_account_number} /></dd>}</div>
-                  <div className="flex flex-wrap gap-2"><dt className="font-semibold">{kitMode ? "Amount to pay" : "Registration Fee"}:</dt><dd>{kitMode ? `${peso(total)}${order.qty ? ` (${order.qty} × ${order.kit.name} at ${peso(order.unit)})` : ""}` : `${fee}php (Exclusive of food and drinks)`}</dd></div>
+                  <div className="flex flex-wrap gap-2"><dt className="font-semibold">{kitMode ? "Amount to pay" : "Registration Fee"}:</dt><dd>{kitMode ? `${peso(total)}${order.kit ? ` (${order.kit.name})` : ""}` : `${fee}php (Exclusive of food and drinks)`}</dd></div>
                 </dl>
               ) : <Alert tone="warn" className="mt-2">The payment details are not available yet. Please check back soon.</Alert>}
               <p className="mt-3 text-sm">Kindly avoid using the &quot;Money Protect&quot; feature to avoid inconveniences and cancellation of your slot.</p>
@@ -327,7 +327,7 @@ export default function EventRegister() {
             )}
 
             <Field id="sender_name" label="Name of Sender" required error={errors.sender_name?.message}><input className="input" readOnly={!!reuseId} {...register("sender_name")} /></Field>
-            <Field id="amount_paid" label="Amount Paid" required hint={`At least ${peso(total)}${kitMode && order.qty ? ` (${order.qty} × ${peso(order.unit)})` : ""}. Convenience or transaction fees are not covered. Send enough so that the kit price is complete.`} error={errors.amount_paid?.message}>
+            <Field id="amount_paid" label="Amount Paid" required hint={`At least ${peso(total)}${kitMode && order.kit ? ` (${order.kit.name})` : ""}. Convenience or transaction fees are not covered. Send enough so that the kit price is complete.`} error={errors.amount_paid?.message}>
               <input className="input" inputMode="decimal" readOnly={!!reuseId} {...register("amount_paid")} />
             </Field>
             <Field id="reference_number" label="Reference Number" required hint="Digits only, from your GCash receipt" error={errors.reference_number?.message}>

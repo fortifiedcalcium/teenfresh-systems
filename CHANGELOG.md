@@ -2,7 +2,21 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit.
+
+## [1.3.0] - 2026-11-02
+
+### Changed
+- **One form = one kit.** The registration form no longer asks for a quantity. The attendee picks a kit and pays that kit's price; the step is now called **Kit** (was "Kit and quantity"). To order more kits, an attendee fills in another form, as with any other entry.
+- The total reads "Total to pay: ₱250.50" and the amount hint names the kit instead of "2 × price".
+- The event page lists kits as "Name: price" (the "up to N per form" text is gone).
+- Admin pages, the scanner and emails show the kit name alone; "× N" appears only on older orders placed before this change that have more than one.
+
+### Removed
+- The Quantity field with its plus and minus buttons from the registration form, and the "Most one form can order" field from the Kits tab.
+
+### Upgrade notes
+- Run `supabase/migrations/006_one_kit_per_form.sql` in the SQL Editor of project `fnhamldmvpdcygjbzdls`. It sets every kit to one per form so the database refuses a quantity above 1 (it does not touch placed orders). The front end works without it, but the database only enforces the rule after it runs.
 
 ## [1.2.1] - 2026-11-02
 

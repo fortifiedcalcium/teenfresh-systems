@@ -69,10 +69,9 @@ test.describe("security headers", () => {
     await page.getByLabel(/^Contact Number/).fill("09171234567");
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("radio", { name: /^Standard kit/ }).check();                          // kit step
-    await page.getByLabel(/^Quantity/).fill("2");
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByLabel(/^Name of Sender/).fill("Juan D.");
-    await page.getByLabel(/^Amount Paid/).fill("200");
+    await page.getByLabel(/^Amount Paid/).fill("100");
     await page.getByLabel(/^Reference Number/).fill("1234567890123");
     await page.locator("#receipt").setInputFiles({ name: "receipt.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGOUi2plwAaYsIoOWgkAyk8BDTx0sOwAAAAASUVORK5CYII=", "base64") });
     await expect(page.getByAltText("Preview of your receipt")).toBeVisible();                 // a blob: image is allowed

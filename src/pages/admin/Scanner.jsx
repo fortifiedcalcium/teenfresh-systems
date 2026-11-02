@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabaseClient.js";
 import { friendlyError } from "../../lib/api.js";
 import { feedback } from "../../lib/beep.js";
 import { fmtDateTime } from "../../lib/availability.js";
+import { kitLabel } from "../../lib/payment.js";
 import QrScanner from "../../components/QrScanner.jsx";
 import { IconClose, IconScan, IconSearch, IconUserCheck, IconVolume } from "../../components/NavIcons.jsx";
 
@@ -23,7 +24,7 @@ const REASON = {
 
 const summary = (r) => {
   if (!r) return "";
-  const kit = r.kit_name ? ` Kit: ${r.kit_name}, quantity ${r.kit_quantity}.` : "";
+  const kit = r.kit_name ? ` Kit: ${r.kit_name}${r.kit_quantity > 1 ? `, quantity ${r.kit_quantity}` : ""}.` : "";
   const who = r.name ? `${r.name}, X username ${r.x_username}, ticket ${r.ticket_number}.${kit}` : `Ticket ${r.ticket_number}.`;
   if (r.result === "success") return `Valid ticket. ${who} Checked in.`;
   if (r.result === "duplicate") return `Already checked in. ${who} First scanned ${fmtDateTime(r.checked_in_at)}${r.checked_in_by_name ? ` by ${r.checked_in_by_name}` : ""}.`;
@@ -99,7 +100,7 @@ export default function Scanner() {
               <p className="text-3xl font-extrabold">{result.name}</p>
               <p className="text-xl">@{result.x_username}</p>
               <p className="font-mono text-lg">{result.ticket_number}</p>
-              {result.kit_name && <p className="text-xl font-bold">Kit: {result.kit_name} × {result.kit_quantity}</p>}
+              {result.kit_name && <p className="text-xl font-bold">Kit: {kitLabel(result.kit_name, result.kit_quantity)}</p>}
               {result.result === "duplicate" && <p className="mt-2 text-lg font-bold">First scanned {fmtDateTime(result.checked_in_at)}{result.checked_in_by_name ? ` by ${result.checked_in_by_name}` : ""}</p>}
               <fieldset className="mx-auto mt-4 flex max-w-md flex-wrap justify-center gap-x-6 rounded-xl border-2 border-current bg-white p-3 text-left text-base text-ink">
                 <legend className="px-2 text-sm font-bold">After check-in</legend>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { step1Schema, step2Schema, makeStep3Schema, makeKitSchema, stepSchemaFor } from "../src/lib/validation.js";
-import { balanceLeft, orderTotal, priceRange, isUnusualReferenceLength, isValidReference, normalizeFacebook, normalizePhone, normalizeReference, normalizeX, parseAmount, reusablePayments, validateReceiptFile, MAX_RECEIPT_BYTES } from "../src/lib/payment.js";
+import { balanceLeft, kitLabel, orderTotal, priceRange, isUnusualReferenceLength, isValidReference, normalizeFacebook, normalizePhone, normalizeReference, normalizeX, parseAmount, reusablePayments, validateReceiptFile, MAX_RECEIPT_BYTES } from "../src/lib/payment.js";
 
 // the first message per field, which is what the form shows (react-hook-form keeps the first error of a field)
 const issues = (schema, value) => { const r = schema.safeParse(value); return r.success ? {} : r.error.issues.reduce((o, i) => (i.path[0] in o ? o : { ...o, [i.path[0]]: i.message }), {}); };
@@ -114,47 +114,39 @@ describe("step 3: payment", () => {
 
 const KITS = [{ id: "k1", name: "Standard kit", unit_price: 100, max_per_order: 5 }, { id: "k2", name: "Deluxe kit", unit_price: 250.5, max_per_order: 2 }];
 
-describe("kit step: a kit and a quantity", () => {
+describe("kit step: one kit per form", () => {
   const schema = makeKitSchema(KITS);
-  it("accepts a kit with a whole quantity from 1 up to its limit", () => {
-    expect(issues(schema, { kit_id: "k1", quantity: "1" })).toEqual({});
-    expect(issues(schema, { kit_id: "k1", quantity: "5" })).toEqual({});
-    expect(issues(schema, { kit_id: "k2", quantity: " 2 " })).toEqual({});
+  it("accepts any kit that exists (there is no quantity to enter)", () => {
+    expect(issues(schema, { kit_id: "k1" })).toEqual({});
+    expect(issues(schema, { kit_id: "k2" })).toEqual({});
   });
   it("needs a kit that exists", () => {
-    expect(issues(schema, { kit_id: "", quantity: "1" }).kit_id).toMatch(/Choose a kit/);
-    expect(issues(schema, { kit_id: "nope", quantity: "1" }).kit_id).toMatch(/Choose a kit/);
-  });
-  it("refuses zero, negative, fractional, text and over-the-limit quantities, naming the limit", () => {
-    expect(issues(schema, { kit_id: "k1", quantity: "0" }).quantity).toMatch(/at least 1/);
-    expect(issues(schema, { kit_id: "k1", quantity: "-1" }).quantity).toMatch(/whole number/);
-    expect(issues(schema, { kit_id: "k1", quantity: "1.5" }).quantity).toMatch(/whole number/);
-    expect(issues(schema, { kit_id: "k1", quantity: "two" }).quantity).toMatch(/whole number/);
-    expect(issues(schema, { kit_id: "k1", quantity: "" }).quantity).toMatch(/whole number/);
-    expect(issues(schema, { kit_id: "k1", quantity: "6" }).quantity).toMatch(/up to 5 of this kit/);
-    expect(issues(schema, { kit_id: "k2", quantity: "3" }).quantity).toMatch(/up to 2 of this kit/);       // each kit has its own limit
+    expect(issues(schema, { kit_id: "" }).kit_id).toMatch(/Choose a kit/);
+    expect(issues(schema, { kit_id: "nope" }).kit_id).toMatch(/Choose a kit/);
   });
   it("is the schema used for the kit step, and the payment step now checks the order's total", () => {
-    expect(stepSchemaFor("kit", { kits: KITS }).safeParse({ kit_id: "k1", quantity: "2" }).success).toBe(true);
+    expect(stepSchemaFor("kit", { kits: KITS }).safeParse({ kit_id: "k1" }).success).toBe(true);
     const pay = (amount) => issues(stepSchemaFor("payment", { total: 250 }), { reuse_payment_id: "", sender_name: "Juan D.", amount_paid: amount, reference_number: "1234567890123", notes: "" });
     expect(pay("249.99").amount_paid).toMatch(/at least 250.00 PHP/);
     expect(pay("250")).toEqual({});
   });
 });
 
-describe("order total (quantity x price per kit)", () => {
-  it("is the chosen kit's price times the quantity", () => {
-    expect(orderTotal({ kit_id: "k1", quantity: "3" }, KITS, 0)).toMatchObject({ qty: 3, unit: 100, total: 300 });
-    expect(orderTotal({ kit_id: "k2", quantity: "2" }, KITS, 0)).toMatchObject({ qty: 2, unit: 250.5, total: 501 });
+describe("order total (one kit per form)", () => {
+  it("is the chosen kit's price", () => {
+    expect(orderTotal({ kit_id: "k1" }, KITS, 0)).toMatchObject({ qty: 1, unit: 100, total: 100 });
+    expect(orderTotal({ kit_id: "k2" }, KITS, 0)).toMatchObject({ qty: 1, unit: 250.5, total: 250.5 });
   });
-  it("avoids floating point drift", () => {
-    expect(orderTotal({ kit_id: "k", quantity: "3" }, [{ id: "k", unit_price: 0.1, max_per_order: 9 }], 0).total).toBe(0.3);
-    expect(orderTotal({ kit_id: "k", quantity: "7" }, [{ id: "k", unit_price: 19.99, max_per_order: 9 }], 0).total).toBe(139.93);
+  it("ignores any quantity value: it is always one kit", () => {
+    expect(orderTotal({ kit_id: "k1", quantity: "3" }, KITS, 0)).toMatchObject({ qty: 1, total: 100 });
   });
-  it("is 0 until a valid kit and quantity are chosen (nothing to pay yet)", () => {
-    expect(orderTotal({ kit_id: "", quantity: "1" }, KITS, 0).total).toBe(0);
-    expect(orderTotal({ kit_id: "k1", quantity: "9" }, KITS, 0).total).toBe(0);
-    expect(orderTotal({ kit_id: "k1", quantity: "abc" }, KITS, 0).total).toBe(0);
+  it("is 0 until a kit is chosen (nothing to pay yet)", () => {
+    expect(orderTotal({ kit_id: "" }, KITS, 0).total).toBe(0);
+    expect(orderTotal({ kit_id: "nope" }, KITS, 0).total).toBe(0);
+  });
+  it("labels older multi-kit orders with their quantity and normal orders with the name only", () => {
+    expect(kitLabel("Standard kit", 1)).toBe("Standard kit");
+    expect(kitLabel("Standard kit", 3)).toBe("Standard kit × 3");
   });
   it("events without kits use the flat fee and a quantity of 1", () => {
     expect(orderTotal({ kit_id: "", quantity: "1" }, [], 100)).toMatchObject({ kit: null, qty: 1, unit: 100, total: 100 });

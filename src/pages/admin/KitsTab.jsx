@@ -7,8 +7,8 @@ import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { IconPlus, IconSave, IconTrash } from "../../components/NavIcons.jsx";
 
-const blank = () => ({ key: crypto.randomUUID(), id: null, name: "", description: "", unit_price: "", max_per_order: "5", active: true });
-const toRow = (k) => ({ key: k.id, id: k.id, name: k.name, description: k.description || "", unit_price: String(k.unit_price), max_per_order: String(k.max_per_order), active: k.active });
+const blank = () => ({ key: crypto.randomUUID(), id: null, name: "", description: "", unit_price: "", active: true });
+const toRow = (k) => ({ key: k.id, id: k.id, name: k.name, description: k.description || "", unit_price: String(k.unit_price), active: k.active });
 
 /** One problem per field, in plain words. The database checks the same limits (and never trusts the browser). */
 export function validateKit(r) {
@@ -16,7 +16,6 @@ export function validateKit(r) {
   if (!r.name.trim()) e.name = "Enter the kit's name";
   else if (r.name.trim().length > 80) e.name = "The name can be 80 characters at most";
   if (!/^\d+(\.\d{1,2})?$/.test(r.unit_price.trim()) || Number(r.unit_price) <= 0) e.unit_price = "Enter a price above 0, with at most 2 decimals";
-  if (!/^\d+$/.test(r.max_per_order.trim()) || Number(r.max_per_order) < 1 || Number(r.max_per_order) > 50) e.max_per_order = "Enter a whole number from 1 to 50";
   return e;
 }
 
@@ -49,7 +48,7 @@ export default function KitsTab({ event }) {
     try {
       if (removed.length) { const { error } = await supabase.from("event_kits").delete().in("id", removed); if (error) throw error; }
       for (const [i, r] of rows.entries()) {
-        const row = { event_id: event.id, name: r.name.trim(), description: r.description.trim() || null, unit_price: Number(r.unit_price), max_per_order: Number(r.max_per_order), active: r.active, sort_order: i };
+        const row = { event_id: event.id, name: r.name.trim(), description: r.description.trim() || null, unit_price: Number(r.unit_price), max_per_order: 1, active: r.active, sort_order: i };
         const { error } = r.id ? await supabase.from("event_kits").update(row).eq("id", r.id) : await supabase.from("event_kits").insert(row);
         if (error) throw error;
       }
@@ -63,7 +62,7 @@ export default function KitsTab({ event }) {
   const flat = rows.flatMap((r, i) => Object.entries(errors[r.key] || {}).map(([f, message]) => [`kit${i}-${f}`, { message: `Kit ${i + 1}: ${message}` }]));
   return (
     <div className="space-y-4">
-      <p className="text-sm text-ink-muted">Add the kits people can order. Each form picks one kit and a quantity, and pays <strong>quantity × price</strong>. With no kits, the event uses its single registration fee. Orders already placed keep the price they were placed at, so changing a price only affects new orders. A switched-off kit disappears from the form but stays on old orders.</p>
+      <p className="text-sm text-ink-muted">Add the kits people can order. Each form picks <strong>one kit</strong> and pays that kit\u2019s price. With no kits, the event uses its single registration fee. Orders already placed keep the price they were placed at, so changing a price only affects new orders. A switched-off kit disappears from the form but stays on old orders.</p>
       <ErrorSummary errors={Object.fromEntries(flat)} submitCount={submitCount} focusSignal={focusSignal} />
       {rows.length === 0 && <Alert tone="info">No kits yet. Add one, or leave it empty to use the flat registration fee.</Alert>}
       <ul className="space-y-4">
@@ -85,7 +84,6 @@ export default function KitsTab({ event }) {
                 <div className="grid gap-3 md:grid-cols-2">
                   {field("name", "Name (required)", { maxLength: 80 })}
                   {field("unit_price", "Price per kit, PHP (required)", { inputMode: "decimal" }, r.unit_price && !e.unit_price && Number(r.unit_price) > 0 ? `${peso(r.unit_price)} each` : "Amount per kit, for example 100")}
-                  {field("max_per_order", "Most one form can order (required)", { inputMode: "numeric" }, "A whole number from 1 to 50")}
                 </div>
                 <div>
                   <label htmlFor={f("description")} className="label">Description</label>

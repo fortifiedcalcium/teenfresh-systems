@@ -90,19 +90,17 @@ test.describe("axe: wcag2a / wcag2aa / wcag21aa / wcag22aa on every route", () =
     await page.getByLabel(/^Contact Number/).fill("09171234567");
     await page.getByRole("button", { name: "Next" }).click();
 
-    // kit and quantity
-    await expect(page.getByRole("heading", { level: 2, name: "Kit and quantity" })).toBeFocused();
+    // kit (one per form)
+    await expect(page.getByRole("heading", { level: 2, name: "Kit", exact: true })).toBeFocused();
+    await expect(page.getByLabel(/^Quantity/)).toHaveCount(0);
     v = await scan(page); expect(v, "kit step\n" + formatViolations(v)).toEqual([]);
     await page.getByRole("button", { name: "Next" }).click();                                   // nothing chosen yet
     await expect(page.getByRole("alert").filter({ hasText: "problem" })).toBeFocused();
     v = await scan(page); expect(v, "kit step errors\n" + formatViolations(v)).toEqual([]);
     await page.getByRole("radio", { name: /^Deluxe kit/ }).check();
-    await page.getByLabel(/^Quantity/).fill("3");                                               // above this kit's limit of 2
-    await page.getByRole("button", { name: "Next" }).click();
-    await expect(page.getByText(/up to 2 of this kit per form/).first()).toBeVisible();
+    await expect(page.getByText("Total to pay: ₱250.50")).toBeVisible();
     await page.getByRole("radio", { name: /^Standard kit/ }).check();
-    await page.getByLabel(/^Quantity/).fill("2");
-    await expect(page.getByText("Total to pay: 2 × ₱100.00 = ₱200.00")).toBeVisible();
+    await expect(page.getByText("Total to pay: ₱100.00")).toBeVisible();
     v = await scan(page); expect(v, "kit step with a total\n" + formatViolations(v)).toEqual([]);
     await page.getByRole("button", { name: "Next" }).click();
 

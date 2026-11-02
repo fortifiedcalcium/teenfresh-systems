@@ -77,6 +77,7 @@ beforeAll(async () => {
   await db.exec(read("003_kits.sql"));
   await db.exec(read("004_change_log.sql"));
   await db.exec(read("005_underpayment_top_up.sql"));
+  await db.exec(read("006_one_kit_per_form.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -593,7 +594,7 @@ describe("kits: choosing a kit, a quantity, and paying quantity x price", () => 
     await asSuper();
     const k = (await db.query("select k.* from public.event_kits k join public.events e on e.id = k.event_id where e.title = 'IVEMON: ODD PLATINUM Cupsleeve Event'")).rows;
     expect(k).toHaveLength(1);
-    expect(k[0]).toMatchObject({ name: "Event kit", max_per_order: 5, active: true });
+    expect(k[0]).toMatchObject({ name: "Event kit", max_per_order: 1, active: true });   // 006: one kit per form
     expect(Number(k[0].unit_price)).toBe(100);
     expect(k[0].description).toBe("(1) Cupsleeve, (1) Trading Card, (2) Mezastar Tags");
   });
@@ -679,5 +680,18 @@ describe("005 underpayment email", () => {
     const t = (await db.query("select html_body, text_body from public.email_templates where event_id = $1 and kind = 'payment_underpaid'", [ev])).rows[0];
     expect(t.html_body).toContain("send only the remaining");
     expect(t.text_body).toContain("You do not need to pay the full amount again");
+  });
+});
+
+describe("006 one kit per form", () => {
+  it("new kits default to one per form and the database refuses a quantity above 1", async () => {
+    await asSuper();
+    const ev = await mkEvent();
+    const kit = (await db.query("insert into public.event_kits (event_id, name, unit_price) values ($1,'Solo kit',100) returning id, max_per_order", [ev])).rows[0];
+    expect(kit.max_per_order).toBe(1);
+    await asUser("alice");
+    await fails(submit("alice", ev, { x: "solo_a", kit: kit.id, qty: 2, amount: 200 }), "INVALID_QUANTITY");
+    const ok = await submit("alice", ev, { x: "solo_a", kit: kit.id, qty: 1, amount: 100 });
+    expect(await regRow(ok.registration_id)).toMatchObject({ kit_name: "Solo kit", kit_quantity: 1 });
   });
 });

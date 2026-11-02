@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { callFunction, fetchAll, friendlyError, resendMany } from "../../lib/api.js";
-import { peso } from "../../lib/payment.js";
+import { kitLabel, peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import { exportReport } from "../../lib/excel.js";
 import DataTable from "../../components/DataTable.jsx";
@@ -23,7 +23,7 @@ import { IconAlert, IconCheckCircle, IconClose, IconDownload, IconEye, IconSend,
 const TONE = { pending: "warn", verified: "ok", underpaid: "warn", rejected: "bad" };
 const LABEL = { pending: "Pending", verified: "Verified", underpaid: "Underpaid", rejected: "Rejected" };
 const activeForms = (p) => (p.registrations || []).filter((r) => r.status === "pending_verification" || r.status === "confirmed");
-/** what the forms on a payment add up to (quantity x price of each ordered kit), in pesos */
+/** what the forms on a payment add up to (the price of each ordered kit), in pesos */
 const expectedOf = (p) => Math.round(activeForms(p).reduce((a, r) => a + Math.round(Number(r.total_amount || 0) * 100), 0)) / 100;
 
 /** A receipt from the private bucket, shown through a short-lived signed URL */
@@ -127,7 +127,7 @@ function ReviewDialog({ payment, onClose, onChanged, inline = false }) {
               .map(([k, v]) => <div key={k} className="flex flex-wrap justify-between gap-2"><dt className="font-semibold">{k}</dt><dd className="text-right">{v}</dd></div>)}
           </dl>
           <div><p className="font-semibold">Linked forms</p>
-            <ul className="mt-1 space-y-1 text-sm">{(payment.registrations || []).map((r) => <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-brand-sky p-2"><span>{r.name} <span className="text-ink-muted">@{r.x_username}</span>{r.kit_name && <span className="block text-ink-muted">{r.kit_name} × {r.kit_quantity} = {peso(r.total_amount)}</span>}{r.facebook_url && <> · <a href={r.facebook_url} target="_blank" rel="noopener noreferrer">Facebook{" "}<span className="sr-only">of {r.name} (opens in a new tab)</span></a></>}</span><span className="flex gap-2"><Badge tone={r.status === "confirmed" ? "ok" : r.status === "pending_verification" ? "warn" : "bad"}>{r.status.replace("_", " ")}</Badge>{r.ticket_number && <span className="font-mono">{r.ticket_number}</span>}</span></li>)}</ul>
+            <ul className="mt-1 space-y-1 text-sm">{(payment.registrations || []).map((r) => <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-brand-sky p-2"><span>{r.name} <span className="text-ink-muted">@{r.x_username}</span>{r.kit_name && <span className="block text-ink-muted">{kitLabel(r.kit_name, r.kit_quantity)} = {peso(r.total_amount)}</span>}{r.facebook_url && <> · <a href={r.facebook_url} target="_blank" rel="noopener noreferrer">Facebook{" "}<span className="sr-only">of {r.name} (opens in a new tab)</span></a></>}</span><span className="flex gap-2"><Badge tone={r.status === "confirmed" ? "ok" : r.status === "pending_verification" ? "warn" : "bad"}>{r.status.replace("_", " ")}</Badge>{r.ticket_number && <span className="font-mono">{r.ticket_number}</span>}</span></li>)}</ul>
           </div>
           {short && reviewable && <Alert tone="warn">The amount paid ({peso(paid)}) is lower than expected ({peso(expected)}). Convenience or transaction fees are not covered by the kit price.</Alert>}
           {paid > expected && expected > 0 && <Alert tone="info">The amount is higher than expected ({peso(expected)}). It may cover more forms the person has not submitted yet.</Alert>}

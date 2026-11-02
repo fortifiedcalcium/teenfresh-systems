@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "../../lib/supabaseClient.js";
 import { friendlyError } from "../../lib/api.js";
 import { makeStep3Schema } from "../../lib/validation.js";
-import { parseAmount, peso, receiptPath, validateReceiptFile } from "../../lib/payment.js";
+import { kitLabel, parseAmount, peso, receiptPath, validateReceiptFile } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
@@ -123,7 +123,7 @@ export default function MyRegistrations() {
                     <h2 className="font-bold">{r.events?.title}</h2>
                     <p className="text-sm text-ink-muted">{fmtDateTime(r.events?.event_date)} · {r.events?.venue}</p>
                     <p className="text-sm">For <strong>{r.name}</strong> (@{r.x_username})</p>
-                    {r.kit_name && <p className="text-sm">{r.kit_name} × {r.kit_quantity}{Number(r.total_amount) > 0 ? ` · ${peso(r.total_amount)}` : ""}</p>}
+                    {r.kit_name && <p className="text-sm">{kitLabel(r.kit_name, r.kit_quantity)}{Number(r.total_amount) > 0 ? ` · ${peso(r.total_amount)}` : ""}</p>}
                     {r.ticket_number && r.status === "confirmed" && <p className="mt-1 font-mono text-sm">{r.ticket_number}</p>}
                   </div>
                   <div className="flex items-center gap-2">

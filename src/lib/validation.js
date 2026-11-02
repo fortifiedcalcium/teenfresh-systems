@@ -28,16 +28,12 @@ export const step2Schema = z.object({
     .refine((v) => !v || normalizePhone(v) !== null, "Enter a Philippine mobile number, like 09171234567 or +639171234567"),
 });
 
-/** Kit step: a kit (when the event has kits) and a whole quantity from 1 up to that kit's limit. */
+/** Kit step: one kit (when the event has kits). One form orders one kit, so there is no quantity. */
 export const makeKitSchema = (kits) =>
-  z.object({ kit_id: z.string(), quantity: z.string().trim() }).superRefine((v, ctx) => {
+  z.object({ kit_id: z.string() }).superRefine((v, ctx) => {
     const issue = (path, message) => ctx.addIssue({ code: "custom", path: [path], message });
     const kit = (kits || []).find((k) => k.id === v.kit_id);
-    if (!kit) return issue("kit_id", "Choose a kit");
-    if (!/^\d+$/.test(v.quantity)) return issue("quantity", "Enter how many kits as a whole number, like 1 or 2");
-    const qty = Number(v.quantity);
-    if (qty < 1) issue("quantity", "The quantity must be at least 1");
-    else if (qty > kit.max_per_order) issue("quantity", `You can order up to ${kit.max_per_order} of this kit per form`);
+    if (!kit) issue("kit_id", "Choose a kit");
   });
 
 /** Payment step. `total` is what this form costs (quantity x price, or the flat fee); with a reused payment only the notes are checked. */

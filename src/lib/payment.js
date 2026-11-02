@@ -62,13 +62,12 @@ export function balanceLeft(payment) {
 export const reusablePayments = (payments, total) => (payments || []).filter((p) => (p.status === "pending" || p.status === "verified") && total > 0 && cents(balanceLeft(p)) >= cents(total));
 
 /** What the form orders and what it costs. With kit options the price comes from the chosen kit; without any,
- *  the event has one flat fee and a quantity of 1. The database repeats this calculation and never trusts the browser. */
+ *  the event has one flat fee. Either way one form orders one kit. The database repeats this calculation and never trusts the browser. */
 export function orderTotal(values, kits, fee) {
   if (kits && kits.length) {
     const kit = kits.find((k) => k.id === values.kit_id) || null;
-    const qty = Number.parseInt(values.quantity, 10);
-    const ok = kit && Number.isInteger(qty) && qty >= 1 && qty <= kit.max_per_order;
-    return { kit, qty: ok ? qty : null, unit: kit ? Number(kit.unit_price) : 0, total: ok ? cents(Number(kit.unit_price) * qty) / 100 : 0 };
+    // one form = one kit: there is no quantity to choose
+    return { kit, qty: kit ? 1 : null, unit: kit ? Number(kit.unit_price) : 0, total: kit ? cents(Number(kit.unit_price)) / 100 : 0 };
   }
   return { kit: null, qty: 1, unit: Number(fee || 0), total: Number(fee || 0) };
 }
@@ -83,3 +82,6 @@ export function priceRange(kits) {
 
 /** Receipt files are stored under <user id>/<random uuid>.<ext>: the original name is never used */
 export const receiptPath = (userId, file) => `${userId}/${crypto.randomUUID()}.${RECEIPT_TYPES[file.type]}`;
+
+/** "Standard kit" for a normal order; "Standard kit × 3" only for older orders placed before one form meant one kit */
+export const kitLabel = (name, qty) => (Number(qty) > 1 ? `${name} × ${qty}` : name);

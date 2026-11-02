@@ -6,9 +6,10 @@ React 18 + Vite + Tailwind front end, Supabase (Auth, Postgres, RLS, Realtime, E
 src/                     React app (attendee site + /admin)
 supabase/migrations/schema.sql                  tables, RLS, triggers, RPCs, seed (IVEMON: BRILLIANT FORCE event)
 supabase/migrations/002_registration_payments.sql   payments, receipts, image slots, storage buckets, ODD PLATINUM seed (run second)
-supabase/migrations/003_kits.sql                    kit options, quantity and price per kit, balance-based shared payments (run third)
+supabase/migrations/003_kits.sql                    kit options and price per kit, balance-based shared payments (run third)
 supabase/migrations/004_change_log.sql              admin Change log: who changed what (run fourth)
 supabase/migrations/005_underpayment_top_up.sql     underpayment: pay only the missing amount (run fifth)
+supabase/migrations/006_one_kit_per_form.sql        one form = one kit, no quantity (run sixth)
 supabase/functions/send-confirmation-email   ticket email on verification / resend / test email
 supabase/functions/send-payment-email        underpaid, rejected and "we received your registration" emails
 supabase/functions/send-bulk-email           admin bulk mail merge
@@ -28,6 +29,7 @@ The app targets **WCAG 2.2 AA** with the Teenfresh palette (brand colours as sur
 4. **SQL Editor** → new query → paste all of `supabase/migrations/003_kits.sql` → **Run** (once, after the second file). It adds kit options, quantity and amount per kit. Existing registrations are kept as quantity 1 at the old fee.
 5. **SQL Editor** → new query → paste all of `supabase/migrations/004_change_log.sql` → **Run** (once, after the third file). It adds **Admin → Change log**, filled by database triggers; contact details and payment references are logged as “changed” without their values.
 6. **SQL Editor** → new query → paste all of `supabase/migrations/005_underpayment_top_up.sql` → **Run** (once, after the fourth file). After an underpayment the attendee sends only the missing amount, and it is added to what they paid before.
+7. **SQL Editor** → new query → paste all of `supabase/migrations/006_one_kit_per_form.sql` → **Run** (once, after the fifth file). Every kit then allows one per form.
 
 ## 2. Auth providers
 **Authentication → Providers → Email**: enable, and keep **Confirm email** on (sign-up sends a verification link).
@@ -92,11 +94,11 @@ npm run deploy                 # builds (the contrast check runs first) and publ
 `npm run test:e2e` runs the production build with these exact headers enforced in a browser (`e2e/csp.spec.js`) and fails on any violation, including the camera scanner, the receipt viewer and the email preview. If you add a new external service (an analytics script, another image host, a payment widget), add its domain to the right directive in `firebase.json` first, or the browser will block it.
 
 ## Kits, quantity and price per kit
-In **Admin > Events > edit > Kits** an event gets one or more kit options, each with a **name**, a **price per kit** (the amount per quantity), a short **description** and the **most one form may order**. In the registration form a new **Kit and quantity** step lets the attendee choose a kit and a quantity and shows the total (`quantity × price`); the payment step then asks for at least that amount.
+In **Admin > Events > edit > Kits** an event gets one or more kit options, each with a **name**, a **price per kit** and a short **description**. One form orders exactly one kit, so there is no quantity. In the registration form a **Kit** step lets the attendee choose a kit and shows the total (the kit's price); the payment step then asks for at least that amount.
 - The database works out the total from the kit itself. The browser only sends *which* kit and *how many*, never a price, so it cannot be changed from the page.
 - What was ordered (kit name, quantity, price per kit, total) is copied onto each registration, so changing a price later affects only new orders, and deleting a kit never rewrites old ones. A switched-off kit disappears from the form but stays on old orders.
 - With **no kits**, an event keeps its single flat registration fee (quantity 1), exactly as before.
-- The kit and quantity show on the Attendees page and CSV, the Payments review (each form's `kit × quantity = total`, and the expected amount is their sum), the scanner result (so the right number of kits is handed over), and a **Kits ordered** table on the Dashboard. Emails can use the merge fields `{{Kit}}`, `{{Quantity}}`, `{{Unit Price}}` and `{{Total Amount}}` (add them to a template with the field chips in Admin > Email).
+- The kit and quantity show on the Attendees page and CSV, the Payments review (each form's `kit = total`, and the expected amount is their sum), the scanner result (so the right kit is handed over; older orders placed before 1.3.0 may show a quantity above 1), and a **Kits ordered** table on the Dashboard. Emails can use the merge fields `{{Kit}}`, `{{Quantity}}`, `{{Unit Price}}` and `{{Total Amount}}` (add them to a template with the field chips in Admin > Email).
 
 ## How a registration works
 1. The attendee completes four steps: **event info and terms**, **participant's information**, **payment** (GCash number with a Copy button, QR image, sender name, amount, reference number, receipt file) and **review**. Unsent progress is kept in the browser tab only (never the receipt file).
@@ -128,7 +130,7 @@ It needs the service-role key (Project Settings > API). Keep that key out of the
 - `events.event_date` stays the start time (the brief's `starts_at`); the migration adds `ends_at`, not a second start column.
 - ODD PLATINUM: capacity 100 (the brief gives none), ticket prefix `IVEMONOP`, masked account name `BR**N CA**O S.` (the example in the brief), GCash number a placeholder.
 - The older "BRILLIANT FORCE" event keeps working; it has fee 0 so it behaves as a free event with immediate tickets. Delete it in Admin > Events if you do not need it.
-- A form orders one kit type with a quantity from 1 up to that kit's limit (default 5, set 1 to 50 per kit). The seeded ODD PLATINUM event has one kit, "Event kit" at 100 PHP, using the kit contents from the reference form; edit or add kits in Admin. Capacity still counts forms (entries), not kits.
+- A form orders exactly one kit (since 1.3.0; migration `006_one_kit_per_form.sql` makes the database refuse a quantity above 1). The seeded ODD PLATINUM event has one kit, "Event kit" at 100 PHP, using the kit contents from the reference form; edit or add kits in Admin. Capacity still counts forms (entries), not kits.
 - A user may submit several forms; the unique rule is **one active entry per X username per event** (case-insensitive). Rejected and cancelled forms free the username.
 - A new form attached to an already verified payment is confirmed immediately (the payment was already checked).
 - Resubmitting an underpaid payment replaces the amount, reference and receipt (earlier ones are kept in `receipt_history` for the admin); the person enters the **total** paid across both transfers.

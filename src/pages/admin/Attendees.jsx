@@ -5,7 +5,7 @@ import { callFunction, fetchAll, resendMany } from "../../lib/api.js";
 import { exportReport } from "../../lib/excel.js";
 import { normalizeFacebook, normalizePhone, normalizeX } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
-import { peso } from "../../lib/payment.js";
+import { kitLabel, peso } from "../../lib/payment.js";
 import { useToast } from "../../components/Toast.jsx";
 import DataTable from "../../components/DataTable.jsx";
 import Modal from "../../components/Modal.jsx";
@@ -102,7 +102,7 @@ export default function Attendees() {
     { key: "email", label: "Email" },
     { key: "facebook_url", label: "Facebook", render: (r) => (r.facebook_url ? <a href={r.facebook_url} target="_blank" rel="noopener noreferrer">Profile{" "}<span className="sr-only">of {r.name} (opens in a new tab)</span></a> : "—") },
     { key: "contact_number", label: "Contact", className: "whitespace-nowrap", render: (r) => r.contact_number || "—" },
-    { key: "kit_name", label: "Kit", sortValue: (r) => r.kit_name || "", render: (r) => (r.kit_name ? `${r.kit_name} × ${r.kit_quantity}` : "—") },
+    { key: "kit_name", label: "Kit", sortValue: (r) => r.kit_name || "", render: (r) => (r.kit_name ? kitLabel(r.kit_name, r.kit_quantity) : "—") },
     { key: "total_amount", label: "Total", className: "whitespace-nowrap", sortValue: (r) => Number(r.total_amount || 0), render: (r) => (Number(r.total_amount) > 0 ? peso(r.total_amount) : "—") },
     { key: "pay_status", label: "Payment", render: (r) => <span className={`badge ${PAY_BADGE[r.pay_status]}`}>{r.pay_status === "none" ? "n/a" : r.pay_status}</span> },
     { key: "created_at", label: "Registered", className: "whitespace-nowrap", render: (r) => fmtDateTime(r.created_at) },
@@ -129,7 +129,7 @@ export default function Attendees() {
       {sel && !edit && (
         <Modal title={sel.name} onClose={() => setSel(null)}>
           <dl className="space-y-1 text-sm">
-            {[["Ticket", sel.ticket_number || "Not issued yet"], ["X username", "@" + sel.x_username], ["Email", sel.email], ["Facebook", sel.facebook_url || "—"], ["Contact", sel.contact_number || "—"], ["Kit", sel.kit_name ? `${sel.kit_name} × ${sel.kit_quantity} at ${peso(sel.kit_unit_price)}` : "—"], ["Total", Number(sel.total_amount) > 0 ? peso(sel.total_amount) : "—"], ["Notes", sel.notes || "—"],
+            {[["Ticket", sel.ticket_number || "Not issued yet"], ["X username", "@" + sel.x_username], ["Email", sel.email], ["Facebook", sel.facebook_url || "—"], ["Contact", sel.contact_number || "—"], ["Kit", sel.kit_name ? `${kitLabel(sel.kit_name, sel.kit_quantity)} at ${peso(sel.kit_unit_price)}` : "—"], ["Total", Number(sel.total_amount) > 0 ? peso(sel.total_amount) : "—"], ["Notes", sel.notes || "—"],
               ["Registered", fmtDateTime(sel.created_at)], ["Status", sel.status.replace("_", " ")], ["Payment", sel.pay_status === "none" ? "n/a" : `${sel.pay_status}${sel.payment?.reference_number ? ` (ref ${sel.payment.reference_number})` : ""}`],
               ["Checked in", sel.checked_in_at ? `${fmtDateTime(sel.checked_in_at)}${sel.checker ? " by " + (sel.checker.full_name || sel.checker.email) : ""}` : "No"], ["Receipt verified", sel.receipt_verified ? "Yes" : "No"], ["Kit claimed", sel.kit_claimed ? "Yes" : "No"], ["Email status", sel.email_status + (sel.email_error ? ` (${sel.email_error})` : "")]].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4"><dt className="text-ink-muted">{k}</dt><dd className="break-all text-right font-medium">{v}</dd></div>
