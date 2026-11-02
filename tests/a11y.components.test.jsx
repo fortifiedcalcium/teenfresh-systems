@@ -284,13 +284,14 @@ describe("images, uploads and the new form pieces", () => {
     expect(calls).toEqual(["inner"]);                                                         // the outer dialog stays
   });
 
-  it("TermsEditor: formatting buttons add tags and the preview is sanitized", async () => {
+  it("TermsEditor: plain text in, formatted preview out", async () => {
     const user = userEvent.setup();
-    function Host() { const [v, setV] = React.useState('<p>Hello</p><script>alert(1)</script>'); return <><label htmlFor="t">Terms</label><TermsEditor id="t" value={v} onChange={setV} /></>; }
+    function Host() { const [v, setV] = React.useState('Hello <script>alert(1)</script>'); return <><label htmlFor="t">Terms</label><TermsEditor id="t" value={v} onChange={setV} /></>; }
     const { container } = wrap(<Host />);
     expect(container.querySelector(".safe-html script")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Numbered list" }));
-    expect(screen.getByLabelText("Terms").value).toContain("<ol>");
+    expect(screen.getByLabelText("Terms").value).toMatch(/^1\. /);
+    expect(container.querySelector(".safe-html ol")).not.toBeNull();
     expect(screen.getByRole("toolbar", { name: "Formatting" })).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
   });

@@ -1,36 +1,50 @@
-import React, { useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import SafeHtml from "./SafeHtml.jsx";
 import { IconLink, IconList, IconParagraph } from "./NavIcons.jsx";
+import { wrapSelection } from "../lib/formatText.js";
+import { textToHtml } from "../lib/terms.js";
+
+const wrap = (open, close, placeholder) => (v, s, e) => wrapSelection(v, s, e, open, close, placeholder);
+/** Puts a prefix in front of every selected line ("- " or "1. "), or removes it again when they all have it. */
+const prefixLines = (numbered) => (v, s, e) => {
+  const from = v.lastIndexOf("\n", s - 1) + 1, nl = v.indexOf("\n", e), to = nl === -1 ? v.length : nl;
+  const lines = v.slice(from, to).split("\n");
+  const has = (l) => (numbered ? /^\d+[.)]\s/ : /^[-*]\s/).test(l);
+  const next = lines.every(has) ? lines.map((l) => l.replace(numbered ? /^\d+[.)]\s/ : /^[-*]\s/, "")) : lines.map((l, i) => (has(l) ? l : `${numbered ? `${i + 1}. ` : "- "}${l}`));
+  const text = next.join("\n");
+  return { value: v.slice(0, from) + text + v.slice(to), start: from, end: from + text.length };
+};
 
 const BUTTONS = [
-  ["Bold", (t) => `<strong>${t || "bold text"}</strong>`, <b key="b" aria-hidden="true" className="font-serif text-base leading-none">B</b>],
-  ["Italic", (t) => `<em>${t || "italic text"}</em>`, <i key="i" aria-hidden="true" className="font-serif text-base leading-none">I</i>],
-  ["Paragraph", (t) => `<p>${t || "Paragraph"}</p>`, <IconParagraph key="p" />],
-  ["Numbered list", (t) => `<ol>\n<li>${t || "First rule"}</li>\n<li>Second rule</li>\n</ol>`, <IconList key="l" />],
-  ["Link", (t) => `<a href="https://">${t || "link text"}</a>`, <IconLink key="k" />],
+  ["Bold", wrap("**", "**", "bold text"), <b key="b" aria-hidden="true" className="font-serif text-base leading-none">B</b>],
+  ["Italic", wrap("*", "*", "italic text"), <i key="i" aria-hidden="true" className="font-serif text-base leading-none">I</i>],
+  ["Bulleted list", prefixLines(false), <IconList key="u" />],
+  ["Numbered list", prefixLines(true), <IconParagraph key="p" />],
+  ["Link", (v, s, e) => { const t = v.slice(s, e) || "link text"; return { value: `${v.slice(0, s)}[${t}](https://)${v.slice(e)}`, start: s + t.length + 3, end: s + t.length + 11 }; }, <IconLink key="k" />],
 ];
 
-/** A small HTML editor for the Terms: formatting buttons wrap the selection in the right tag, and a live preview shows
- *  exactly what attendees will see (the same sanitizer is used for the page and the email, so scripts and styles never get through). */
+/** A plain-text editor for the Terms: no HTML to type. Blank line = new paragraph, "- " = bullet, "1. " = number,
+ *  **bold**, *italic*, [text](https://link). The preview shows exactly what attendees will see; the text is turned into
+ *  sanitized HTML once, when the event is saved. */
 export default function TermsEditor({ id, value, onChange }) {
   const ref = useRef(null);
+  const html = useMemo(() => textToHtml(value), [value]);
   const apply = (make) => {
     const el = ref.current;
-    const [s, e] = [el.selectionStart, el.selectionEnd];
-    const text = value.slice(s, e);
-    const next = value.slice(0, s) + make(text) + value.slice(e);
-    onChange(next);
-    requestAnimationFrame(() => { el.focus(); });
+    const r = make(value, el.selectionStart, el.selectionEnd);
+    onChange(r.value);
+    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(r.start, r.end); });
   };
   return (
     <div className="space-y-2">
       <div role="toolbar" aria-label="Formatting" aria-controls={id} className="flex flex-wrap gap-2">
         {BUTTONS.map(([label, make, icon]) => <button key={label} type="button" className="btn-secondary" onClick={() => apply(make)}>{icon}{label}</button>)}
       </div>
-      <textarea id={id} ref={ref} rows={12} className="input font-mono text-sm" value={value} onChange={(e) => onChange(e.target.value)} spellCheck />
+      <textarea id={id} ref={ref} rows={12} className="input text-sm" value={value} onChange={(e) => onChange(e.target.value)} aria-describedby={`${id}-help`} spellCheck />
+      <p id={`${id}-help`} className="text-xs text-ink-muted">Just type. Leave a blank line between paragraphs. Start a line with <code>- </code> for bullets or <code>1. </code> for numbers. Use <code>**bold**</code>, <code>*italic*</code> and <code>[text](https://link)</code>.</p>
       <div>
         <p className="label">Preview (what attendees see)</p>
-        <div className="rounded-lg border border-link bg-brand-ivory p-3 text-sm"><SafeHtml html={value} /></div>
+        <div className="rounded-lg border border-link bg-brand-ivory p-3 text-sm"><SafeHtml html={html} /></div>
       </div>
     </div>
   );
