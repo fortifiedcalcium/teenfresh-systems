@@ -39,8 +39,8 @@
 @media (min-width: 768px) { .admin-bottom-nav__shadow { filter: drop-shadow(0 6px 16px rgb(0 0 0 / 0.3)); } }
 .admin-bottom-nav__bg {
   position: absolute; inset: 0;
-  background: var(--ink);
-  border-top: 1px solid var(--ink-muted);
+  background: var(--brand-cream);                    /* the same colour as the desktop sidebar and the top bar */
+  border-top: 2px solid var(--ink);
   border-radius: var(--nav-radius) var(--nav-radius) 0 0;
   /* the cut-out for the raised scan button: a radial hole centred on the top edge, so the shadow follows it */
   --cut: calc(var(--fab-d) / 2 + var(--fab-gap));
@@ -56,15 +56,15 @@
 .bottom-nav-item {
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   min-height: 56px; margin: 4px 2px; padding: 4px 2px; border-radius: 16px;
-  color: var(--brand-sky); text-decoration: none; font-size: var(--nav-label); font-weight: 500; line-height: 1.15; text-align: center;
+  color: var(--ink); text-decoration: none; font-size: var(--nav-label); font-weight: 500; line-height: 1.15; text-align: center;
   transition: transform 120ms ease-out, background-color 120ms ease-out;
 }
 .bottom-nav-item svg { width: var(--nav-icon); height: var(--nav-icon); }
-.bottom-nav-item:active { transform: scale(0.96); background: color-mix(in srgb, var(--brand-sky) 16%, transparent); }
-.bottom-nav-item[aria-current="page"] { color: var(--brand-blue); font-weight: 800; }
-.bottom-nav-item[aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 50%; width: 28px; height: 3px; border-radius: 3px; background: var(--brand-blue); transform: translateX(-50%); }
+.bottom-nav-item:active { transform: scale(0.96); background: var(--brand-sky); }
+/* current page: the same ink pill with ivory text as the desktop sidebar */
+.bottom-nav-item[aria-current="page"] { background: var(--ink); color: var(--brand-ivory); font-weight: 800; }
 .bottom-nav-item__label { max-width: 100%; overflow-wrap: anywhere; min-height: 1.15em; }  /* wraps to two lines, never truncates */
-@media (min-width: 768px) { .bottom-nav-item { min-height: 68px; } .bottom-nav-item[aria-current="page"]::before { width: 36px; } }
+@media (min-width: 768px) { .bottom-nav-item { min-height: 68px; } }
 @media (max-height: 480px) and (orientation: landscape) {
   .bottom-nav-item { min-height: 48px; flex-direction: row; }
   .bottom-nav-item__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }  /* labels hidden, names kept */
@@ -80,10 +80,10 @@
 }
 .scan-fab svg { width: calc(var(--fab-d) * 0.5); height: calc(var(--fab-d) * 0.5); }
 .scan-fab:active { transform: translateX(-50%) scale(0.96); }
-.admin-bottom-nav[data-docked="true"] .scan-fab { top: calc((var(--nav-h) - var(--fab-d)) / 2); border-color: var(--brand-blue); }
+.admin-bottom-nav[data-docked="true"] .scan-fab { top: calc((var(--nav-h) - var(--fab-d)) / 2); border-color: var(--ink); }
 .scan-fab:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }                       /* raised: the gap is page-coloured */
-.admin-bottom-nav[data-docked="true"] .scan-fab:focus-visible { outline-color: var(--brand-ivory); }  /* docked: the bar is dark */
-.bottom-nav-item:focus-visible { outline: 3px solid var(--brand-ivory); outline-offset: -3px; }
+.bottom-nav-item:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.bottom-nav-item[aria-current="page"]:focus-visible { outline-color: var(--brand-ivory); }   /* on the ink pill */
 
 .nav-badge { position: absolute; top: 2px; right: calc(50% - 26px); min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; display: grid; place-items: center;
   background: var(--brand-coral); color: var(--ink); font-size: 12px; font-weight: 800; line-height: 1; }
@@ -94,9 +94,8 @@
   .scan-fab:active { transform: translateX(-50%); }
 }
 @media (prefers-contrast: more) {
-  .admin-bottom-nav__bg { border-top: 2px solid var(--brand-ivory); }
-  .bottom-nav-item { color: var(--white); }
-  .bottom-nav-item[aria-current="page"] { color: var(--white); text-decoration: underline; text-underline-offset: 4px; }
+  .admin-bottom-nav__bg { border-top-width: 3px; }
+  .bottom-nav-item[aria-current="page"] { text-decoration: underline; text-underline-offset: 4px; }
 }
 @media (forced-colors: active) {
   .admin-bottom-nav__bg { background: Canvas; border: 2px solid CanvasText; }

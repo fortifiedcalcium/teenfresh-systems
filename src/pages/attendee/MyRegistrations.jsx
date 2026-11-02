@@ -16,7 +16,8 @@ import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { IconClose, IconSend, IconTicket, IconUpload } from "../../components/NavIcons.jsx";
+import EventImage from "../../components/EventImage.jsx";
+import { IconCalendar, IconClose, IconMapPin, IconPackage, IconSend, IconTicket, IconUpload, IconUser } from "../../components/NavIcons.jsx";
 
 const STATUS = {
   pending_verification: { tone: "warn", label: "Pending verification" },
@@ -88,6 +89,7 @@ export default function MyRegistrations() {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
   const [resubmit, setResubmit] = useState(null);
+  const [banners, setBanners] = useState({});
 
   const load = useCallback(async () => {
     const { data, error: e } = await supabase.from("registrations")
@@ -97,6 +99,8 @@ export default function MyRegistrations() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (e) setError("Could not load your registrations.");
+    const im = await supabase.from("event_images").select("*").eq("slot", "banner");          // the same banners the home page shows
+    setBanners(Object.fromEntries((im.data || []).map((x) => [x.event_id, x])));
     const list = data || [];
     // how many of my forms share each payment (the resubmit minimum is fee x forms)
     const count = {}, sum = {};
@@ -111,34 +115,44 @@ export default function MyRegistrations() {
       <h1 className="mb-4 flex items-center gap-2 text-2xl"><IconTicket />My registrations</h1>
       {error && <Alert tone="bad" className="mb-3">{error}</Alert>}
       {rows.length === 0 ? <Empty>You haven&apos;t registered for any event yet. <Link to="/">Browse events</Link></Empty> : (
-        <ul className="space-y-3">
+        <ul className="grid auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((r) => {
             const s = STATUS[r.status];
             const p = r.payments;
             const needsAction = p && (p.status === "underpaid" || p.status === "rejected");
+            const ev = r.events;
             return (
-              <li key={r.id} className="card space-y-3 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-bold">{r.events?.title}</h2>
-                    <p className="text-sm text-ink-muted">{fmtDateTime(r.events?.event_date)} · {r.events?.venue}</p>
-                    <p className="text-sm">For <strong>{r.name}</strong> (@{r.x_username})</p>
-                    {r.kit_name && <p className="text-sm">{kitLabel(r.kit_name, r.kit_quantity)}{Number(r.total_amount) > 0 ? ` · ${peso(r.total_amount)}` : ""}</p>}
-                    {r.ticket_number && r.status === "confirmed" && <p className="mt-1 font-mono text-sm">{r.ticket_number}</p>}
+              <li key={r.id} className="flex">
+                {/* same card as the events on the home page: banner on top, then the details, actions at the bottom */}
+                <article className="card flex h-full w-full flex-col overflow-hidden" aria-labelledby={`reg-title-${r.id}`}>
+                  <EventImage slot="banner" event={{ id: r.event_id, title: ev?.title }} image={banners[r.event_id]} lightbox={false} fit="cover" className="!rounded-none !border-0" />
+                  <div className="flex flex-1 flex-col gap-3 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <h2 id={`reg-title-${r.id}`} className="line-clamp-2 min-w-0 flex-1 text-lg font-bold leading-snug" title={ev?.title}>{ev?.title}</h2>
+                      <Badge tone={s.tone}>{s.label}</Badge>
+                    </div>
+                    <dl className="space-y-1 text-sm text-ink-muted">
+                      <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconCalendar />Date:</dt><dd>{fmtDateTime(ev?.event_date)}</dd></div>
+                      {ev?.venue && <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconMapPin />Venue:</dt><dd className="line-clamp-2" title={ev.venue}>{ev.venue}</dd></div>}
+                      <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconUser />For:</dt><dd className="min-w-0 break-words text-ink">{r.name} (@{r.x_username})</dd></div>
+                      {r.kit_name && <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconPackage />Kit:</dt><dd>{`${kitLabel(r.kit_name, r.kit_quantity)}${Number(r.total_amount) > 0 ? ` · ${peso(r.total_amount)}` : ""}`}</dd></div>}
+                      {r.ticket_number && r.status === "confirmed" && <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconTicket />Ticket:</dt><dd className="font-mono text-ink">{r.ticket_number}</dd></div>}
+                    </dl>
+                    {r.status === "pending_verification" && !needsAction && <p className="text-sm text-ink-muted">Your payment is being verified. A confirmation email will be sent within 48 to 72 hours.</p>}
+                    {needsAction && (
+                      <Alert tone={p.status === "underpaid" ? "warn" : "bad"}>
+                        <p className="font-semibold">{p.status === "underpaid" ? `Payment incomplete: ${peso(p.amount_due)} still due.` : "Payment rejected."}</p>
+                        {p.review_note && <p>{p.review_note}</p>}
+                        <button className="btn-primary mt-2 w-full" onClick={() => setResubmit(r)}><IconUpload />{p.status === "underpaid" ? "Send the missing amount" : "Upload a new receipt"}{" "}<span className="sr-only">for {r.name}</span></button>
+                      </Alert>
+                    )}
+                    {r.status === "confirmed" && (
+                      <div className="mt-auto">
+                        <Link className="btn-primary w-full" to={`/my-ticket/${r.id}`} aria-label={`View ticket ${r.ticket_number} for ${ev?.title}`}><IconTicket />View ticket</Link>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge tone={s.tone}>{s.label}</Badge>
-                    {r.status === "confirmed" && <Link className="btn-primary" to={`/my-ticket/${r.id}`} aria-label={`View ticket ${r.ticket_number} for ${r.events?.title}`}><IconTicket />View ticket</Link>}
-                  </div>
-                </div>
-                {r.status === "pending_verification" && !needsAction && <p className="text-sm text-ink-muted">Your payment is being verified. A confirmation email will be sent within 48 to 72 hours.</p>}
-                {needsAction && (
-                  <Alert tone={p.status === "underpaid" ? "warn" : "bad"}>
-                    <p className="font-semibold">{p.status === "underpaid" ? `Payment incomplete: ${peso(p.amount_due)} still due.` : "Payment rejected."}</p>
-                    {p.review_note && <p>{p.review_note}</p>}
-                    <button className="btn-primary mt-2" onClick={() => setResubmit(r)}><IconUpload />{p.status === "underpaid" ? "Send the missing amount" : "Upload a new receipt"}{" "}<span className="sr-only">for {r.name}</span></button>
-                  </Alert>
-                )}
+                </article>
               </li>
             );
           })}

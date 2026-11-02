@@ -25,7 +25,7 @@ export default function AdminBottomNav({ pending = 0, hidden = false }) {
   }, [pending]);
 
   return (
-    <nav aria-label="Admin" className="admin-bottom-nav on-ink lg:hidden" data-docked={docked} data-hidden={hidden}>
+    <nav aria-label="Admin" className="admin-bottom-nav lg:hidden" data-docked={docked} data-hidden={hidden}>
       <div className="admin-bottom-nav__shadow" aria-hidden="true"><div className="admin-bottom-nav__bg" /></div>
       <ul className="admin-bottom-nav__list">
         {TABS.map((t) => t.fab

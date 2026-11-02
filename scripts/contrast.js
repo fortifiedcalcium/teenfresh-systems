@@ -35,9 +35,9 @@ export const APPROVED = [
   T("warning-ink", "brand-cream", 4.5, "few slots / already checked in"), T("warning-ink", "white"), T("warning-ink", "brand-ivory"),
   // inverted
   T("white", "danger", 4.5, "destructive button"), T("brand-ivory", "ink", 4.5, "hover / current nav"), T("white", "link", 4.5, "text on link fill"),
-  // admin bottom navigation (dark bar): inactive sky 9.2:1, active brand-blue 5.2:1, focus ivory 12.8:1
-  T("brand-sky", "ink", 4.5, "bottom bar: inactive label"), T("brand-blue", "ink", 4.5, "bottom bar: active label"),
-  T("brand-sky", "ink", 3, "bottom bar: inactive icon"), T("brand-blue", "ink", 3, "bottom bar: active icon and indicator line"),
+  // admin bottom navigation (cream bar like the sidebar): inactive ink on cream, active ivory on the ink pill
+  T("ink", "brand-cream", 4.5, "bottom bar: inactive label"), T("brand-ivory", "ink", 4.5, "bottom bar: active label on the ink pill"), T("ink", "brand-sky", 4.5, "bottom bar: pressed item"),
+  T("ink", "brand-cream", 3, "bottom bar: inactive icon"), T("brand-ivory", "ink", 3, "bottom bar: active icon"),
   T("ink", "brand-blue", 4.5, "scan button icon on its fill"), T("brand-ivory", "ink", 4.5, "bottom bar: focus ring and text"), T("ink", "brand-coral", 4.5, "pending badge"),
   // non-text (>= 3:1)
   T("link", "white", 3, "input / card border"), T("link", "brand-ivory", 3, "border"), T("link", "brand-sky", 3, "progress fill on track"),

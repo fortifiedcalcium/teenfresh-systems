@@ -2,7 +2,13 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar.
+
+## [1.4.1] - 2026-11-02
+
+### Changed
+- **My registrations is now a grid of cards**, the same card as the events on the home page (1 column on phones, 2 on tablets, 3 on desktop), instead of full-width horizontal rows. Each card shows the event banner, the title and status, then Date, Venue, For, Kit and Ticket with icons. "View ticket" (confirmed) or the payment action (underpaid or rejected) sits at the bottom of the card at full width.
+- **The admin bottom bar on mobile is cream**, the same colour as the desktop sidebar and the top bar (it was dark). The current page is an ink pill with ivory text, like the sidebar; the scan button keeps its blue fill with an ink outline. Contrast pairings in `scripts/contrast.js` were updated.
 
 ## [1.4.0] - 2026-11-02
 
