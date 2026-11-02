@@ -4,6 +4,23 @@ All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
 `1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar.
 
+## [Unreleased]
+
+Small changes made after 1.4.1. They are listed here and will be released with the next major version (no tag yet).
+
+### Added
+- **Ticket-shaped cards on My registrations.** Each registration is a vertical ticket: the event banner, title and status, then Date, Venue, For and Kit with icons, a dashed perforation, and a stub. A round notch is cut out of both sides at the perforation, and the outline and shadow follow the notches. Tickets in a row have equal heights and the perforation lines up, even when one stub is taller (browsers without CSS subgrid still work but may not align it).
+- The stub depends on the status: **confirmed** shows "Ticket no.", the ticket number, a Copy button, a decorative barcode strip and **View ticket**; **pending** shows "Awaiting payment check" and the 48 to 72 hours note; **underpaid or rejected** shows the message and the **Send the missing amount** / **Upload a new receipt** button; **cancelled** is muted. A **VOID** stamp appears on rejected tickets only (decorative; the badge and message carry the meaning).
+- **Copy ticket number** icon button (accessible name "Copy ticket number", announces "copied").
+- **The Teenfresh logo on loading screens**: the full-page loader and the page-level loaders (Events, My registrations, the registration form, the admin Dashboard, "Signing you in…") show the logo above the spinner. It pulses gently, and stays still when reduced motion is on. Small inline loaders keep the plain spinner.
+- Tests: `e2e/tickets.spec.js` (real cut-out notch, perforation alignment, a stub per status, keyboard order, forced colours, axe and screenshots at 360, 768, 1280 and 1600 px), `tests/ticket.test.jsx`, `tests/loading.test.jsx`; contrast pairs for the ticket colours in `scripts/contrast.js`.
+
+### Changed
+- My registrations is a grid of 1, 2, 3 and 4 columns at 640, 1024 and 1536 px (tickets at most 420 px wide on phones). Without mask support the ticket is a plain rounded card; in forced-colours mode it is a plain bordered card.
+
+### Fixed
+- On My registrations, the "Payment rejected" message and the **Upload a new receipt** button were one box, so the message colour became the button's background. The message and the button are now separate (the same for **Send the missing amount**).
+
 ## [1.4.1] - 2026-11-02
 
 ### Changed
