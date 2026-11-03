@@ -1,15 +1,16 @@
 import React from "react";
 
-/** A vertical ticket: the main section on top (`image`, then `children`) and the stub underneath, split by a dashed
+/** A vertical ticket: the main section on top (`image`, with the status `badge` as a chip on it, then `children`) and the stub underneath, split by a dashed
  *  perforation with a round notch cut out of each side (see src/styles/ticket.css). Purely presentational.
  *  `status`: confirmed | pending | attention | rejected | cancelled (a rejected ticket also gets a VOID stamp).
  *  The notches, perforation and stamp are decorative: aria-hidden, never focusable. */
-export function Ticket({ status = "confirmed", labelledBy, image, children, stub }) {
+export function Ticket({ status = "confirmed", labelledBy, image, badge, children, stub }) {
   return (
     <article className="ticket" data-status={status} aria-labelledby={labelledBy}>
       <div className="ticket__top">
         <div className="ticket__fill">
-          {image}
+          <div className="ticket__media">{image}</div>
+          {badge && <div className="ticket__chip">{badge}</div>}
           {status === "rejected" && <span className="ticket__stamp" aria-hidden="true">VOID</span>}
           <div className="ticket__content">{children}</div>
         </div>
@@ -21,13 +22,15 @@ export function Ticket({ status = "confirmed", labelledBy, image, children, stub
   );
 }
 
-/** The stub's small heading, and its content */
+/** The stub's small heading, and its content. Put the button(s) in <TicketAction>: it sits on the bottom line of the stub. */
 export const TicketStub = ({ label, children }) => (
   <>
     {label && <p className="ticket__label">{label}</p>}
     {children}
   </>
 );
+
+export const TicketAction = ({ children }) => <div className="ticket__action">{children}</div>;
 
 /** Decorative barcode strip, drawn from the ticket number so every ticket looks different. It is NOT a scannable code. */
 export function TicketBarcode({ value = "" }) {
@@ -41,5 +44,5 @@ export function TicketBarcode({ value = "" }) {
     bars.push(<rect key={x} x={x} y="0" width={w} height="40" />);
     x += w + gap;
   }
-  return <svg aria-hidden="true" focusable="false" viewBox="0 0 200 40" preserveAspectRatio="none" className="h-9 w-full text-ink" fill="currentColor">{bars}</svg>;
+  return <svg aria-hidden="true" focusable="false" viewBox="0 0 200 40" preserveAspectRatio="none" className="ticket__barcode text-ink" fill="currentColor">{bars}</svg>;
 }

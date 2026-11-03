@@ -25,6 +25,11 @@
   --warning-ink: #3d2c00;  /* few slots left / already checked in */
   --white:       #ffffff;  /* inputs, modals, table rows */
 
+  /* Ticket cards (My registrations): one inset and one spacing scale */
+  --ticket-pad: 1.25rem;     /* 20px: body text, stub content AND the perforation start at this inset */
+  --ticket-notch: 12px;      /* notch radius (10px below 360px) */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+
   /* Roles, so `prefers-contrast: more` can strengthen them in one place */
   --border-ui: var(--link);
   --border-soft: var(--brand-sky);

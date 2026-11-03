@@ -19,19 +19,11 @@
 @media (min-width: 1536px) { .ticket-li { max-width: 360px; } }
 
 .ticket {
-  --notch: 12px; --edge: 1.5px; --corner: 16px; --perf-inset: 20px;
+  --notch: var(--ticket-notch); --edge: 1.5px; --corner: 16px; --perf-inset: var(--ticket-pad);
   position: relative; display: flex; flex-direction: column; width: 100%;
   filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--ink) 24%, transparent));
-  transition: transform 150ms ease-out;
 }
-@media (max-width: 479px) { .ticket { --notch: 10px; } }
-
-/* Same row = same perforation line: with subgrid, the body rows and stub rows of the tickets in one row are
-   sized together. Without subgrid the body simply grows (flex) and the stub sits at the bottom. */
-@supports (grid-template-rows: subgrid) {
-  .ticket-li { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 0; }
-  .ticket { grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; row-gap: 0; }
-}
+@media (max-width: 359px) { .ticket { --notch: 10px; } }
 
 .ticket__top, .ticket__bottom { min-width: 0; background: var(--link); display: flex; flex-direction: column; }
 .ticket__top { padding: var(--edge) var(--edge) 0; border-radius: var(--corner) var(--corner) 0 0; flex: 1 1 auto; }
@@ -39,6 +31,17 @@
 .ticket__fill { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; position: relative; }
 .ticket__top .ticket__fill { background: var(--white); border-radius: calc(var(--corner) - var(--edge)) calc(var(--corner) - var(--edge)) 0 0; overflow: hidden; }
 .ticket__bottom .ticket__fill { background: var(--brand-ivory); border-radius: 0 0 calc(var(--corner) - var(--edge)) calc(var(--corner) - var(--edge)); }
+
+/* Same row = same lines: each ticket spans THREE rows of the grid (picture, details, stub) through nested subgrids, so in one
+   row the picture, the title, the perforation and the buttons sit on the same horizontal lines. Without subgrid the body
+   simply grows (flex) and the stub sits at the bottom. */
+@supports (grid-template-rows: subgrid) {
+  .ticket-li { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0; }
+  .ticket { grid-row: 1 / span 3; display: grid; grid-template-rows: subgrid; row-gap: 0; }
+  .ticket__top { grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; row-gap: 0; }
+  .ticket__top > .ticket__fill { display: grid; grid-template-rows: subgrid; grid-row: 1 / span 2; row-gap: 0; }
+  .ticket__bottom { grid-row: 3; }
+}
 
 /* The perforation: a dashed line along the top of the stub, stopping short of the notches */
 .ticket__bottom .ticket__fill::before {
@@ -67,25 +70,51 @@
   }
 }
 
-.ticket__content { display: flex; flex: 1 1 auto; flex-direction: column; gap: 0.75rem; padding: 1.25rem 1.5rem 1.75rem; }   /* 24px from both edges, room above the notches */
-.ticket__stub { display: flex; flex-direction: column; gap: 0.75rem; padding: 1.75rem 1.5rem 1.25rem; }
-.ticket__label { font-size: 0.875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
-.ticket__number { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 18px; letter-spacing: 0.04em; color: var(--ink); overflow-wrap: anywhere; }
+/* Picture: one ratio for every ticket, so every picture is exactly the same height at a given width */
+.ticket__media { aspect-ratio: 16 / 9; min-width: 0; position: relative; overflow: hidden; }
+.ticket__media > * { width: 100%; height: 100%; aspect-ratio: auto !important; }
+.ticket__media img { object-position: center 30%; }                      /* faces are not cropped by default */
+.ticket__media [data-placeholder], .ticket__media [data-coming-soon] { display: grid; place-items: center; align-content: center; gap: var(--space-2); padding: 2.75rem var(--ticket-pad) var(--space-4); }
+/* the status chip sits on the picture, top-left, never beside the title */
+.ticket__chip { position: absolute; top: 14px; left: 14px; z-index: 1; }
+.ticket__chip .badge { box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 35%, transparent); }
+
+/* Details: ONE inset (--ticket-pad) for text, stub and perforation; 16 px above the title, 12 px below it */
+.ticket__content { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; padding: var(--space-4) var(--ticket-pad) var(--space-5); }
+.ticket__title { font-size: 1.1875rem; line-height: 1.3; font-weight: 900; text-wrap: balance; overflow-wrap: anywhere; margin: 0 0 var(--space-3); }
+.ticket__details { margin: 0; }
+
+/* Stub: label, 8, number row (44), 16, barcode (32), 16, button (48), 20 */
+.ticket__stub { display: flex; flex: 1 1 auto; flex-direction: column; padding: var(--space-5) var(--ticket-pad); }
+.ticket__stub > * + * { margin-top: var(--space-4); }
+.ticket__stub > .ticket__label + * { margin-top: var(--space-2); }
+.ticket__label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin: 0; }
+.ticket__number-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: 44px; }
+.ticket__number-row .btn-secondary { width: 44px; height: 44px; min-width: 44px; padding: 0; }   /* the copy button is a full touch target */
+.ticket__number { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 18px; letter-spacing: 0.04em; color: var(--ink); overflow-wrap: anywhere; margin: 0; }
+.ticket__barcode { display: block; width: 100%; height: 32px; }
+.ticket__action { margin-top: auto; padding-top: var(--space-4); }       /* the buttons share one line across a row, 16 px under what is above */
+.ticket__stub > .ticket__action { margin-top: auto; }
+.ticket__action .btn-primary { min-height: 48px; }
 
 /* VOID stamp on a rejected ticket: decorative (the badge and the message carry the meaning) */
 .ticket__stamp {
-  position: absolute; top: 14px; right: 14px; z-index: 1; transform: rotate(12deg); pointer-events: none;
+  position: absolute; top: 14px; right: 14px; z-index: 1; transform: rotate(-8deg); pointer-events: none;
   border: 2px solid var(--danger); border-radius: 6px; background: var(--brand-blush); color: var(--danger);
   padding: 0 0.5rem; font-size: 1.125rem; font-weight: 800; letter-spacing: 0.18em; line-height: 1.6;
 }
+
+@media (max-width: 319px) { .ticket__stamp { display: none; } }   /* no room beside the chip */
 
 /* Cancelled: quieter, but the text keeps its full contrast (no fading, no strike-through) */
 .ticket[data-status="cancelled"] .ticket__top .ticket__fill { background: var(--brand-ivory); }
 .ticket[data-status="cancelled"] img { filter: grayscale(1); }
 
-/* A gentle lift, only where hover exists and motion is welcome */
+/* A gentle lift, only where hover exists and motion is welcome. It is a shadow change, NOT a move: moving the ticket by even 2 px
+   put it out of line with the others in its row (that was the "first ticket is 2 px higher" bug). */
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .ticket:hover { transform: translateY(-2px); }
+  .ticket { transition: filter 150ms ease-out; }
+  .ticket:hover { filter: drop-shadow(0 6px 12px color-mix(in srgb, var(--ink) 32%, transparent)); }
 }
 
 /* Forced colours: no mask, a plain bordered card (the system draws the colours) */

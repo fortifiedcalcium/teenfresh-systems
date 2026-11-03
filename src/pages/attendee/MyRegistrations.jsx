@@ -18,7 +18,8 @@ import { useToast } from "../../components/Toast.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import CopyButton from "../../components/CopyButton.jsx";
 import EventImage from "../../components/EventImage.jsx";
-import { Ticket, TicketBarcode, TicketStub } from "../../components/Ticket.jsx";
+import { Ticket, TicketAction, TicketBarcode, TicketStub } from "../../components/Ticket.jsx";
+import { InfoList, InfoRow, NoWrap } from "../../components/InfoRow.jsx";
 import { IconCalendar, IconClose, IconMapPin, IconPackage, IconSend, IconTicket, IconUpload, IconUser } from "../../components/NavIcons.jsx";
 
 const STATUS = {
@@ -131,18 +132,19 @@ export default function MyRegistrations() {
                 <Ticket
                   status={kind}
                   labelledBy={titleId}
-                  image={<EventImage slot="banner" event={{ id: r.event_id, title: ev?.title, banner_coming_soon: ev?.banner_coming_soon }} image={banners[r.event_id]} lightbox={false} fit="cover" className="!rounded-none !border-0" />}
+                  image={<EventImage slot="banner" event={{ id: r.event_id, title: ev?.title, banner_coming_soon: ev?.banner_coming_soon }} image={banners[r.event_id]} lightbox={false} readOnly fit="cover" className="!rounded-none !border-0" />}
+                  badge={<Badge tone={s.tone}>{s.label}</Badge>}
                   stub={
                     kind === "confirmed" ? (
                       <TicketStub label="Ticket no.">
                         {r.ticket_number && (
-                          <div className="flex items-center justify-between gap-2">
+                          <div className="ticket__number-row">
                             <p className="ticket__number">{r.ticket_number}</p>
                             <CopyButton iconOnly text={r.ticket_number} label="Copy ticket number" what="Ticket number" />
                           </div>
                         )}
                         <TicketBarcode value={r.ticket_number || r.id} />
-                        <Link className="btn-primary w-full" to={`/my-ticket/${r.id}`} aria-label={`View ticket ${r.ticket_number} for ${ev?.title}`}><IconTicket />View ticket</Link>
+                        <TicketAction><Link className="btn-primary w-full" to={`/my-ticket/${r.id}`} aria-label={`View ticket ${r.ticket_number} for ${ev?.title}`}><IconTicket />View ticket</Link></TicketAction>
                       </TicketStub>
                     ) : kind === "pending" ? (
                       <TicketStub label="Awaiting payment check">
@@ -158,21 +160,18 @@ export default function MyRegistrations() {
                           <p className="font-semibold">{p.status === "underpaid" ? `Payment incomplete: ${peso(p.amount_due)} still due.` : "Payment rejected."}</p>
                           {p.review_note && <p>{p.review_note}</p>}
                         </Alert>
-                        <button className="btn-primary w-full" onClick={() => setResubmit(r)}><IconUpload />{p.status === "underpaid" ? "Send the missing amount" : "Upload a new receipt"}{" "}<span className="sr-only">for {r.name}</span></button>
+                        <TicketAction><button className="btn-primary w-full" onClick={() => setResubmit(r)}><IconUpload />{p.status === "underpaid" ? "Send the missing amount" : "Upload a new receipt"}{" "}<span className="sr-only">for {r.name}</span></button></TicketAction>
                       </TicketStub>
                     )
                   }
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <h2 id={titleId} className="line-clamp-2 min-w-0 flex-1 text-lg font-black leading-snug" title={ev?.title}>{ev?.title}</h2>
-                    <Badge tone={s.tone}>{s.label}</Badge>
-                  </div>
-                  <dl className="space-y-1 text-sm text-ink-muted">
-                    <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconCalendar />Date:</dt><dd>{fmtDateTime(ev?.event_date)}</dd></div>
-                    {ev?.venue && <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconMapPin />Venue:</dt><dd className="line-clamp-2" title={ev.venue}>{ev.venue}</dd></div>}
-                    <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconUser />For:</dt><dd className="min-w-0 break-words text-ink">{r.name} (@{r.x_username})</dd></div>
-                    {r.kit_name && <div className="flex gap-2"><dt className="inline-flex items-center gap-1.5 font-semibold"><IconPackage />Kit:</dt><dd>{`${kitLabel(r.kit_name, r.kit_quantity)}${Number(r.total_amount) > 0 ? ` · ${peso(r.total_amount)}` : ""}`}</dd></div>}
-                  </dl>
+                  <h2 id={titleId} className="ticket__title">{ev?.title}</h2>
+                  <InfoList className="ticket__details">
+                    <InfoRow icon={<IconCalendar />} label="Date:">{fmtDateTime(ev?.event_date)}</InfoRow>
+                    {ev?.venue && <InfoRow icon={<IconMapPin />} label="Venue:">{ev.venue}</InfoRow>}
+                    <InfoRow icon={<IconUser />} label="For:"><span className="text-ink">{r.name} <NoWrap>(@{r.x_username})</NoWrap></span></InfoRow>
+                    {r.kit_name && <InfoRow icon={<IconPackage />} label="Kit:">{`${kitLabel(r.kit_name, r.kit_quantity)}${Number(r.total_amount) > 0 ? ` · ${peso(r.total_amount)}` : ""}`}</InfoRow>}
+                  </InfoList>
                 </Ticket>
               </li>
             );

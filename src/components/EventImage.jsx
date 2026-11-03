@@ -24,9 +24,9 @@ export function ComingSoonBanner({ className = "", ratio = SLOTS.banner.ratio })
 }
 
 /** One image slot of an event. Shows the uploaded image, or a placeholder that reserves the exact aspect ratio
- *  (no layout shift) when there is none or it fails to load. Admins get an "Upload image" button on the placeholder.
+ *  (no layout shift) when there is none or it fails to load. Admins get an "Upload image" button on the placeholder (not with `readOnly`, e.g. on an attendee's own ticket).
  *  `image` is the event_images row for the slot (or undefined). */
-export default function EventImage({ slot, event, image, onChanged, lightbox = true, fit = "contain", className = "" }) {
+export default function EventImage({ slot, event, image, onChanged, lightbox = true, fit = "contain", className = "", readOnly = false }) {
   const spec = SLOTS[slot];
   const { isAdmin } = useAuth();
   const toast = useToast();
@@ -54,7 +54,7 @@ export default function EventImage({ slot, event, image, onChanged, lightbox = t
       <div className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-link bg-brand-sky p-4 text-center text-ink ${className}`} style={box} data-placeholder={slot}>
         <ImageIcon />
         <p className="font-semibold">{spec.placeholder}</p>
-        {isAdmin && event && (
+        {isAdmin && !readOnly && event && (
           <>
             <p className="text-sm">Recommended: {spec.recommended}. JPG, PNG or WebP, 5 MB at most.</p>
             <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" className="file-input sr-only" onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
