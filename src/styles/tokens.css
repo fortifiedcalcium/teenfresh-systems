@@ -24,6 +24,8 @@
   --success:     #0b5d3b;  /* success, available / valid */
   --warning-ink: #3d2c00;  /* few slots left / already checked in */
   --white:       #ffffff;  /* inputs, modals, table rows */
+  --social-pink: #b83a58;  /* footer social icons and handle: a rose that keeps 4.5:1 on the cream footer */
+  --social-pink-hover: #9c2a47;  /* their hover colour (darker) */
 
   /* Ticket cards (My registrations): one inset and one spacing scale */
   --ticket-pad: 1.25rem;     /* 20px: body text, stub content AND the perforation start at this inset */

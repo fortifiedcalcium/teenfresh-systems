@@ -42,6 +42,9 @@ export const APPROVED = [
   // ticket cards (My registrations): ink on the white body and the ivory stub, the stub label, the VOID stamp
   T("ink", "white", 4.5, "ticket body text"), T("ink", "brand-ivory", 4.5, "ticket stub text and ticket number"), T("ink-muted", "brand-ivory", 4.5, "ticket stub label"),
   T("danger", "brand-blush", 4.5, "VOID stamp and rejected message in the stub"), T("warning-ink", "brand-cream", 4.5, "underpaid message in the stub"),
+  // footer social icons and handle (cream footer)
+  T("social-pink", "brand-cream", 4.5, "footer handle text"), T("social-pink-hover", "brand-cream", 4.5, "footer handle text on hover"),
+  T("social-pink", "brand-cream", 3, "footer social icons"), T("social-pink-hover", "brand-cream", 3, "footer social icons on hover"),
   // non-text (>= 3:1)
   T("link", "white", 3, "input / card border"), T("link", "brand-ivory", 3, "border"), T("link", "brand-sky", 3, "progress fill on track"),
   T("ink-muted", "brand-ivory", 3, "ticket perforation"), T("ink-muted", "white", 3, "ticket perforation"), T("link", "brand-blush", 3, "ticket outline on the page"),

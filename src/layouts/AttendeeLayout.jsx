@@ -4,9 +4,16 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { SkipLink } from "../a11y.jsx";
 import logo from "../logo/teenfresh-logo.png";
 import { IconCalendar, IconTicket, IconDashboard, IconLogIn, IconLogOut, IconUserPlus } from "../components/NavIcons.jsx";
-import { FacebookIcon, MailIcon, XIcon } from "../components/SocialIcons.jsx";
+import { FacebookIcon, InstagramIcon, TikTokIcon, XIcon } from "../components/SocialIcons.jsx";
 
 const SUPPORT = import.meta.env.VITE_SUPPORT_EMAIL;
+// One handle on every network. The first link is also the "main" profile the @teenfreshph text points to.
+const SOCIALS = [
+  { name: "Facebook", href: "https://www.facebook.com/TeenfreshPH", Icon: FacebookIcon },
+  { name: "X", href: "https://x.com/TeenfreshPH", Icon: XIcon },
+  { name: "Instagram", href: "https://www.instagram.com/teenfreshph", Icon: InstagramIcon },
+  { name: "TikTok", href: "https://www.tiktok.com/@teenfreshph", Icon: TikTokIcon },
+];
 
 export default function AttendeeLayout() {
   const { user, isAdmin, signOut } = useAuth();
@@ -32,13 +39,18 @@ export default function AttendeeLayout() {
         </nav>
       </header>
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-6"><Outlet /></main>
-      <footer className="border-t-2 border-ink bg-brand-cream px-4 py-4 text-center text-sm">
-        <p className="font-bold">TeenfreshPH</p>
-        <ul aria-label="Teenfresh on social media and support" className="mt-1 flex flex-wrap items-center justify-center gap-2">
-          <li><a href="https://www.facebook.com/TeenfreshPH" className="social-link" aria-label="Teenfresh on Facebook" title="Facebook"><FacebookIcon size={24} /></a></li>
-          <li><a href="https://x.com/TeenfreshPH" className="social-link" aria-label="Teenfresh on X" title="X"><XIcon size={24} /></a></li>
-          <li><a href={SUPPORT ? `mailto:${SUPPORT}?subject=Accessibility%20issue` : "https://x.com/TeenfreshPH"} className="social-link" aria-label="Report an accessibility issue" title="Report an accessibility issue"><MailIcon size={24} /></a></li>
-        </ul>
+      <footer className="border-t-2 border-ink bg-brand-cream px-4 py-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-start">
+          <nav aria-label="Social media" className="social-row">
+            <ul className="social-icons">
+              {SOCIALS.map(({ name, href, Icon }) => (
+                <li key={name}><a href={href} className="social-link" aria-label={name} title={name} target="_blank" rel="noopener noreferrer"><Icon size={40} /></a></li>
+              ))}
+            </ul>
+            <a href={SOCIALS[0].href} className="social-handle" target="_blank" rel="noopener noreferrer">@teenfreshph</a>
+          </nav>
+          <a href={SUPPORT ? `mailto:${SUPPORT}?subject=Accessibility%20issue` : "https://x.com/TeenfreshPH"} className="text-sm sm:ml-auto">Report an accessibility issue</a>
+        </div>
       </footer>
     </div>
   );
