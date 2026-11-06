@@ -80,6 +80,7 @@ beforeAll(async () => {
   await db.exec(read("006_one_kit_per_form.sql"));
   await db.exec(read("007_free_reference_number.sql"));
   await db.exec(read("008_banner_coming_soon.sql"));
+  await db.exec(read("009_upload_limit_10mb.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -438,12 +439,12 @@ describe("storage policies", () => {
     await asUser("alice"); await expect(put("event-media", "e1/evil.png")).rejects.toThrow(/row-level security/);
     await asUser(null); expect((await db.query("select name from storage.objects where bucket_id = 'event-media'")).rows).toHaveLength(1);
   });
-  it("the buckets are configured: receipts private, 5 MB, no executables", async () => {
+  it("the buckets are configured: receipts private, 10 MB, no executables", async () => {
     await asSuper();
     const b = Object.fromEntries((await db.query("select * from storage.buckets")).rows.map((r) => [r.id, r]));
-    expect(b["payment-receipts"]).toMatchObject({ public: false, file_size_limit: 5242880 });
+    expect(b["payment-receipts"]).toMatchObject({ public: false, file_size_limit: 10485760 });
     expect(b["payment-receipts"].allowed_mime_types.sort()).toEqual(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
-    expect(b["event-media"]).toMatchObject({ public: true, file_size_limit: 5242880 });
+    expect(b["event-media"]).toMatchObject({ public: true, file_size_limit: 10485760 });
     expect(b["event-media"].allowed_mime_types).not.toContain("application/pdf");
   });
 });

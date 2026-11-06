@@ -230,8 +230,8 @@ describe("images, uploads and the new form pieces", () => {
     await user.upload(input, new File(["x"], "evil.exe", { type: "application/octet-stream" }));
     expect(await screen.findByText(/file type is not allowed/)).toBeInTheDocument();
     expect(input).toHaveAttribute("aria-invalid", "true");
-    await user.upload(input, new File([new Uint8Array(6 * 1024 * 1024)], "big.png", { type: "image/png" }));
-    expect((await screen.findAllByText(/limit is 5 MB/)).length).toBeGreaterThan(0);   // shown in the field and echoed to the live region
+    await user.upload(input, new File([new Uint8Array(11 * 1024 * 1024)], "big.png", { type: "image/png" }));
+    expect((await screen.findAllByText(/limit is 10 MB/)).length).toBeGreaterThan(0);   // shown in the field and echoed to the live region
     await user.upload(input, new File(["receipt"], "gcash.png", { type: "image/png" }));
     expect((await screen.findAllByText("gcash.png")).length).toBeGreaterThan(0);
     await waitFor(() => expect(screen.getAllByRole("status").map((n) => n.textContent).join(" ")).toContain("Selected gcash.png"));   // announced

@@ -44,7 +44,7 @@ function SlotCard({ event, slot, row, reload, onEventChanged }) {
           <span>Show “Coming soon” instead of a banner image<span className="block font-normal text-ink-muted">Attendees see a Coming soon panel on the event card. Any uploaded image is kept and returns when this is off.</span></span>
         </label>
       )}
-      <p className="text-sm">Recommended: {spec.recommended}. JPG, PNG or WebP, 5 MB at most.{row && <> Last updated {fmtDateTime(row.updated_at)}.</>}</p>
+      <p className="text-sm">Recommended: {spec.recommended}. JPG, PNG or WebP, 10 MB at most.{row && <> Last updated {fmtDateTime(row.updated_at)}.</>}</p>
       <div className="flex flex-wrap gap-2">
         <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" className="file-input sr-only" disabled={busy}
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) run(() => uploadEventImage(event, slot, f, alt, row), `${spec.label} ${row ? "replaced" : "uploaded"}`); }} />

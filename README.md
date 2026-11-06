@@ -11,7 +11,8 @@ supabase/migrations/004_change_log.sql              admin Change log: who change
 supabase/migrations/005_underpayment_top_up.sql     underpayment: pay only the missing amount (run fifth)
 supabase/migrations/006_one_kit_per_form.sql        one form = one kit, no quantity (run sixth)
 supabase/migrations/007_free_reference_number.sql   reference number typed freely (run seventh)
-supabase/migrations/008_banner_coming_soon.sql        "Coming soon" banner switch (run eighth)
+supabase/migrations/008_banner_coming_soon.sql    "Coming soon" banner switch (run eighth)
+supabase/migrations/009_upload_limit_10mb.sql    10 MB upload limit (run ninth)
 supabase/functions/send-confirmation-email   ticket email on verification / resend / test email
 supabase/functions/send-payment-email        underpaid, rejected and "we received your registration" emails
 supabase/functions/send-bulk-email           admin bulk mail merge
@@ -34,6 +35,7 @@ The app targets **WCAG 2.2 AA** with the Teenfresh palette (brand colours as sur
 7. **SQL Editor** → new query → paste all of `supabase/migrations/006_one_kit_per_form.sql` → **Run** (once, after the fifth file). Every kit then allows one per form.
 8. **SQL Editor** → new query → paste all of `supabase/migrations/007_free_reference_number.sql` → **Run** (once, after the sixth file). The reference number can then be typed as the banking app shows it.
 9. **SQL Editor** → new query → paste all of `supabase/migrations/008_banner_coming_soon.sql` → **Run** (once, after the seventh file). Admins can then show “Coming soon” instead of a banner image (Admin → Events → Edit → Media).
+10. **SQL Editor** → new query → paste all of `supabase/migrations/009_upload_limit_10mb.sql` → **Run** (once, after the eighth file). Uploads (event images and receipts) can then be up to 10 MB.
 
 ## 2. Auth providers
 **Authentication → Providers → Email**: enable, and keep **Confirm email** on (sign-up sends a verification link).
@@ -138,7 +140,7 @@ It needs the service-role key (Project Settings > API). Keep that key out of the
 - A user may submit several forms; the unique rule is **one active entry per X username per event** (case-insensitive). Rejected and cancelled forms free the username.
 - A new form attached to an already verified payment is confirmed immediately (the payment was already checked).
 - Resubmitting an underpaid payment replaces the amount, reference and receipt (earlier ones are kept in `receipt_history` for the admin); the person enters the **total** paid across both transfers.
-- Receipts are checked by type, size and path in the browser, in the database function and in the bucket (JPG, PNG, WebP, PDF; 5 MB; stored as `<user id>/<random uuid>.<ext>`). Uploads are limited to 20 per user per hour and forms to 10 per hour.
+- Receipts are checked by type, size and path in the browser, in the database function and in the bucket (JPG, PNG, WebP, PDF; 10 MB; stored as `<user id>/<random uuid>.<ext>`). Uploads are limited to 20 per user per hour and forms to 10 per hour.
 - The GCash account number is stored on the event, so anyone who can open the form can see it (like on the reference Google Form).
 - Emails are sent by the admin's browser calling the Edge Function right after the decision is saved (not a background queue). If that call fails the decision stays saved; use **Resend** (Payments dialog, Attendees, Email logs).
 - The Terms editor is an HTML editor with formatting buttons and a live sanitized preview, not a WYSIWYG editor. Only simple formatting and https/mailto links survive, on the page (DOMPurify) and in the email (an equivalent whitelist in `merge.ts`).

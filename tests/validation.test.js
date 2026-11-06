@@ -37,17 +37,17 @@ describe("normalisers (mirror the database functions)", () => {
 
 describe("receipt files", () => {
   const file = (name, type, size = 1000) => ({ name, type, size });
-  it("accepts JPG, PNG, WebP and PDF up to 5 MB", () => {
+  it("accepts JPG, PNG, WebP and PDF up to 10 MB", () => {
     for (const [n, t] of [["a.jpg", "image/jpeg"], ["a.JPEG", "image/jpeg"], ["a.png", "image/png"], ["a.webp", "image/webp"], ["a.pdf", "application/pdf"]]) expect(validateReceiptFile(file(n, t)), n).toBeNull();
     expect(validateReceiptFile(file("a.png", "image/png", MAX_RECEIPT_BYTES))).toBeNull();
   });
-  it("refuses other types, a type/extension mismatch, empty files and files over 5 MB", () => {
+  it("refuses other types, a type/extension mismatch, empty files and files over 10 MB", () => {
     expect(validateReceiptFile(file("a.exe", "application/octet-stream"))).toMatch(/not allowed/);
     expect(validateReceiptFile(file("a.exe", "image/png"))).toMatch(/not allowed/);
     expect(validateReceiptFile(file("a.png", "application/pdf"))).toBeNull();            // extension is allowed; MIME decides storage, the bucket enforces it again
     expect(validateReceiptFile(file("a.svg", "image/svg+xml"))).toMatch(/not allowed/);
     expect(validateReceiptFile(file("a.png", "image/png", 0))).toMatch(/empty/);
-    expect(validateReceiptFile(file("a.png", "image/png", MAX_RECEIPT_BYTES + 1))).toMatch(/5 MB/);
+    expect(validateReceiptFile(file("a.png", "image/png", MAX_RECEIPT_BYTES + 1))).toMatch(/10 MB/);
     expect(validateReceiptFile(null)).toMatch(/Attach/);
   });
 });

@@ -467,7 +467,7 @@ describe("admin pages", () => {
     const cards = await within(dialog).findAllByRole("heading", { level: 3 });
     expect(cards.map((h) => h.textContent)).toEqual(["Event poster", "Event details card", "GCash QR code", "Home page banner", "Confirmation email banner"]);
     expect(within(dialog).getAllByText(/Recommended:/).length).toBe(5);
-    expect(within(dialog).getAllByText(/JPG, PNG or WebP, 5 MB at most/).length).toBeGreaterThanOrEqual(5);
+    expect(within(dialog).getAllByText(/JPG, PNG or WebP, 10 MB at most/).length).toBeGreaterThanOrEqual(5);
     expect(within(dialog).getByText("Event poster image coming soon")).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
   });

@@ -32,7 +32,7 @@ export const parseAmount = (v) => {
 export const peso = (n) => "₱" + Number(n || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ---- receipt files
-export const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
+export const MAX_RECEIPT_BYTES = 10 * 1024 * 1024;
 export const RECEIPT_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "application/pdf": "pdf" };
 export const RECEIPT_ACCEPT = ".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf";
 
@@ -44,7 +44,7 @@ export function validateReceiptFile(file) {
   const ext = (file.name.split(".").pop() || "").toLowerCase();
   if (!RECEIPT_TYPES[file.type] || !["jpg", "jpeg", "png", "webp", "pdf"].includes(ext)) return "That file type is not allowed. Use a JPG, PNG, WebP or PDF file.";
   if (file.size === 0) return "That file is empty.";
-  if (file.size > MAX_RECEIPT_BYTES) return `That file is ${formatBytes(file.size)}. The limit is 5 MB.`;
+  if (file.size > MAX_RECEIPT_BYTES) return `That file is ${formatBytes(file.size)}. The limit is 10 MB.`;
   return null;
 }
 

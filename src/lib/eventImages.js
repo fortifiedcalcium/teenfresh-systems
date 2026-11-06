@@ -2,7 +2,7 @@ import { supabase } from "./supabaseClient.js";
 
 export const BUCKET = "event-media";
 export const IMAGE_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 /** The five image slots. `ratio` reserves the space so nothing jumps when an image loads. */
 export const SLOTS = {
@@ -31,7 +31,7 @@ export async function fetchEventImages(eventId) {
 export function validateImageFile(file) {
   if (!file) return "Choose an image.";
   if (!IMAGE_TYPES[file.type]) return "Use a JPG, PNG or WebP image.";
-  if (file.size > MAX_IMAGE_BYTES) return "The image is larger than 5 MB.";
+  if (file.size > MAX_IMAGE_BYTES) return "The image is larger than 10 MB.";
   return null;
 }
 

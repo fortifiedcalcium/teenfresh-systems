@@ -47,7 +47,7 @@ export default function FileUpload({ id, label = "Attach payment receipt", file,
           onChange={(e) => { if (e.target.files?.[0]) take(e.target.files[0]); e.target.value = ""; }}
         />
         <label htmlFor={id} className="btn-secondary cursor-pointer"><IconUpload />{file ? "Replace file" : "Choose file"}</label>
-        <p id={hintId} className="hint">or drag and drop it here. JPG, PNG, WebP or PDF, one file, up to 5 MB.</p>
+        <p id={hintId} className="hint">or drag and drop it here. JPG, PNG, WebP or PDF, one file, up to 10 MB.</p>
       </div>
       {shownError && <p id={`${id}-err`} className="mt-1 flex gap-1 text-sm font-semibold text-danger"><span aria-hidden="true">✕</span>{shownError}</p>}
 

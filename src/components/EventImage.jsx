@@ -56,7 +56,7 @@ export default function EventImage({ slot, event, image, onChanged, lightbox = t
         <p className="font-semibold">{spec.placeholder}</p>
         {isAdmin && !readOnly && event && (
           <>
-            <p className="text-sm">Recommended: {spec.recommended}. JPG, PNG or WebP, 5 MB at most.</p>
+            <p className="text-sm">Recommended: {spec.recommended}. JPG, PNG or WebP, 10 MB at most.</p>
             <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" className="file-input sr-only" onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
             <label htmlFor={inputId} className="btn-secondary cursor-pointer" aria-disabled={busy}><IconUpload />{busy ? "Uploading…" : "Upload image"}{" "}<span className="sr-only">for {spec.label}</span></label>
           </>
