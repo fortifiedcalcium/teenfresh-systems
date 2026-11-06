@@ -132,7 +132,7 @@ export default function MyRegistrations() {
                 <Ticket
                   status={kind}
                   labelledBy={titleId}
-                  image={<EventImage slot="banner" event={{ id: r.event_id, title: ev?.title, banner_coming_soon: ev?.banner_coming_soon }} image={banners[r.event_id]} lightbox={false} readOnly fit="cover" className="!rounded-none !border-0" />}
+                  image={<EventImage slot="banner" event={{ id: r.event_id, title: ev?.title, banner_coming_soon: ev?.banner_coming_soon }} image={banners[r.event_id]} lightbox={false} readOnly className="!rounded-none !border-0" />}
                   badge={<Badge tone={s.tone}>{s.label}</Badge>}
                   stub={
                     kind === "confirmed" ? (

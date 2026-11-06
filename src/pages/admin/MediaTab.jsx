@@ -32,11 +32,11 @@ function SlotCard({ event, slot, row, reload, onEventChanged }) {
   return (
     <li className="card space-y-3 p-4">
       <div><h3 className="text-lg">{spec.label}</h3><p className="text-sm text-ink-muted">{spec.where}</p></div>
-      <div className="mx-auto max-w-[14rem] overflow-hidden rounded-lg border border-link bg-brand-sky" style={{ aspectRatio: spec.ratio }}>
-        {soon ? <ComingSoonBanner ratio="16 / 9" className="h-full" />
+      <div className="mx-auto max-w-[14rem] overflow-hidden rounded-lg border border-link bg-brand-sky">
+        {soon ? <ComingSoonBanner ratio="16 / 9" />
           : url && !broken
-          ? <img src={url} alt={alt || `${spec.label} preview`} onError={() => setBroken(true)} className="h-full w-full object-contain" />
-          : <div className="flex h-full items-center justify-center p-3 text-center text-sm font-semibold">{broken ? "The image could not be loaded" : spec.placeholder}</div>}
+          ? <img src={url} alt={alt || `${spec.label} preview`} onError={() => setBroken(true)} className="block h-auto w-full" />
+          : <div className="flex items-center justify-center p-3 text-center text-sm font-semibold" style={{ aspectRatio: spec.ratio }}>{broken ? "The image could not be loaded" : spec.placeholder}</div>}
       </div>
       {isBanner && (
         <label className="flex items-start gap-2 text-sm font-semibold">

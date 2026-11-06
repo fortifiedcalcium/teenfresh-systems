@@ -23,10 +23,10 @@ export function ComingSoonBanner({ className = "", ratio = SLOTS.banner.ratio })
   );
 }
 
-/** One image slot of an event. Shows the uploaded image, or a placeholder that reserves the exact aspect ratio
- *  (no layout shift) when there is none or it fails to load. Admins get an "Upload image" button on the placeholder (not with `readOnly`, e.g. on an attendee's own ticket).
+/** One image slot of an event. Shows the uploaded image at its own size and proportions, or a placeholder with the
+ *  slot's recommended aspect ratio when there is none or it fails to load. Admins get an "Upload image" button on the placeholder (not with `readOnly`, e.g. on an attendee's own ticket).
  *  `image` is the event_images row for the slot (or undefined). */
-export default function EventImage({ slot, event, image, onChanged, lightbox = true, fit = "contain", className = "", readOnly = false }) {
+export default function EventImage({ slot, event, image, onChanged, lightbox = true, className = "", readOnly = false }) {
   const spec = SLOTS[slot];
   const { isAdmin } = useAuth();
   const toast = useToast();
@@ -65,12 +65,14 @@ export default function EventImage({ slot, event, image, onChanged, lightbox = t
     );
   }
 
-  const img = <img src={url} alt={alt} width={spec.w} height={spec.h} loading="lazy" decoding="async" onError={() => setFailed(true)} className={`h-full w-full ${fit === "cover" ? "object-cover" : "object-contain"}`} />;
+  // The picture keeps its own proportions: full width, height follows the image (no cropping, no letterboxing).
+  // width/height only reserve room until the file has loaded; then the real dimensions take over.
+  const img = <img src={url} alt={alt} width={spec.w} height={spec.h} loading="lazy" decoding="async" onError={() => setFailed(true)} className="block h-auto w-full" />;
   return (
     <>
-      <div className={`overflow-hidden rounded-lg border border-link bg-brand-sky ${className}`} style={box}>
+      <div className={`overflow-hidden rounded-lg border border-link bg-brand-sky ${className}`}>
         {lightbox ? (
-          <button type="button" className="block h-full w-full" onClick={() => setOpen(true)} aria-label={`View larger: ${alt}`} aria-haspopup="dialog">{img}</button>
+          <button type="button" className="block w-full" onClick={() => setOpen(true)} aria-label={`View larger: ${alt}`} aria-haspopup="dialog">{img}</button>
         ) : img}
       </div>
       {open && <Lightbox url={url} alt={alt} title={spec.label} onClose={() => setOpen(false)} />}

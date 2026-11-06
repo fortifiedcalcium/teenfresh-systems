@@ -23,7 +23,7 @@ export default function EventCard({ event, registered, bannerImage, onChanged, k
   const slotsText = st.key === "closed" ? "Registration is closed" : `${st.slotsLeft} of ${event.capacity} slots left`;
   return (
     <article className="card flex h-full w-full flex-col overflow-hidden" aria-labelledby={`title-${event.id}`}>
-      <EventImage slot="banner" event={event} image={bannerImage} onChanged={onChanged} lightbox={false} fit="cover" className="!rounded-none !border-0" />
+      <EventImage slot="banner" event={event} image={bannerImage} onChanged={onChanged} lightbox={false} className="!rounded-none !border-0" />
       <div className="flex flex-1 flex-col p-4">
         <div className={`flex items-start justify-between gap-3 ${event.subtitle ? "mb-1" : "mb-4"}`}>
           <h2 id={`title-${event.id}`} className="line-clamp-2 min-w-0 flex-1 text-lg font-black leading-snug" title={event.title}>{event.title}</h2>

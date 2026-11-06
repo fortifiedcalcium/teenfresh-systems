@@ -71,10 +71,9 @@
 }
 
 /* Picture: one ratio for every ticket, so every picture is exactly the same height at a given width */
-.ticket__media { aspect-ratio: 16 / 9; min-width: 0; position: relative; overflow: hidden; }
-.ticket__media > * { width: 100%; height: 100%; aspect-ratio: auto !important; }
-.ticket__media img { object-position: center 30%; }                      /* faces are not cropped by default */
-.ticket__media [data-placeholder], .ticket__media [data-coming-soon] { display: grid; place-items: center; align-content: center; gap: var(--space-2); padding: 2.75rem var(--ticket-pad) var(--space-4); }
+.ticket__media { min-width: 0; position: relative; overflow: hidden; }                 /* the picture keeps its own proportions */
+.ticket__media > * { width: 100%; }
+.ticket__media [data-placeholder], .ticket__media [data-coming-soon] { aspect-ratio: 16 / 9 !important; display: grid; place-items: center; align-content: center; gap: var(--space-2); padding: 2.75rem var(--ticket-pad) var(--space-4); }
 /* the status chip sits on the picture, top-left, never beside the title */
 .ticket__chip { position: absolute; top: 14px; left: 14px; z-index: 1; }
 .ticket__chip .badge { box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 35%, transparent); }
