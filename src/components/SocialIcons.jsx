@@ -1,7 +1,7 @@
 import React from "react";
 
 // Brand glyphs (Simple Icons, CC0). They use currentColor, so they take the link colour from the design tokens,
-// and they are decorative (aria-hidden): the link's visible text is its accessible name.
+// and they are decorative (aria-hidden): the link carries the accessible name (aria-label).
 const Svg = ({ d, size = 20 }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" focusable="false" fill="currentColor" className="shrink-0"><path d={d} /></svg>
 );

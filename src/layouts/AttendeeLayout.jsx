@@ -33,10 +33,11 @@ export default function AttendeeLayout() {
       </header>
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-6"><Outlet /></main>
       <footer className="border-t-2 border-ink bg-brand-cream px-4 py-4 text-center text-sm">
-        <ul aria-label="Teenfresh on social media and support" className="flex flex-wrap items-center justify-center gap-x-6">
-          <li><a href="https://www.facebook.com/TeenfreshPH" className="inline-flex min-h-target items-center gap-2"><FacebookIcon /><span className="sr-only">Facebook </span>/TeenfreshPH</a></li>
-          <li><a href="https://x.com/TeenfreshPH" className="inline-flex min-h-target items-center gap-2"><XIcon /><span className="sr-only">X </span>@TeenfreshPH</a></li>
-          <li><a href={SUPPORT ? `mailto:${SUPPORT}?subject=Accessibility%20issue` : "https://x.com/TeenfreshPH"} className="inline-flex min-h-target items-center gap-2"><MailIcon />Report an accessibility issue</a></li>
+        <p className="font-bold">TeenfreshPH</p>
+        <ul aria-label="Teenfresh on social media and support" className="mt-1 flex flex-wrap items-center justify-center gap-2">
+          <li><a href="https://www.facebook.com/TeenfreshPH" className="social-link" aria-label="Teenfresh on Facebook" title="Facebook"><FacebookIcon size={24} /></a></li>
+          <li><a href="https://x.com/TeenfreshPH" className="social-link" aria-label="Teenfresh on X" title="X"><XIcon size={24} /></a></li>
+          <li><a href={SUPPORT ? `mailto:${SUPPORT}?subject=Accessibility%20issue` : "https://x.com/TeenfreshPH"} className="social-link" aria-label="Report an accessibility issue" title="Report an accessibility issue"><MailIcon size={24} /></a></li>
         </ul>
       </footer>
     </div>
