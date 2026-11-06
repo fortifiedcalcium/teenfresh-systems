@@ -11,8 +11,8 @@
   body { @apply bg-brand-blush font-sans text-base text-ink antialiased; line-height: 1.5; }
   h1, h2, h3, h4 { @apply font-black text-ink; }   /* titles use the Black weight (900) */
   /* 1.4.1: links are always underlined, never distinguished by colour alone */
-  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.social-handle):not(.no-underline):not(.bottom-nav-item):not(.scan-fab) { @apply text-link underline underline-offset-2; }
-  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.social-handle):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):hover { text-decoration-thickness: 2px; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab) { @apply text-link underline underline-offset-2; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):hover { text-decoration-thickness: 2px; }
   /* 2.4.7: one visible focus indicator for everything interactive: 3px ink, 2px offset */
   :focus { outline: none; }
   :focus-visible, [tabindex="-1"]:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
@@ -74,8 +74,8 @@
   .social-icons { @apply flex items-center gap-0 xs:gap-3; }                      /* 44 px targets: glyphs end up 16 px apart on desktop */
   .social-link { @apply inline-flex h-11 min-h-target w-11 min-w-target items-center justify-center rounded-lg no-underline; color: var(--social-pink); transition: color 0.2s ease, transform 0.2s ease; }
   .social-link svg { @apply h-7 w-7 xs:h-10 xs:w-10; }                             /* 28 px under 480 px, 40 px from 480 px */
-  .social-handle { @apply text-lg font-bold lowercase no-underline xs:text-2xl; color: var(--social-pink); transition: color 0.2s ease, transform 0.2s ease; }
-  .social-link:hover, .social-handle:hover { color: var(--social-pink-hover); }
+  .social-handle { @apply text-lg font-bold lowercase xs:text-2xl; color: var(--social-pink); }
+  .social-link:hover { color: var(--social-pink-hover); }
   @media (hover: hover) and (prefers-reduced-motion: no-preference) { .social-link:hover { transform: scale(1.1); } }
   .nav-link { @apply inline-flex min-h-target items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-ink no-underline hover:bg-brand-sky; }
   .nav-link[aria-current="page"] { @apply bg-ink text-brand-ivory hover:bg-ink; }

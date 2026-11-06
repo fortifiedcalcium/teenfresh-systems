@@ -7,7 +7,7 @@ import { IconCalendar, IconTicket, IconDashboard, IconLogIn, IconLogOut, IconUse
 import { FacebookIcon, InstagramIcon, TikTokIcon, XIcon } from "../components/SocialIcons.jsx";
 
 const SUPPORT = import.meta.env.VITE_SUPPORT_EMAIL;
-// One handle on every network. The first link is also the "main" profile the @teenfreshph text points to.
+// One handle on every network. The "@teenfreshph" text next to the icons is plain text, not a link.
 const SOCIALS = [
   { name: "Facebook", href: "https://www.facebook.com/TeenfreshPH", Icon: FacebookIcon },
   { name: "X", href: "https://x.com/TeenfreshPH", Icon: XIcon },
@@ -47,7 +47,7 @@ export default function AttendeeLayout() {
                 <li key={name}><a href={href} className="social-link" aria-label={name} title={name} target="_blank" rel="noopener noreferrer"><Icon size={40} /></a></li>
               ))}
             </ul>
-            <a href={SOCIALS[0].href} className="social-handle" target="_blank" rel="noopener noreferrer">@teenfreshph</a>
+            <p className="social-handle">@teenfreshph</p>
           </nav>
           <a href={SUPPORT ? `mailto:${SUPPORT}?subject=Accessibility%20issue` : "https://x.com/TeenfreshPH"} className="text-sm sm:ml-auto">Report an accessibility issue</a>
         </div>

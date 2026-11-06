@@ -1,12 +1,12 @@
 import { test, expect } from "./fixtures.js";
 
 test.describe("footer", () => {
-  test("four clickable social icons, then @teenfreshph once; 44 px targets, new tab, named for screen readers", async ({ page, as }) => {
+  test("four clickable social icons, then @teenfreshph once as plain text; 44 px targets, new tab, named for screen readers", async ({ page, as }) => {
     await as(null);
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Social media" });
     const links = nav.getByRole("link");
-    await expect(links).toHaveCount(5);                                                       // 4 icons + the handle
+    await expect(links).toHaveCount(4);                                                       // only the 4 icons are links
     const hrefs = { Facebook: "facebook.com/TeenfreshPH", X: "x.com/TeenfreshPH", Instagram: "instagram.com/teenfreshph", TikTok: "tiktok.com/@teenfreshph" };
     let prev = -1;
     for (const [name, href] of Object.entries(hrefs)) {                                       // order: Facebook, X, Instagram, TikTok
@@ -19,9 +19,10 @@ test.describe("footer", () => {
       expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44);
       expect(box.x).toBeGreaterThan(prev); prev = box.x;
     }
-    const handle = nav.getByRole("link", { name: "@teenfreshph" });
+    const handle = nav.getByText("@teenfreshph", { exact: true });
     await expect(handle).toHaveCount(1);
-    expect((await handle.boundingBox()).x).toBeGreaterThan(prev);                              // the handle sits to the right of the icons
+    await expect(nav.getByRole("link", { name: "@teenfreshph" })).toHaveCount(0);              // a word, not a link
+    expect((await handle.boundingBox()).x).toBeGreaterThan(prev);                              // it sits to the right of the icons
     await expect(page.getByRole("contentinfo").getByText("TeenfreshPH", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Report an accessibility issue" })).toBeVisible();
   });
