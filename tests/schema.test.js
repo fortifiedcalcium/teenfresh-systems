@@ -83,6 +83,7 @@ beforeAll(async () => {
   await db.exec(read("009_upload_limit_10mb.sql"));
   await db.exec(read("010_products.sql"));
   await db.exec(read("011_orders.sql"));
+  await db.exec(read("012_order_emails.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -828,5 +829,18 @@ describe("011 orders", () => {
     await fails(place("frank", items([p1, 1])), "PAYMENT_NOT_SET_UP");
     await asUser("admin");
     await db.query("update public.shop_settings set gcash_account_number = '09170000000' where id");
+  });
+});
+
+describe("012 order emails", () => {
+  it("only admins can read the email log, and nobody can write it from the browser", async () => {
+    await asSuper();
+    const o = (await db.query("select id, user_id from public.orders limit 1")).rows[0];
+    await db.query("insert into public.order_emails (order_id, kind, recipient, status) values ($1, 'order_received', 'a@b.co', 'sent')", [o.id]);
+    await asUser("admin");
+    expect((await db.query("select id from public.order_emails where order_id = $1", [o.id])).rows.length).toBeGreaterThan(0);
+    await asUser("erin");
+    expect((await db.query("select id from public.order_emails where order_id = $1", [o.id])).rows).toHaveLength(0);
+    await fails(db.query("insert into public.order_emails (order_id, kind, recipient, status) values ($1, 'order_paid', 'a@b.co', 'sent')", [o.id]), "row-level security");
   });
 });

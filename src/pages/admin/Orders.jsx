@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { STATUS } from "../../lib/orders.js";
+import { STATUS, sendOrderEmail } from "../../lib/orders.js";
 import { usd } from "../../lib/products.js";
 import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
@@ -12,6 +12,7 @@ import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconBag, IconCheck, IconClose, IconPackage, IconSave } from "../../components/NavIcons.jsx";
 
+const MAIL_LABEL = { order_received: "Order received", order_paid: "Payment confirmed", order_shipped: "Shipped", order_cancelled: "Cancelled" };
 const FILTERS = [["all", "All"], ["pending", "Awaiting payment check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
 
 /** Rate, shipping fee and GCash details. */
@@ -77,13 +78,16 @@ function OrderDialog({ order, onClose, onChanged }) {
   const [items, setItems] = useState([]);
   const [note, setNote] = useState(order.admin_note || "");
   const [busy, setBusy] = useState(false);
+  const [mails, setMails] = useState([]);
+  useEffect(() => { supabase.from("order_emails").select("*").eq("order_id", order.id).order("sent_at", { ascending: false }).then(({ data }) => setMails(data || [])); }, [order.id]);
   useEffect(() => { supabase.from("order_items").select("*").eq("order_id", order.id).order("title").then(({ data }) => setItems(data || [])); }, [order.id]);
   const setStatus = async (status) => {
     setBusy(true);
     const { error } = await supabase.from("orders").update({ status, admin_note: note.trim() || null, updated_at: new Date().toISOString() }).eq("id", order.id);
     setBusy(false);
     if (error) { toast(error.message, "error"); return; }
-    toast(`Order ${order.order_number}: ${STATUS[status].label}`, "success");
+    const mail = await sendOrderEmail(`order_${status}`, order.id);
+    toast(`Order ${order.order_number}: ${STATUS[status].label}. ${mail.ok ? "The shopper was emailed." : "The email could not be sent: " + mail.error}`, mail.ok ? "success" : "error");
     onChanged();
   };
   const next = { pending: [["paid", "Mark as paid", IconCheck], ["cancelled", "Cancel order", IconClose]], paid: [["shipped", "Mark as shipped", IconPackage], ["cancelled", "Cancel order", IconClose]], shipped: [], cancelled: [] }[order.status] || [];
@@ -98,6 +102,11 @@ function OrderDialog({ order, onClose, onChanged }) {
           {items.map((i) => <li key={i.id} className="flex justify-between gap-3 py-2"><span className="break-words">{i.artist}: <strong>{i.title}</strong></span><span className="tabular-nums">{usd(i.unit_price_usd)} × {i.quantity}</span></li>)}
         </ul>
         {order.receipt_path ? <Receipt path={order.receipt_path} /> : <p className="text-ink-muted">No receipt file is stored for this order.</p>}
+        {mails.length > 0 && (
+          <section aria-labelledby="o-mail"><h3 id="o-mail" className="font-black">Emails to the shopper</h3>
+            <ul className="mt-1 space-y-1">{mails.map((m) => <li key={m.id} className="flex flex-wrap items-center gap-2"><Badge tone={m.status === "sent" ? "ok" : "bad"}>{m.status === "sent" ? "Sent" : "Failed"}</Badge><span>{MAIL_LABEL[m.kind]} · {fmtDateTime(m.sent_at)}{m.error ? ` · ${m.error}` : ""}</span></li>)}</ul>
+          </section>
+        )}
         <Field id="admin_note" label="Note (only admins see this)"><textarea className="input" rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
         <div className="sheet-actions flex flex-wrap justify-end gap-2 border-t border-brand-sky">
           <button type="button" className="btn-secondary" onClick={onClose}><IconClose />Close</button>

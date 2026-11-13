@@ -1,0 +1,35 @@
+import { describe, expect, it } from "vitest";
+import { KIND_STATUS, ORDER_KINDS, renderOrderEmail } from "../supabase/functions/_shared/orderEmail.ts";
+
+const order = { id: "o1", order_number: "TF-000007", name: "Juan <b>Dela</b> Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati", postal_code: "1210", subtotal_usd: "25.56", usd_to_php: "58.00", shipping_php: "150.00", total_php: "1632.48" };
+const items = [{ artist: "Marv", title: "ÖRBITAL & more", unit_price_usd: "12.78", quantity: 2 }];
+
+describe("renderOrderEmail", () => {
+  it("has a subject, a heading and the order number for every kind", () => {
+    for (const k of ORDER_KINDS) {
+      const m = renderOrderEmail(k, order, items, "https://shop.example");
+      expect(m.subject).toContain("TF-000007");
+      expect(m.html).toContain("Order TF-000007");
+      expect(m.text).toContain("Total paid (GCash): PHP 1,632.48");
+    }
+    expect(Object.keys(KIND_STATUS).sort()).toEqual([...ORDER_KINDS].sort());
+  });
+  it("lists the items, the totals and the delivery address, and links to the order", () => {
+    const m = renderOrderEmail("order_received", order, items, "https://shop.example/");
+    expect(m.text).toContain("$12.78 x 2");
+    expect(m.text).toContain("Items (at PHP 58 per $1): $25.56");
+    expect(m.text).toContain("12 Rizal St.");
+    expect(m.html).toContain('href="https://shop.example/orders/o1"');
+    expect(m.text).toContain("https://shop.example/orders/o1");
+  });
+  it("escapes what shoppers typed", () => {
+    const m = renderOrderEmail("order_paid", order, items, "");
+    expect(m.html).not.toContain("<b>Dela</b>");
+    expect(m.html).toContain("Juan &lt;b&gt;Dela&lt;/b&gt; Cruz");
+    expect(m.html).toContain("ÖRBITAL &amp; more");
+    expect(m.html).not.toContain("View your order");   // no site address configured, no link
+  });
+  it("says Free when there is no shipping fee", () => {
+    expect(renderOrderEmail("order_shipped", { ...order, shipping_php: "0" }, items, "").text).toContain("Shipping: Free");
+  });
+});

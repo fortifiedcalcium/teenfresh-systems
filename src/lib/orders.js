@@ -1,3 +1,4 @@
+import { callFunction } from "./api.js";
 import { isValidReference, normalizePhone, normalizeReference } from "./payment.js";
 
 export const MAX_QTY = 10;
@@ -38,3 +39,9 @@ export const orderArgs = (f, items, receiptPathValue) => ({
   p_name: f.name.trim(), p_email: f.email.trim(), p_phone: f.phone, p_address: f.address.trim(), p_city: f.city.trim(), p_postal: f.postal_code.trim(),
   p_notes: f.notes.trim() || null, p_sender: f.sender_name.trim(), p_reference: normalizeReference(f.reference_number), p_receipt_path: receiptPathValue,
 });
+
+/** Asks the send-order-email function to email the shopper. Never throws: returns { ok, error }. A failed email never undoes an order or a status change. */
+export async function sendOrderEmail(kind, orderId) {
+  try { await callFunction("send-order-email", { kind, order_id: orderId }); return { ok: true }; }
+  catch (e) { return { ok: false, error: e.message }; }
+}

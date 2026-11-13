@@ -153,6 +153,7 @@ describe("attendee pages", () => {
     });
     it("Checkout: names every problem, then places the order with ids and quantities only", async () => {
       asUser();
+      fixtures.current.rpc = { place_order: { id: "o1", order_number: "TF-000001", total_php: 1632.48 } };
       const user = userEvent.setup();
       const { container } = withCart("/checkout", <Checkout />);
       await screen.findByRole("heading", { level: 1, name: "Checkout" });
@@ -173,6 +174,7 @@ describe("attendee pages", () => {
       const call = fixtures.current.rpcCalls.find((c) => c.name === "place_order");
       expect(call.args.p_items).toEqual([{ product_id: "p1", quantity: 2 }]);
       expect(call.args.p_receipt_path).toMatch(/^u1\/[0-9a-f-]{36}\.png$/);
+      await waitFor(() => expect(fixtures.current.fnCalls?.some((c) => c.name === "send-order-email" && c.body.kind === "order_received")).toBe(true));   // the confirmation email
     });
     it("Checkout stays closed when no GCash number is set", async () => {
       asUser();
@@ -204,6 +206,7 @@ describe("attendee pages", () => {
       expect(await within(dialog).findByText(/Expect/)).toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Mark as paid" }));
       await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.args[0]?.status === "paid")).toBe(true));
+      await waitFor(() => expect(fixtures.current.fnCalls?.some((c) => c.name === "send-order-email" && c.body.kind === "order_paid" && c.body.order_id === "o1")).toBe(true));   // the shopper is emailed
     });
   });
   it("Products (admin): lists products, validates, and saves a new one", async () => {

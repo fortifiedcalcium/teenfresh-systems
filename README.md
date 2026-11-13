@@ -15,7 +15,9 @@ supabase/migrations/008_banner_coming_soon.sql    "Coming soon" banner switch (r
 supabase/migrations/009_upload_limit_10mb.sql    10 MB upload limit (run ninth)
 supabase/migrations/010_products.sql             Shop products table and its access rules (run tenth)
 supabase/migrations/011_orders.sql               Shop checkout: settings, orders, place_order (run eleventh)
+supabase/migrations/012_order_emails.sql         log of order emails (run twelfth)
 supabase/functions/send-confirmation-email   ticket email on verification / resend / test email
+supabase/functions/send-order-email          shop order emails: received, paid, shipped, cancelled
 supabase/functions/send-payment-email        underpaid, rejected and "we received your registration" emails
 supabase/functions/send-bulk-email           admin bulk mail merge
 scripts/purge-receipts.mjs                   deletes payment receipts N days after an event (privacy)
@@ -83,6 +85,7 @@ supabase secrets set MAIL_PROVIDER=resend \
 supabase functions deploy send-confirmation-email
 supabase functions deploy send-bulk-email
 supabase functions deploy send-payment-email
+supabase functions deploy send-order-email
 ```
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY` and **`SUPABASE_SERVICE_ROLE_KEY` are injected into functions automatically.** The CLI refuses to set secrets that start with `SUPABASE_`, so you never handle the service-role key. It is never in the browser.
 - **Resend:** verify your sending domain (Resend → Domains); `MAIL_FROM` must be on it.
