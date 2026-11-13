@@ -16,6 +16,7 @@ supabase/migrations/009_upload_limit_10mb.sql    10 MB upload limit (run ninth)
 supabase/migrations/010_products.sql             Shop products table and its access rules (run tenth)
 supabase/migrations/011_orders.sql               Shop checkout: settings, orders, place_order (run eleventh)
 supabase/migrations/012_order_emails.sql         log of order emails (run twelfth)
+supabase/migrations/013_order_email_templates.sql editable wording of the order emails (run thirteenth)
 supabase/functions/send-confirmation-email   ticket email on verification / resend / test email
 supabase/functions/send-order-email          shop order emails: received, paid, shipped, cancelled
 supabase/functions/send-payment-email        underpaid, rejected and "we received your registration" emails

@@ -12,15 +12,40 @@ export interface ItemRow { artist: string; title: string; unit_price_usd: number
 const usd = (n: unknown) => "$" + Number(n).toFixed(2);
 const php = (n: unknown) => "PHP " + Number(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const COPY: Record<OrderKind, { subject: (n: string) => string; heading: string; body: string }> = {
-  order_received: { subject: (n) => `We received your order ${n}`, heading: "Thank you for your order!", body: "We received your order and your GCash receipt. We are checking your payment now, which takes 48 to 72 hours. We will email you again when it is confirmed." },
-  order_paid:     { subject: (n) => `Payment confirmed for order ${n}`, heading: "Your payment is confirmed", body: "We checked your GCash payment and it is confirmed. We are now preparing your order for shipping." },
-  order_shipped:  { subject: (n) => `Your order ${n} has shipped`, heading: "Your order is on its way", body: "Your order has been shipped to the address below. It should reach you soon." },
-  order_cancelled:{ subject: (n) => `Your order ${n} was cancelled`, heading: "Your order was cancelled", body: "Your order was cancelled. If you already paid and think this is a mistake, reply to this email and we will help." },
+export interface OrderTemplate { subject: string; heading: string; body: string }
+
+/** The built-in wording. An admin can override each one on the Order emails page (table order_email_templates). */
+export const DEFAULT_TEMPLATES: Record<OrderKind, OrderTemplate> = {
+  order_received: { subject: "We received your order {{Order Number}}", heading: "Thank you for your order!", body: "Hi {{Name}},\n\nWe received your order and your GCash receipt. We are checking your payment now, which takes 48 to 72 hours. We will email you again when it is confirmed." },
+  order_paid:     { subject: "Payment confirmed for order {{Order Number}}", heading: "Your payment is confirmed", body: "Hi {{Name}},\n\nWe checked your GCash payment and it is confirmed. We are now preparing your order for shipping." },
+  order_shipped:  { subject: "Your order {{Order Number}} has shipped", heading: "Your order is on its way", body: "Hi {{Name}},\n\nYour order has been shipped to the address below. It should reach you soon." },
+  order_cancelled:{ subject: "Your order {{Order Number}} was cancelled", heading: "Your order was cancelled", body: "Hi {{Name}},\n\nYour order was cancelled. If you already paid and think this is a mistake, reply to this email and we will help." },
 };
 
-export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[], site: string) {
-  const c = COPY[kind];
+/** The placeholders an admin may use in the wording. */
+export const ORDER_FIELDS = ["Name", "Order Number", "Total"] as const;
+const fieldKey = (k: string) => k.trim().toLowerCase().replace(/\s+/g, " ");
+const KNOWN = new Set(ORDER_FIELDS.map(fieldKey));
+
+/** Placeholders in a text that are not one of ORDER_FIELDS (a typo such as {{Nmae}}). */
+export function unknownOrderFields(text: string): string[] {
+  return [...String(text).matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)].map((m) => m[1]).filter((k) => !KNOWN.has(fieldKey(k)));
+}
+
+/** Replaces the known placeholders; anything else is left as typed. */
+export function fillOrderFields(text: string, v: Record<string, string>): string {
+  const by = Object.fromEntries(Object.entries(v).map(([k, x]) => [fieldKey(k), x]));
+  return String(text).replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (m, k) => (fieldKey(k) in by ? by[fieldKey(k)] : m));
+}
+
+/** Plain text to HTML paragraphs: a blank line starts a new paragraph, a single line break stays a line break. */
+const paragraphs = (t: string) => t.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean).map((p) => `<p style="margin:0 0 16px 0;">${e(p).replace(/\n/g, "<br>")}</p>`).join("");
+
+export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[], site: string, custom?: Partial<OrderTemplate> | null) {
+  const d = DEFAULT_TEMPLATES[kind];
+  const pick = (v: string | undefined, f: string) => (v && v.trim() ? v : f);
+  const vals = { "Name": o.name, "Order Number": o.order_number, "Total": php(o.total_php) };
+  const c = { subject: fillOrderFields(pick(custom?.subject, d.subject), vals), heading: fillOrderFields(pick(custom?.heading, d.heading), vals), body: fillOrderFields(pick(custom?.body, d.body), vals) };
   const link = site ? `${site.replace(/\/$/, "")}/orders/${o.id}` : "";
   const rows = items.map((i) => `<tr><td style="padding:6px 0;">${e(i.artist)}<br><strong>${e(i.title)}</strong></td><td style="padding:6px 0;text-align:right;white-space:nowrap;">${usd(i.unit_price_usd)} × ${i.quantity}</td></tr>`).join("");
   const shipping = Number(o.shipping_php) > 0 ? php(o.shipping_php) : "Free";
@@ -30,7 +55,7 @@ export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[],
 <tr><td style="background:#f9e7b9;padding:16px 24px;font-size:20px;font-weight:bold;">Teenfresh</td></tr>
 <tr><td style="padding:24px;">
 <h1 style="margin:0 0 8px 0;font-size:22px;">${e(c.heading)}</h1>
-<p style="margin:0 0 16px 0;">Hi ${e(o.name)}, ${e(c.body)}</p>
+${paragraphs(c.body)}
 <p style="margin:0 0 8px 0;"><strong>Order ${e(o.order_number)}</strong></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #c4d6ea;border-bottom:1px solid #c4d6ea;font-size:14px;">${rows}</table>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin-top:8px;">
@@ -43,11 +68,11 @@ ${link ? `<p style="margin:0 0 8px 0;"><a href="${e(link)}" style="color:#1c5a85
 <p style="margin:16px 0 0 0;font-size:12px;color:#2b4c63;">Teenfresh</p>
 </td></tr></table></td></tr></table></body></html>`;
   const text = [
-    c.heading, "", `Hi ${o.name}, ${c.body}`, "", `Order ${o.order_number}`,
+    c.heading, "", c.body, "", `Order ${o.order_number}`,
     ...items.map((i) => `- ${i.artist}: ${i.title}  ${usd(i.unit_price_usd)} x ${i.quantity}`), "",
     `Items (at PHP ${Number(o.usd_to_php)} per $1): ${usd(o.subtotal_usd)}`, `Shipping: ${shipping}`, `Total paid (GCash): ${php(o.total_php)}`, "",
     "Deliver to:", o.name, o.address, `${o.city} ${o.postal_code}`, o.phone,
     ...(link ? ["", `View your order: ${link}`] : []),
   ].join("\n");
-  return { subject: c.subject(o.order_number), html, text };
+  return { subject: c.subject, html, text };
 }

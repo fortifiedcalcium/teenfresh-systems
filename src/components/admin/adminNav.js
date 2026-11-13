@@ -6,7 +6,7 @@ export const matchers = {
   search: (p) => p.startsWith("/admin/attendees"),
   scan: (p) => p.startsWith("/admin/scanner"),
   history: (p) => p.startsWith("/admin/tracker"),
-  profile: (p) => ["/admin/profile", "/admin/events", "/admin/products", "/admin/orders", "/admin/payments", "/admin/emails", "/admin/email", "/admin/users", "/admin/changelog"].some((x) => p === x || p.startsWith(x + "/")),
+  profile: (p) => ["/admin/profile", "/admin/events", "/admin/products", "/admin/orders", "/admin/order-emails", "/admin/payments", "/admin/emails", "/admin/email", "/admin/users", "/admin/changelog"].some((x) => p === x || p.startsWith(x + "/")),
 };
 
 export const TABS = [
@@ -28,6 +28,7 @@ export const SIDEBAR = [
   ["/admin/scanner", "QR Scanner", IconScan],
   ["/admin/tracker", "Attendance", IconChecklist],
   ["/admin/emails", "Email", IconMail],
+  ["/admin/order-emails", "Order emails", IconMail],
   ["/admin/users", "Admin users", IconShield],
   ["/admin/changelog", "Change log", IconHistory],
 ];
@@ -35,7 +36,7 @@ export const SIDEBAR = [
 /** Page titles for the mobile top bar, and where its back button goes. */
 export const TITLES = [
   ["/admin/profile", "Profile"], ["/admin/events", "Events", "/admin/profile"], ["/admin/products", "Shop products", "/admin/profile"], ["/admin/orders", "Shop orders", "/admin/profile"], ["/admin/payments", "Payments", "/admin/profile"],
-  ["/admin/emails", "Email", "/admin/profile"], ["/admin/users", "Admin users", "/admin/profile"], ["/admin/changelog", "Change log", "/admin/profile"],
+  ["/admin/order-emails", "Order emails", "/admin/profile"], ["/admin/emails", "Email", "/admin/profile"], ["/admin/users", "Admin users", "/admin/profile"], ["/admin/changelog", "Change log", "/admin/profile"],
   ["/admin/attendees", "Attendees"], ["/admin/scanner", "QR Scanner"], ["/admin/tracker", "Attendance"], ["/admin", "Dashboard"],
 ];
 export function titleFor(pathname) {

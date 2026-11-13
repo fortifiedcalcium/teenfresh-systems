@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KIND_STATUS, ORDER_KINDS, renderOrderEmail } from "../supabase/functions/_shared/orderEmail.ts";
+import { DEFAULT_TEMPLATES, KIND_STATUS, ORDER_KINDS, fillOrderFields, renderOrderEmail, unknownOrderFields } from "../supabase/functions/_shared/orderEmail.ts";
 
 const order = { id: "o1", order_number: "TF-000007", name: "Juan <b>Dela</b> Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati", postal_code: "1210", subtotal_usd: "25.56", usd_to_php: "58.00", shipping_php: "150.00", total_php: "1632.48" };
 const items = [{ artist: "Marv", title: "ÖRBITAL & more", unit_price_usd: "12.78", quantity: 2 }];
@@ -31,5 +31,31 @@ describe("renderOrderEmail", () => {
   });
   it("says Free when there is no shipping fee", () => {
     expect(renderOrderEmail("order_shipped", { ...order, shipping_php: "0" }, items, "").text).toContain("Shipping: Free");
+  });
+});
+
+describe("editable wording", () => {
+  it("uses the admin's text, fills the placeholders and keeps the order details", () => {
+    const tpl = { subject: "Order {{order number}} is in, {{Name}}!", heading: "Salamat!", body: "Hello {{Name}}.\n\nYour total is {{Total}}.\nSee you soon." };
+    const m = renderOrderEmail("order_received", order, items, "", tpl);
+    expect(m.subject).toBe("Order TF-000007 is in, Juan <b>Dela</b> Cruz!");
+    expect(m.text).toContain("Salamat!");
+    expect(m.text).toContain("Your total is PHP 1,632.48.");
+    expect(m.html).toContain("<p style=\"margin:0 0 16px 0;\">Your total is PHP 1,632.48.<br>See you soon.</p>");
+    expect(m.text).toContain("$12.78 x 2");                       // the items are still added
+  });
+  it("escapes the admin's text in the HTML, never lets it add markup", () => {
+    const m = renderOrderEmail("order_paid", order, items, "", { heading: "<script>alert(1)</script>", body: "<img src=x onerror=alert(1)>" });
+    expect(m.html).not.toMatch(/<script|<img/);
+    expect(m.html).toContain("&lt;script&gt;");
+  });
+  it("falls back to the built-in wording for an empty or missing part", () => {
+    const m = renderOrderEmail("order_shipped", order, items, "", { subject: "  ", heading: undefined, body: "" });
+    expect(m.subject).toBe("Your order TF-000007 has shipped");
+    expect(m.text).toContain(DEFAULT_TEMPLATES.order_shipped.heading);
+  });
+  it("finds placeholders that do not exist, and leaves them as typed", () => {
+    expect(unknownOrderFields("Hi {{Name}}, {{Nmae}} {{ order  number }} {{Tracking}}")).toEqual(["Nmae", "Tracking"]);
+    expect(fillOrderFields("{{Nmae}} {{Name}}", { Name: "Ana" })).toBe("{{Nmae}} Ana");
   });
 });

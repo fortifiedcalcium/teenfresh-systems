@@ -26,6 +26,7 @@ const Dashboard = lazy(() => import("./pages/admin/Dashboard.jsx"));
 const Events = lazy(() => import("./pages/admin/Events.jsx"));
 const Attendees = lazy(() => import("./pages/admin/Attendees.jsx"));
 const Products = lazy(() => import("./pages/admin/Products.jsx"));
+const OrderEmails = lazy(() => import("./pages/admin/OrderEmails.jsx"));
 const Orders = lazy(() => import("./pages/admin/Orders.jsx"));
 const Payments = lazy(() => import("./pages/admin/Payments.jsx"));
 const Scanner = lazy(() => import("./pages/admin/Scanner.jsx"));
@@ -73,6 +74,7 @@ export default function App() {
         <Route path="events" element={<Events />} />
         <Route path="products" element={<Products />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="order-emails" element={<OrderEmails />} />
         <Route path="payments" element={<Payments />} />
         <Route path="attendees" element={<Attendees />} />
         <Route path="scanner" element={<Scanner />} />

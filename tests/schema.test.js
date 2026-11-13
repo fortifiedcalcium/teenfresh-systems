@@ -84,6 +84,7 @@ beforeAll(async () => {
   await db.exec(read("010_products.sql"));
   await db.exec(read("011_orders.sql"));
   await db.exec(read("012_order_emails.sql"));
+  await db.exec(read("013_order_email_templates.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -842,5 +843,25 @@ describe("012 order emails", () => {
     await asUser("erin");
     expect((await db.query("select id from public.order_emails where order_id = $1", [o.id])).rows).toHaveLength(0);
     await fails(db.query("insert into public.order_emails (order_id, kind, recipient, status) values ($1, 'order_paid', 'a@b.co', 'sent')", [o.id]), "row-level security");
+  });
+});
+
+describe("013 order email templates", () => {
+  const ins = (kind = "order_paid", subject = "S", heading = "H", body = "B") => db.query("insert into public.order_email_templates (kind, subject, heading, body) values ($1,$2,$3,$4)", [kind, subject, heading, body]);
+  it("only admins can read or write the wording", async () => {
+    await asUser("alice");
+    await fails(ins(), "row-level security");
+    await asUser("admin");
+    await ins("order_paid", "Paid {{Order Number}}");
+    await asUser("alice");
+    expect((await db.query("select kind from public.order_email_templates")).rows).toHaveLength(0);
+    await asUser("admin");
+    expect((await db.query("select kind from public.order_email_templates")).rows).toHaveLength(1);
+  });
+  it("rejects empty text, an unknown kind and a second row for the same email", async () => {
+    await asUser("admin");
+    await fails(ins("order_shipped", "  "), "subject_check");
+    await fails(ins("order_unknown"), "kind_check");
+    await fails(ins("order_paid"), "duplicate key");
   });
 });

@@ -26,6 +26,7 @@ import Dashboard from "../src/pages/admin/Dashboard.jsx";
 import Events from "../src/pages/admin/Events.jsx";
 import Products from "../src/pages/admin/Products.jsx";
 import Orders from "../src/pages/admin/Orders.jsx";
+import OrderEmails from "../src/pages/admin/OrderEmails.jsx";
 import Cart from "../src/pages/attendee/Cart.jsx";
 import Checkout from "../src/pages/attendee/Checkout.jsx";
 import MyOrders from "../src/pages/attendee/MyOrders.jsx";
@@ -208,6 +209,25 @@ describe("attendee pages", () => {
       await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.args[0]?.status === "paid")).toBe(true));
       await waitFor(() => expect(fixtures.current.fnCalls?.some((c) => c.name === "send-order-email" && c.body.kind === "order_paid" && c.body.order_id === "o1")).toBe(true));   // the shopper is emailed
     });
+  });
+  it("Order emails (admin): edits the wording, shows a preview, catches a mistyped placeholder, and restores the default", async () => {
+    const user = userEvent.setup();
+    fixtures.current.order_email_templates = [];
+    const { container } = admin(<OrderEmails />); await settled("Order emails");
+    expect(screen.getByLabelText(/^Subject/)).toHaveValue("We received your order {{Order Number}}");
+    expect(screen.getByLabelText("Email preview")).toHaveTextContent("Thank you for your order!");
+    expect(await check(container)).toHaveNoViolations();
+    const subject = screen.getByLabelText(/^Subject/);
+    await user.clear(subject); await user.type(subject, "Got it {{{{Nmae}}");
+    await user.click(screen.getByRole("button", { name: "Save wording" }));
+    expect(await screen.findByText(/placeholder that does not exist: \{\{Nmae\}\}/)).toBeInTheDocument();
+    await user.clear(subject); await user.type(subject, "Got it, {{{{Name}}");
+    await waitFor(() => expect(screen.getByText(/Subject:/).parentElement).toHaveTextContent("Got it, Juan Dela Cruz"));
+    await user.click(screen.getByRole("button", { name: "Save wording" }));
+    await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "order_email_templates" && w.op === "upsert" && w.args[0].kind === "order_received" && w.args[0].subject === "Got it, {{Name}}")).toBe(true));
+    await user.click(await screen.findByRole("button", { name: "Restore default wording" }));
+    await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "order_email_templates" && w.op === "delete")).toBe(true));
+    expect(screen.getByLabelText(/^Subject/)).toHaveValue("We received your order {{Order Number}}");
   });
   it("Products (admin): lists products, validates, and saves a new one", async () => {
     const user = userEvent.setup();
