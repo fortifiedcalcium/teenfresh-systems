@@ -16,6 +16,7 @@ import Home from "./pages/attendee/Home.jsx";
 import EventRegister from "./pages/attendee/EventRegister.jsx";
 import MyRegistrations from "./pages/attendee/MyRegistrations.jsx";
 import MyTicket from "./pages/attendee/MyTicket.jsx";
+import Shop from "./pages/attendee/Shop.jsx";
 import { IconAlert } from "./components/NavIcons.jsx";
 const Dashboard = lazy(() => import("./pages/admin/Dashboard.jsx"));
 const Events = lazy(() => import("./pages/admin/Events.jsx"));
@@ -45,6 +46,7 @@ export default function App() {
     <Routes>
       <Route element={<AttendeeLayout />}>
         <Route index element={<Home />} />
+        <Route path="shop" element={<Shop />} />
         <Route path="events/:id/register" element={<ProtectedRoute><EventRegister /></ProtectedRoute>} />
         <Route path="my-registrations" element={<ProtectedRoute><MyRegistrations /></ProtectedRoute>} />
         <Route path="my-ticket/:id" element={<ProtectedRoute><MyTicket /></ProtectedRoute>} />

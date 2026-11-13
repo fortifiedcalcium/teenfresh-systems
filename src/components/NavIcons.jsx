@@ -9,6 +9,7 @@ const Icon = ({ children, size = 20 }) => (
 
 export const IconHome = () => <Icon><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z" /></Icon>;
 export const IconCalendar = () => <Icon><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></Icon>;
+export const IconBag = () => <Icon><path d="M5 8h14l-1 12H6Z" /><path d="M9 8V7a3 3 0 0 1 6 0v1" /></Icon>;
 export const IconTicket = () => <Icon><path d="M2 9a3 3 0 0 1 0 6v2a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a3 3 0 0 1 0-6V7a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1Z" /><path d="M13 6v12" strokeDasharray="2 3" /></Icon>;
 export const IconDashboard = () => <Icon><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></Icon>;
 export const IconWallet = () => <Icon><path d="M19 7V5a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2" /><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" /></Icon>;

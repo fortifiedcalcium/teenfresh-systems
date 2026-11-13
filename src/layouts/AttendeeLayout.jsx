@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { SkipLink } from "../a11y.jsx";
 import logo from "../logo/teenfresh-logo.png";
-import { IconCalendar, IconTicket, IconDashboard, IconLogIn, IconLogOut, IconUserPlus } from "../components/NavIcons.jsx";
+import { IconBag, IconCalendar, IconTicket, IconDashboard, IconLogIn, IconLogOut, IconUserPlus } from "../components/NavIcons.jsx";
 import { FacebookIcon, InstagramIcon, TikTokIcon, XIcon } from "../components/SocialIcons.jsx";
 
 const SUPPORT = import.meta.env.VITE_SUPPORT_EMAIL;
@@ -25,6 +25,7 @@ export default function AttendeeLayout() {
           <Link to="/" className="nav-link" aria-label="Teenfresh Events, home"><img src={logo} alt="" width="188" height="40" className="h-10 w-auto" /></Link>
           <div className="flex flex-wrap items-center gap-1">
             <NavLink to="/" end className="nav-link"><IconCalendar />Events</NavLink>
+            <NavLink to="/shop" className="nav-link"><IconBag />Shop</NavLink>
             {user && <NavLink to="/my-registrations" className="nav-link"><IconTicket />My registrations</NavLink>}
             {isAdmin && <NavLink to="/admin" className="nav-link"><IconDashboard />Admin</NavLink>}
             {user ? (

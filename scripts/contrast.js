@@ -45,6 +45,8 @@ export const APPROVED = [
   // footer social icons and handle (cream footer)
   T("social-pink", "brand-cream", 4.5, "footer handle text"), T("social-pink-hover", "brand-cream", 4.5, "footer handle text on hover"),
   T("social-pink", "brand-cream", 3, "footer social icons"), T("social-pink-hover", "brand-cream", 3, "footer social icons on hover"),
+  // shop page (white panel): pink PRE-ORDER label, muted artist, red discount, NEW badge
+  T("social-pink", "white", 4.5, "shop: PRE-ORDER label"), T("ink-muted", "white", 4.5, "shop: artist name"), T("danger", "white", 4.5, "shop: discount"), T("brand-ivory", "ink", 4.5, "shop: NEW badge and selected chip"),
   // non-text (>= 3:1)
   T("link", "white", 3, "input / card border"), T("link", "brand-ivory", 3, "border"), T("link", "brand-sky", 3, "progress fill on track"),
   T("ink-muted", "brand-ivory", 3, "ticket perforation"), T("ink-muted", "white", 3, "ticket perforation"), T("link", "brand-blush", 3, "ticket outline on the page"),

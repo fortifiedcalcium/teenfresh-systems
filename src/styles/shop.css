@@ -1,0 +1,20 @@
+/* Shop page (src/pages/attendee/Shop.jsx). Colours come from tokens.css only; text is never below 14px. */
+@layer components {
+  .shop-chips { @apply mb-6 flex gap-2 overflow-x-auto pb-1; scrollbar-width: thin; }
+  .shop-chip { @apply min-h-target shrink-0 rounded-full border border-link bg-white px-4 py-1 text-sm font-semibold text-ink hover:bg-brand-ivory; }
+  .shop-chip[aria-pressed="true"] { @apply border-ink bg-ink text-brand-ivory hover:bg-ink; }
+
+  .shop-grid { @apply grid grid-cols-1 gap-x-5 gap-y-8 xs:grid-cols-2 lg:grid-cols-4; }
+  .shop-card { @apply rounded-2xl transition-shadow duration-200; }
+  .shop-thumb { @apply aspect-square overflow-hidden rounded-2xl border border-link bg-brand-ivory; }
+  .shop-art { transition: transform 0.4s ease; }
+  .shop-pre { @apply m-0 text-sm font-bold uppercase tracking-wide; color: var(--social-pink); }
+  .shop-title { @apply m-0 text-base font-bold leading-snug text-ink; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .shop-new { @apply mt-1 self-start rounded-md bg-ink px-2 py-0.5 text-sm font-bold text-brand-ivory; }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .shop-card:hover { box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 18%, transparent); }
+    .shop-card:hover .shop-art { transform: scale(1.05); }
+  }
+}
+@media (forced-colors: active) { .shop-thumb { border: 2px solid CanvasText; } }

@@ -18,6 +18,7 @@ import ForgotPassword from "../src/pages/auth/ForgotPassword.jsx";
 import ResetPassword from "../src/pages/auth/ResetPassword.jsx";
 import Callback from "../src/pages/auth/Callback.jsx";
 import Home from "../src/pages/attendee/Home.jsx";
+import Shop from "../src/pages/attendee/Shop.jsx";
 import EventRegister from "../src/pages/attendee/EventRegister.jsx";
 import MyRegistrations from "../src/pages/attendee/MyRegistrations.jsx";
 import MyTicket from "../src/pages/attendee/MyTicket.jsx";
@@ -103,6 +104,19 @@ describe("public and auth pages", () => {
 });
 
 describe("attendee pages", () => {
+  it("Shop: filter chips narrow the grid, and the page has no violations", async () => {
+    const user = userEvent.setup();
+    const { container } = page("/shop", <Shop />);
+    await screen.findByRole("heading", { level: 1, name: /Teenfresh's products/ });
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(4);
+    await user.click(screen.getByRole("button", { name: "Pre-Order" }));
+    expect(screen.getByRole("button", { name: "Pre-Order" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(3);
+    await user.click(screen.getByRole("button", { name: "DVD" }));
+    expect(screen.getByText(/No products in DVD yet/)).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+  });
+
   it("Home: event cards", async () => {
     const { container } = page("/", <Home />);
     await screen.findByText("Sold out event");
