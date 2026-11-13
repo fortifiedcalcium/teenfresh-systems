@@ -3,7 +3,8 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { SkipLink } from "../a11y.jsx";
 import logo from "../logo/teenfresh-logo.png";
-import { IconBag, IconCalendar, IconTicket, IconDashboard, IconLogIn, IconLogOut, IconUserPlus } from "../components/NavIcons.jsx";
+import { useCart } from "../lib/cart.jsx";
+import { IconBag, IconCart, IconPackage, IconCalendar, IconTicket, IconDashboard, IconLogIn, IconLogOut, IconUserPlus } from "../components/NavIcons.jsx";
 import { FacebookIcon, InstagramIcon, TikTokIcon, XIcon } from "../components/SocialIcons.jsx";
 
 const SUPPORT = import.meta.env.VITE_SUPPORT_EMAIL;
@@ -17,6 +18,7 @@ const SOCIALS = [
 
 export default function AttendeeLayout() {
   const { user, isAdmin, signOut } = useAuth();
+  const { count } = useCart();
   return (
     <div className="flex min-h-screen flex-col">
       <SkipLink />
@@ -26,6 +28,8 @@ export default function AttendeeLayout() {
           <div className="flex flex-wrap items-center gap-1">
             <NavLink to="/" end className="nav-link"><IconCalendar />Events</NavLink>
             <NavLink to="/shop" className="nav-link"><IconBag />Shop</NavLink>
+            <NavLink to="/cart" className="nav-link"><IconCart />Cart{count > 0 && <span> ({count}<span className="sr-only"> items</span>)</span>}</NavLink>
+            {user && <NavLink to="/my-orders" className="nav-link"><IconPackage />My orders</NavLink>}
             {user && <NavLink to="/my-registrations" className="nav-link"><IconTicket />My registrations</NavLink>}
             {isAdmin && <NavLink to="/admin" className="nav-link"><IconDashboard />Admin</NavLink>}
             {user ? (

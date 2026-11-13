@@ -13,6 +13,8 @@ supabase/migrations/006_one_kit_per_form.sql        one form = one kit, no quant
 supabase/migrations/007_free_reference_number.sql   reference number typed freely (run seventh)
 supabase/migrations/008_banner_coming_soon.sql    "Coming soon" banner switch (run eighth)
 supabase/migrations/009_upload_limit_10mb.sql    10 MB upload limit (run ninth)
+supabase/migrations/010_products.sql             Shop products table and its access rules (run tenth)
+supabase/migrations/011_orders.sql               Shop checkout: settings, orders, place_order (run eleventh)
 supabase/functions/send-confirmation-email   ticket email on verification / resend / test email
 supabase/functions/send-payment-email        underpaid, rejected and "we received your registration" emails
 supabase/functions/send-bulk-email           admin bulk mail merge

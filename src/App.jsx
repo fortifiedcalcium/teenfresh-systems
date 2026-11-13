@@ -17,10 +17,16 @@ import EventRegister from "./pages/attendee/EventRegister.jsx";
 import MyRegistrations from "./pages/attendee/MyRegistrations.jsx";
 import MyTicket from "./pages/attendee/MyTicket.jsx";
 import Shop from "./pages/attendee/Shop.jsx";
+import Cart from "./pages/attendee/Cart.jsx";
+import Checkout from "./pages/attendee/Checkout.jsx";
+import OrderDetail from "./pages/attendee/OrderDetail.jsx";
+import MyOrders from "./pages/attendee/MyOrders.jsx";
 import { IconAlert } from "./components/NavIcons.jsx";
 const Dashboard = lazy(() => import("./pages/admin/Dashboard.jsx"));
 const Events = lazy(() => import("./pages/admin/Events.jsx"));
 const Attendees = lazy(() => import("./pages/admin/Attendees.jsx"));
+const Products = lazy(() => import("./pages/admin/Products.jsx"));
+const Orders = lazy(() => import("./pages/admin/Orders.jsx"));
 const Payments = lazy(() => import("./pages/admin/Payments.jsx"));
 const Scanner = lazy(() => import("./pages/admin/Scanner.jsx"));
 const Tracker = lazy(() => import("./pages/admin/Tracker.jsx"));
@@ -47,6 +53,10 @@ export default function App() {
       <Route element={<AttendeeLayout />}>
         <Route index element={<Home />} />
         <Route path="shop" element={<Shop />} />
+        <Route path="cart" element={<Cart />} />
+        <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+        <Route path="orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+        <Route path="my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
         <Route path="events/:id/register" element={<ProtectedRoute><EventRegister /></ProtectedRoute>} />
         <Route path="my-registrations" element={<ProtectedRoute><MyRegistrations /></ProtectedRoute>} />
         <Route path="my-ticket/:id" element={<ProtectedRoute><MyTicket /></ProtectedRoute>} />
@@ -61,6 +71,8 @@ export default function App() {
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="events" element={<Events />} />
+        <Route path="products" element={<Products />} />
+        <Route path="orders" element={<Orders />} />
         <Route path="payments" element={<Payments />} />
         <Route path="attendees" element={<Attendees />} />
         <Route path="scanner" element={<Scanner />} />

@@ -24,6 +24,13 @@ import MyRegistrations from "../src/pages/attendee/MyRegistrations.jsx";
 import MyTicket from "../src/pages/attendee/MyTicket.jsx";
 import Dashboard from "../src/pages/admin/Dashboard.jsx";
 import Events from "../src/pages/admin/Events.jsx";
+import Products from "../src/pages/admin/Products.jsx";
+import Orders from "../src/pages/admin/Orders.jsx";
+import Cart from "../src/pages/attendee/Cart.jsx";
+import Checkout from "../src/pages/attendee/Checkout.jsx";
+import MyOrders from "../src/pages/attendee/MyOrders.jsx";
+import OrderDetail from "../src/pages/attendee/OrderDetail.jsx";
+import { CartProvider } from "../src/lib/cart.jsx";
 import Attendees from "../src/pages/admin/Attendees.jsx";
 import Payments from "../src/pages/admin/Payments.jsx";
 import KitsTab from "../src/pages/admin/KitsTab.jsx";
@@ -104,17 +111,122 @@ describe("public and auth pages", () => {
 });
 
 describe("attendee pages", () => {
-  it("Shop: filter chips narrow the grid, and the page has no violations", async () => {
+  it("Shop: loads products, the chips narrow the grid, and the page has no violations", async () => {
     const user = userEvent.setup();
+    fixtures.current.products = [
+      { id: "p1", artist: "Marv", title: "ÖRBITAL", price: 12.78, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: "products/a.png", image_alt: "Black cover", active: true },
+      { id: "p2", artist: "KASSY", title: "EP [ODYSSEY]", price: 17.04, discount_percent: 0, pre_order: true, is_new: false, categories: ["ALBUM"], image_path: null, image_alt: null, active: true },
+    ];
     const { container } = page("/shop", <Shop />);
     await screen.findByRole("heading", { level: 1, name: /Teenfresh's products/ });
-    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(4);
+    expect(await screen.findAllByRole("heading", { level: 2 })).toHaveLength(2);
+    expect(screen.getByText("20%")).toBeInTheDocument();           // a product with no discount shows none
     await user.click(screen.getByRole("button", { name: "Pre-Order" }));
-    expect(screen.getByRole("button", { name: "Pre-Order" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(3);
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: "DVD" }));
     expect(screen.getByText(/No products in DVD yet/)).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
+  });
+  it("Shop: says so when there are no products yet", async () => {
+    fixtures.current.products = [];
+    page("/shop", <Shop />);
+    expect(await screen.findByText(/No products yet/)).toBeInTheDocument();
+  });
+  describe("shop checkout", () => {
+    const prod = { id: "p1", artist: "Marv", title: "ÖRBITAL", price: 12.78, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: null, active: true };
+    const settings = { id: true, usd_to_php: 58, shipping_fee_php: 150, gcash_account_name: "BR**N CA**O S.", gcash_account_number: "09171234567" };
+    const order = { id: "o1", order_number: "TF-000001", user_id: "u1", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati", postal_code: "1210", notes: null, subtotal_usd: 25.56, usd_to_php: 58, shipping_php: 150, total_php: 1632.48, sender_name: "Juan D.", reference_number: "123456", receipt_path: "u1/a.png", status: "pending", admin_note: null, created_at: future };
+    const withCart = (path, el) => { localStorage.setItem("teenfresh-cart", JSON.stringify([{ id: "p1", qty: 2 }])); return page(path, <CartProvider>{el}</CartProvider>); };
+    beforeEach(() => { localStorage.clear(); fixtures.current.products = [prod]; fixtures.current.shop_settings = [settings]; fixtures.current.orders = [order]; fixtures.current.order_items = [{ id: "i1", order_id: "o1", product_id: "p1", artist: "Marv", title: "ÖRBITAL", unit_price_usd: 12.78, quantity: 2 }]; });
+
+    it("Cart: lines, quantity, totals in dollars and pesos, and no violations", async () => {
+      const { container } = withCart("/cart", <Cart />);
+      await screen.findByRole("heading", { level: 2, name: "ÖRBITAL" });
+      expect(screen.getByLabelText("Quantity of ÖRBITAL")).toHaveValue("2");
+      expect(screen.getByText(/\$25\.56 ≈ ₱1,482\.48/)).toBeInTheDocument();
+      expect(screen.getByText("₱1,632.48")).toBeInTheDocument();           // 25.56 x 58 + 150 shipping
+      expect(await check(container)).toHaveNoViolations();
+    });
+    it("Cart: says so when it is empty", async () => {
+      page("/cart", <CartProvider><Cart /></CartProvider>);
+      expect(await screen.findByText(/Your cart is empty/)).toBeInTheDocument();
+    });
+    it("Checkout: names every problem, then places the order with ids and quantities only", async () => {
+      asUser();
+      const user = userEvent.setup();
+      const { container } = withCart("/checkout", <Checkout />);
+      await screen.findByRole("heading", { level: 1, name: "Checkout" });
+      expect(screen.getByText("09171234567")).toBeInTheDocument();          // the GCash number to pay to
+      await user.click(screen.getByRole("button", { name: "Place order" }));
+      expect(await screen.findByRole("alert", { name: /problems? with your submission/ })).toBeInTheDocument();
+      expect(screen.getByLabelText(/^Mobile number/)).toHaveAttribute("aria-invalid", "true");
+      expect(await check(container)).toHaveNoViolations();
+      await user.type(screen.getByLabelText(/^Mobile number/), "09171234567");
+      await user.type(screen.getByLabelText(/^Street address/), "12 Rizal St.");
+      await user.type(screen.getByLabelText(/^City/), "Makati");
+      await user.type(screen.getByLabelText(/^Postal code/), "1210");
+      await user.type(screen.getByLabelText(/^GCash sender name/), "Juan D.");
+      await user.type(screen.getByLabelText(/^Reference number/), "123456");
+      await user.upload(container.querySelector("#receipt"), new File(["x"], "receipt.png", { type: "image/png" }));
+      await user.click(screen.getByRole("button", { name: "Place order" }));
+      await waitFor(() => expect(fixtures.current.rpcCalls?.some((c) => c.name === "place_order")).toBe(true));
+      const call = fixtures.current.rpcCalls.find((c) => c.name === "place_order");
+      expect(call.args.p_items).toEqual([{ product_id: "p1", quantity: 2 }]);
+      expect(call.args.p_receipt_path).toMatch(/^u1\/[0-9a-f-]{36}\.png$/);
+    });
+    it("Checkout stays closed when no GCash number is set", async () => {
+      asUser();
+      fixtures.current.shop_settings = [{ ...settings, gcash_account_number: null }];
+      withCart("/checkout", <Checkout />);
+      expect(await screen.findByText(/payment details are not set up/)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Place order" })).toBeDisabled();
+    });
+    it("My orders and the order page: status, items and what happens next", async () => {
+      asUser();
+      const a = page("/my-orders", <MyOrders />);
+      expect(await screen.findByRole("heading", { level: 2, name: "Order TF-000001" })).toBeInTheDocument();
+      expect(screen.getByText("Awaiting payment check")).toBeInTheDocument();
+      expect(await check(a.container)).toHaveNoViolations();
+      a.unmount();
+      const b = render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>));
+      expect(await screen.findByRole("heading", { level: 1, name: "Order TF-000001" })).toBeInTheDocument();
+      expect(await screen.findByText(/48 to 72 hours/)).toBeInTheDocument();
+      expect(await check(b.container)).toHaveNoViolations();
+    });
+    it("Admin orders: settings, the list, and marking an order paid", async () => {
+      const user = userEvent.setup();
+      const { container } = admin(<Orders />); await settled("Shop orders");
+      expect(await screen.findByRole("heading", { level: 2, name: /TF-000001/ })).toBeInTheDocument();
+      expect(screen.getByLabelText(/^Pesos per US dollar/)).toHaveValue("58");
+      expect(await check(container)).toHaveNoViolations();
+      await user.click(screen.getByRole("button", { name: /Review order TF-000001/ }));
+      const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
+      expect(await within(dialog).findByText(/Expect/)).toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Mark as paid" }));
+      await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.args[0]?.status === "paid")).toBe(true));
+    });
+  });
+  it("Products (admin): lists products, validates, and saves a new one", async () => {
+    const user = userEvent.setup();
+    fixtures.current.products = [{ id: "p1", artist: "Marv", title: "ÖRBITAL", price: 12.78, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: null, active: true }];
+    const { container } = admin(<Products />); await settled("Shop products");
+    expect(await screen.findByRole("heading", { level: 2, name: "ÖRBITAL" })).toBeInTheDocument();
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(screen.getByRole("button", { name: "Add a product" }));
+    const dialog = screen.getByRole("dialog", { name: "Add a product" });
+    await user.click(within(dialog).getByRole("button", { name: "Add product" }));
+    expect(await within(dialog).findByRole("alert", { name: /problems? with your submission/ })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText(/^Artist/)).toHaveAttribute("aria-invalid", "true");
+    expect(await check(container)).toHaveNoViolations();
+    await user.type(within(dialog).getByLabelText(/^Artist/), "KASSY");
+    await user.type(within(dialog).getByLabelText(/^Product title/), "EP [[ODYSSEY]");
+    await user.type(within(dialog).getByLabelText(/^Price/), "17.04");
+    await user.click(within(dialog).getByRole("checkbox", { name: "ALBUM" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Pre-order" }));
+    await user.click(within(dialog).getByRole("button", { name: "Add product" }));
+    await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "products" && w.op === "insert")).toBe(true));
+    const w = fixtures.current.writes.find((x) => x.table === "products" && x.op === "insert");
+    expect(w.args[0]).toMatchObject({ artist: "KASSY", title: "EP [ODYSSEY]", price: 17.04, discount_percent: 0, pre_order: true, categories: ["ALBUM"], active: true });
   });
 
   it("Home: event cards", async () => {

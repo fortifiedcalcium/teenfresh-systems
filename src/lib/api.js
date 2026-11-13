@@ -65,6 +65,13 @@ const ERRORS = {
   OVERRIDE_REASON_REQUIRED: "Give a reason for verifying an incomplete amount.",
   AMOUNT_DUE_REQUIRED: "Enter the remaining amount due.",
   REASON_REQUIRED: "Give a reason.",
+  NOT_SIGNED_IN: "Please sign in first.",
+  INVALID_ITEMS: "Your cart is empty or has too many items.",
+  INVALID_ADDRESS: "Enter your street address and city.",
+  INVALID_POSTAL: "Enter your 4-digit postal code.",
+  INVALID_PHONE: "Enter a Philippine mobile number, like 09171234567.",
+  PRODUCT_UNAVAILABLE: "One of the products in your cart is no longer available. Review your cart and try again.",
+  PAYMENT_NOT_SET_UP: "Checkout is not open yet because payment details are not set up. Please try again later.",
 };
 
 /** Maps the database's error codes to friendly text. */

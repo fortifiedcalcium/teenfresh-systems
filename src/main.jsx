@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
+import { CartProvider } from "./lib/cart.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./components/Toast.jsx";
 import { LiveRegionProvider } from "./a11y.jsx";
@@ -13,7 +14,9 @@ createRoot(document.getElementById("root")).render(
       <LiveRegionProvider>
         <ToastProvider>
           <AuthProvider>
-            <App />
+            <CartProvider>
+              <App />
+            </CartProvider>
           </AuthProvider>
         </ToastProvider>
       </LiveRegionProvider>

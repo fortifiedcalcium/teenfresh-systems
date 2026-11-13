@@ -81,6 +81,8 @@ beforeAll(async () => {
   await db.exec(read("007_free_reference_number.sql"));
   await db.exec(read("008_banner_coming_soon.sql"));
   await db.exec(read("009_upload_limit_10mb.sql"));
+  await db.exec(read("010_products.sql"));
+  await db.exec(read("011_orders.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -725,5 +727,106 @@ describe("008 banner coming soon", () => {
     await asUser("admin");
     await db.query("update public.events set banner_coming_soon = true where id = $1", [ev]);
     expect((await db.query("select banner_coming_soon from public.events where id = $1", [ev])).rows[0].banner_coming_soon).toBe(true);
+  });
+});
+
+describe("010 products", () => {
+  const add = (title, o = {}) => db.query("insert into public.products (artist, title, price, discount_percent, active) values ('A', $1, $2, $3, $4)", [title, o.price ?? 10, o.off ?? 0, o.active ?? true]);
+  it("only admins can add or change products", async () => {
+    await asUser("alice");
+    await fails(add("Nope"), "row-level security");
+    await asUser("admin");
+    await add("Visible one");
+    await add("Hidden one", { active: false });
+  });
+  it("visitors, signed in or not, see only the products that are switched on", async () => {
+    for (const who of [null, "alice"]) {
+      await asUser(who);
+      const rows = (await db.query("select title from public.products where title in ('Visible one', 'Hidden one')")).rows;
+      expect(rows.map((r) => r.title)).toEqual(["Visible one"]);
+    }
+    await asUser("alice");
+    await db.query("update public.products set title = 'Hacked' where title = 'Visible one'");
+    expect((await row("select count(*)::int as n from public.products where title = 'Hacked'")).n).toBe(0);   // RLS: no row was updated
+  });
+  it("rejects a price of 0, a discount above 90 and a blank title", async () => {
+    await asUser("admin");
+    await fails(add("Free", { price: 0 }), "products_price_check");
+    await fails(add("Too cheap", { off: 95 }), "discount_percent_check");
+    await fails(add("   "), "title_check");
+  });
+});
+
+describe("011 orders", () => {
+  const items = (...a) => JSON.stringify(a.map(([product_id, quantity]) => ({ product_id, quantity })));
+  const place = async (who, it, o = {}) => {
+    const r = await db.query("select public.place_order($1::jsonb,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r",
+      [it, "Juan", who + "@example.com", o.phone ?? "09171234567", "12 Rizal St.", "Makati", o.postal ?? "1210", null, "Juan D.", o.ref ?? String(Math.floor(1e11 + Math.random() * 9e11)), o.receipt ?? `${ids[who]}/${randomUUID()}.jpg`]);
+    return r.rows[0].r;
+  };
+  let p1, p2, hidden;
+  it("setup: products and payment settings", async () => {
+    await asUser("admin");
+    p1 = (await db.query("insert into public.products (artist, title, price) values ('A', 'One', 12.50) returning id")).rows[0].id;
+    p2 = (await db.query("insert into public.products (artist, title, price) values ('B', 'Two', 20) returning id")).rows[0].id;
+    hidden = (await db.query("insert into public.products (artist, title, price, active) values ('C', 'Hidden', 5, false) returning id")).rows[0].id;
+    await db.query("update public.shop_settings set usd_to_php = 50, shipping_fee_php = 100, gcash_account_number = '09170000000' where id");
+  });
+  it("prices the order from the products table at the saved rate", async () => {
+    await asUser("alice");
+    const r = await place("alice", items([p1, 2], [p2, 1]));
+    expect(r.order_number).toMatch(/^TF-\d{6}$/);
+    expect(Number(r.total_php)).toBe(2350);                    // (25 + 20) USD x 50 + 100 shipping
+    const o = await row("select * from public.orders where id = $1", [r.id]);
+    expect(o).toMatchObject({ status: "pending", phone: "+639171234567" });
+    expect(Number(o.subtotal_usd)).toBe(45);
+    expect((await row("select count(*)::int as n from public.order_items where order_id = $1", [r.id])).n).toBe(2);
+    await asUser("admin");
+    await db.query("update public.products set price = 99 where id = $1", [p1]);
+    expect(Number((await row("select unit_price_usd from public.order_items where order_id = $1 and title = 'One'", [r.id])).unit_price_usd)).toBe(12.5);   // old orders keep their price
+    await db.query("update public.products set price = 12.50 where id = $1", [p1]);
+  });
+  it("rejects hidden products, bad quantities, bad details and another person's receipt", async () => {
+    await asUser("bob");
+    await fails(place("bob", items([hidden, 1])), "PRODUCT_UNAVAILABLE");
+    await fails(place("bob", items([p1, 0])), "INVALID_QUANTITY");
+    await fails(place("bob", items([p1, 11])), "INVALID_QUANTITY");
+    await fails(place("bob", "[]"), "INVALID_ITEMS");
+    await fails(place("bob", items([p1, 1]), { phone: "123" }), "INVALID_PHONE");
+    await fails(place("bob", items([p1, 1]), { postal: "12" }), "INVALID_POSTAL");
+    await fails(place("bob", items([p1, 1]), { receipt: `${ids.alice}/${randomUUID()}.jpg` }), "INVALID_RECEIPT");
+    await asUser(null);
+    await fails(place("bob", items([p1, 1])), "NOT_SIGNED_IN");
+  });
+  it("one GCash reference pays for one live order", async () => {
+    await asUser("carol");
+    await place("carol", items([p1, 1]), { ref: "REF-DUP-1" });
+    await fails(place("carol", items([p1, 1]), { ref: "REF-DUP- 1" }), "DUPLICATE_REFERENCE");
+  });
+  it("shoppers read only their own orders and cannot write them; admins can read and update", async () => {
+    await asUser("dave");
+    const r = await place("dave", items([p1, 1]));
+    await asUser("erin");
+    expect((await db.query("select id from public.orders where id = $1", [r.id])).rows).toHaveLength(0);
+    expect((await db.query("select id from public.order_items where order_id = $1", [r.id])).rows).toHaveLength(0);
+    await fails(db.query("insert into public.orders (order_number, user_id, name, email, phone, address, city, postal_code, subtotal_usd, usd_to_php, total_php, sender_name, reference_number) values ('X', $1, 'a', 'a@b.co', '1', 'a', 'a', '1234', 1, 1, 1, 'a', 'zz')", [ids.erin]), "row-level security");
+    await asUser("dave");
+    expect((await db.query("select id from public.orders where id = $1", [r.id])).rows).toHaveLength(1);
+    await db.query("update public.orders set status = 'paid' where id = $1", [r.id]);
+    expect((await row("select status from public.orders where id = $1", [r.id])).status).toBe("pending");   // RLS: no row was updated
+    await asUser("admin");
+    await db.query("update public.orders set status = 'paid' where id = $1", [r.id]);
+    expect((await row("select status from public.orders where id = $1", [r.id])).status).toBe("paid");
+  });
+  it("checkout stays closed until a GCash number is set, and only admins can change the settings", async () => {
+    await asUser("alice");
+    await db.query("update public.shop_settings set usd_to_php = 1 where id");
+    expect(Number((await row("select usd_to_php from public.shop_settings")).usd_to_php)).toBe(50);
+    await asUser("admin");
+    await db.query("update public.shop_settings set gcash_account_number = null where id");
+    await asUser("frank");
+    await fails(place("frank", items([p1, 1])), "PAYMENT_NOT_SET_UP");
+    await asUser("admin");
+    await db.query("update public.shop_settings set gcash_account_number = '09170000000' where id");
   });
 });
