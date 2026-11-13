@@ -121,10 +121,10 @@ describe("attendee pages", () => {
     await screen.findByRole("heading", { level: 1, name: /Teenfresh's products/ });
     expect(await screen.findAllByRole("heading", { level: 2 })).toHaveLength(2);
     expect(screen.getByText("20%")).toBeInTheDocument();           // a product with no discount shows none
-    await user.click(screen.getByRole("button", { name: "Pre-Order" }));
-    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);
-    await user.click(screen.getByRole("button", { name: "DVD" }));
-    expect(screen.getByText(/No products in DVD yet/)).toBeInTheDocument();
+    // only "All" and ALBUM (2 products) show; Pre-Order has 1 product and DVD none, so they stay hidden
+    expect(screen.getAllByRole("button", { name: /^(All|ALBUM|BEST|Pre-Order|DVD)$/ }).map((b) => b.textContent)).toEqual(["All", "ALBUM"]);
+    await user.click(screen.getByRole("button", { name: "ALBUM" }));
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(2);
     expect(await check(container)).toHaveNoViolations();
   });
   it("Shop: says so when there are no products yet", async () => {

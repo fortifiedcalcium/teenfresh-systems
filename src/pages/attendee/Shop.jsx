@@ -51,6 +51,8 @@ export default function Shop() {
     return () => { alive = false; };
   }, []);
 
+  // "All" always shows; a category chip appears only once it has more than one product
+  const chips = CHIPS.filter((c) => c === "All" || (products || []).filter((p) => productMatches(p, c)).length > 1);
   const shown = (products || []).filter((p) => productMatches(p, chip));
   const pick = (c) => {
     setChip(c);
@@ -61,7 +63,7 @@ export default function Shop() {
     <section className="rounded-2xl border border-link bg-white p-4 sm:p-6" aria-labelledby="shop-title">
       <h1 id="shop-title" className="mb-4 flex items-center gap-2 text-3xl"><IconBag />Teenfresh's products <span aria-hidden="true">⭐</span></h1>
       <div className="shop-chips" role="group" aria-label="Filter products">
-        {CHIPS.map((c) => <button key={c} type="button" className="shop-chip" aria-pressed={chip === c} onClick={() => pick(c)}>{c}</button>)}
+        {chips.map((c) => <button key={c} type="button" className="shop-chip" aria-pressed={chip === c} onClick={() => pick(c)}>{c}</button>)}
       </div>
       {error && <Alert tone="bad" className="mb-4">{error}</Alert>}
       {products === null ? <Loading label="Loading products…" className="p-12" />
