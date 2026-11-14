@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { SkipLink } from "../a11y.jsx";
 import logo from "../logo/teenfresh-logo.png";
@@ -26,7 +26,11 @@ export default function AttendeeLayout() {
   const { count } = useCart();
   const toast = useToast();
   // something is waiting on the shopper (a payment, a receipt): a badge on My orders, and a toast when a new one appears
-  const { todos } = useShopperTodos(user?.id, SHOP_ENABLED && Boolean(user), (fresh) => { fresh.forEach((t) => toast(`Order ${t.orderNumber}: ${t.text}`, "info")); playChime("shopper"); });
+  const { todos, unseen, markAllSeen, markOrderSeen } = useShopperTodos(user?.id, SHOP_ENABLED && Boolean(user), (fresh) => { fresh.forEach((t) => toast(`Order ${t.orderNumber}: ${t.text}`, "info")); playChime("shopper"); });
+  // opening an order counts as seeing what it needs
+  const orderId = /^\/orders\/([^/]+)/.exec(useLocation().pathname)?.[1];
+  const todosLoaded = todos !== null;
+  useEffect(() => { if (orderId && todosLoaded) markOrderSeen(orderId); }, [orderId, todosLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => unlockChime(), []);                                        // the browser allows sound after the first click or key press
   return (
     <div className="flex min-h-screen flex-col">
@@ -38,8 +42,8 @@ export default function AttendeeLayout() {
             <NavLink to="/" end className="nav-link" title="Events"><IconCalendar /><span className="sr-only">Events</span></NavLink>
             {SHOP_ENABLED && <NavLink to="/shop" className="nav-link" title="Shop"><IconBag /><span className="sr-only">Shop</span></NavLink>}
             {SHOP_ENABLED && <NavLink to="/cart" className="nav-link" title="Cart"><IconCart /><span className="sr-only">Cart</span>{count > 0 && <span aria-hidden="true">({count})</span>}{count > 0 && <span className="sr-only">, {count} items</span>}</NavLink>}
-            {SHOP_ENABLED && user && <TodoBell todos={todos} />}
             {SHOP_ENABLED && user && <NavLink to="/my-orders" className="nav-link" title="My orders"><IconPackage /><span className="sr-only">My orders</span></NavLink>}
+            {SHOP_ENABLED && user && <TodoBell todos={todos} unseen={unseen} onOpen={markAllSeen} />}
             {user && <NavLink to="/my-registrations" className="nav-link" title="My registrations"><IconTicket /><span className="sr-only">My registrations</span></NavLink>}
             {isAdmin && <NavLink to="/admin" className="nav-link" title="Admin"><IconDashboard /><span className="sr-only">Admin</span></NavLink>}
             {user ? (

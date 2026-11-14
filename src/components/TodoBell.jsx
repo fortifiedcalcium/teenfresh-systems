@@ -1,24 +1,24 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { requiredCount } from "../lib/orderTodos.js";
 import { setSoundEnabled, soundEnabled } from "../lib/chime.js";
 import { usePopover } from "../hooks/usePopover.js";
 import { IconBell } from "./NavIcons.jsx";
 
-/** The shopper's notification button: a bell with the number of things waiting on them, and a list of what to do, each linking to its order.
- *  It is the same list as "What you need to do" on My orders. A new one also shows as a toast with a short chime (see AttendeeLayout). */
-export default function TodoBell({ todos }) {
+/** The shopper's notification button: a bell with the number of NEW things waiting on them, and the list of everything they need to do, each linking
+ *  to its order. Opening the list counts as seeing it, so the number goes away until something new arrives. A new one also shows as a toast with a short chime
+ *  (see AttendeeLayout). */
+export default function TodoBell({ todos, unseen = 0, onOpen }) {
   const { open, toggle, close, btn, panel, pos, id } = usePopover("right");
   const [sound, setSound] = useState(() => soundEnabled("shopper"));
   const list = todos || [];
-  const n = requiredCount(list);
+  const n = unseen;
   const flip = () => { const on = !sound; setSound(on); setSoundEnabled(on, "shopper"); };
 
   return (
     <>
       <button ref={btn} type="button" className="nav-link relative" aria-expanded={open} aria-controls={id} title="Notifications"
-        aria-label={n > 0 ? `Notifications, ${n} for you to do` : "Notifications, nothing for you to do"} onClick={toggle}>
+        aria-label={n > 0 ? `Notifications, ${n} new` : "Notifications, nothing new"} onClick={() => { if (!open) onOpen?.(); toggle(); }}>
         <IconBell />
         {n > 0 && <span aria-hidden="true" className="notif-badge">{n > 99 ? "99+" : n}</span>}
       </button>

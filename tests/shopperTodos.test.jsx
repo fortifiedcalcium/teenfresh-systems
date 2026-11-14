@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "../src/components/Toast.jsx";
@@ -14,6 +15,7 @@ const { default: AttendeeLayout } = await import("../src/layouts/AttendeeLayout.
 const order = (o = {}) => ({ id: "o1", order_number: "TF-000001", user_id: "u1", status: "pending", shipping_status: "none", balance_status: "none", preferred_courier: "LBC", ...o });
 const show = () => render(<MemoryRouter initialEntries={["/"]}><LiveRegionProvider><ToastProvider><Routes><Route element={<AttendeeLayout />}><Route index element={<h1>Home</h1>} /></Route></Routes></ToastProvider></LiveRegionProvider></MemoryRouter>);
 const bell = () => screen.getByRole("button", { name: /^Notifications/ });
+const fee = (o = {}) => order({ status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150, ...o });
 
 describe("the shopper's to-do badge and toast", () => {
   const notes = [];
@@ -28,7 +30,7 @@ beforeEach(() => { asGuest(); fixtures.current = { orders: [] }; notes.length = 
     asUser();
     fixtures.current.orders = [order({ status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }), order({ id: "o2", balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 50 }), order({ id: "o3", preferred_courier: null })];
     show();
-    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 2 for you to do"));                  // the optional courier choice is not counted
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 2 new"));                  // the optional courier choice is not counted
     expect(bell().querySelector(".notif-badge")).toHaveTextContent("2");
   });
   it("has no badge when nothing is waiting, and none for a guest", async () => {
@@ -36,24 +38,24 @@ beforeEach(() => { asGuest(); fixtures.current = { orders: [] }; notes.length = 
     show();
     await new Promise((r) => setTimeout(r, 100));
     expect(bell().querySelector(".notif-badge")).toBeNull();
-    expect(bell()).toHaveAccessibleName("Notifications, nothing for you to do");
+    expect(bell()).toHaveAccessibleName("Notifications, nothing new");
   });
   it("no toast for what was already waiting, and a toast when something new needs the shopper", async () => {
     asUser();
     fixtures.current.orders = [order({ status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 })];
     show();
-    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 for you to do"));
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 new"));
     expect(screen.queryByText(/Order TF-000001: Pay your shipping fee/)).toBeNull();      // it was already there when the page opened
     fixtures.current.orders = [order({ status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }), order({ id: "o2", order_number: "TF-000002", balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250 })];
     await act(async () => { realtime.fire("orders"); });
     expect(await screen.findByText("Order TF-000002: Send the remaining ₱250.00 of your payment.", {}, { timeout: 4000 })).toBeInTheDocument();
-    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 2 for you to do"));
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 2 new"));
   });
   it("the badge goes away by itself once the shopper has dealt with it", async () => {
     asUser();
     fixtures.current.orders = [order({ status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 })];
     show();
-    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 for you to do"));
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 new"));
     fixtures.current.orders = [order({ status: "paid", shipping_status: "pending_review", shipping_fee_php: 150 })];       // the receipt was sent
     await act(async () => { realtime.fire("orders"); });
     await waitFor(() => expect(bell().querySelector(".notif-badge")).toBeNull(), { timeout: 4000 });
@@ -63,7 +65,7 @@ beforeEach(() => { asGuest(); fixtures.current = { orders: [] }; notes.length = 
     asUser();
     fixtures.current.orders = [order({ status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 })];
     show();
-    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 for you to do"));
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 new"));
     expect(notes).toEqual([]);                                                                       // opening the page is silent
     fixtures.current.orders = [...fixtures.current.orders, order({ id: "o2", order_number: "TF-000002", balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250 })];
     await act(async () => { realtime.fire("orders"); });
@@ -80,5 +82,53 @@ beforeEach(() => { asGuest(); fixtures.current = { orders: [] }; notes.length = 
     await act(async () => { realtime.fire("orders"); });
     await screen.findByText(/Pay your shipping fee/, {}, { timeout: 4000 });                         // the toast still appears
     expect(notes).toEqual([]);
+  });
+
+  it("looking at the bell's list reads it: the number goes away, the list stays, and a newer one brings the number back", async () => {
+    asUser();
+    fixtures.current.orders = [fee()];
+    show();
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 new"));
+    const user = userEvent.setup();
+    await user.click(bell());                                                                   // open the list
+    expect(screen.getByRole("link", { name: /Pay your shipping fee of ₱150.00/ })).toBeInTheDocument();
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, nothing new"));    // seen: no number
+    await user.keyboard("{Escape}");
+    expect(JSON.parse(localStorage.getItem("shopper_todos_seen:u1"))).toHaveLength(1);       // remembered
+    fixtures.current.orders = [fee(), order({ id: "o2", order_number: "TF-000002", balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250 })];
+    await act(async () => { realtime.fire("orders"); });
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 new"), { timeout: 4000 });     // only the newcomer counts
+  });
+  it("remembers what was seen after a reload", async () => {
+    asUser();
+    fixtures.current.orders = [fee()];
+    const first = show();
+    const user = userEvent.setup();
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 new"));
+    await user.click(bell());
+    first.unmount();
+    show();
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, nothing new"));
+  });
+  it("what the shopper dealt with is forgotten, so the same thing coming back counts as new", async () => {
+    asUser();
+    fixtures.current.orders = [fee()];
+    show();
+    const user = userEvent.setup();
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 new"));
+    await user.click(bell()); await user.keyboard("{Escape}");
+    fixtures.current.orders = [fee({ shipping_status: "pending_review" })];                      // the receipt was sent: nothing to do
+    await act(async () => { realtime.fire("orders"); });
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("shopper_todos_seen:u1"))).toHaveLength(0), { timeout: 4000 });
+    fixtures.current.orders = [fee({ shipping_note: "Blurry" })];                                // it was sent back: to do again
+    await act(async () => { realtime.fire("orders"); });
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, 1 new"), { timeout: 4000 });
+  });
+  it("opening the order itself counts as seeing what it needs", async () => {
+    asUser();
+    fixtures.current.orders = [fee()];
+    render(<MemoryRouter initialEntries={["/orders/o1"]}><LiveRegionProvider><ToastProvider><Routes><Route element={<AttendeeLayout />}><Route path="/orders/:id" element={<h1>An order</h1>} /></Route></Routes></ToastProvider></LiveRegionProvider></MemoryRouter>);
+    await waitFor(() => expect(bell()).toHaveAccessibleName("Notifications, nothing new"));
+    expect(bell().querySelector(".notif-badge")).toBeNull();
   });
 });

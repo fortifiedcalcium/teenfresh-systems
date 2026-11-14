@@ -436,47 +436,16 @@ describe("attendee pages", () => {
       expect(await screen.findByText("LBC777", {}, { timeout: 4000 })).toBeInTheDocument();             // the tracking number shows up by itself
       b.unmount();
     });
-    it("My orders: a list of what the shopper has to do, with a link to each", async () => {
+    it("My orders no longer has a to-do box: that list lives only in the notification bell", async () => {
       asUser();
-      fixtures.current.orders = [
-        { ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150, shipping_note: "Blurry receipt" },
-        { ...order, id: "o5", order_number: "TF-000005", balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250, balance_note: "Short by 250" },
-        { ...order, id: "o6", order_number: "TF-000006", preferred_courier: null },
-      ];
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }, { ...order, id: "o5", order_number: "TF-000005", balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250 }];
       const { container } = page("/my-orders", <MyOrders />);
-      const box = (await screen.findByRole("heading", { level: 2, name: "What you need to do" })).closest("section");
-      const rows = within(box).getAllByRole("listitem").map((li) => li.textContent.replace(/\s+/g, " ").trim());
-      expect(rows[0]).toContain("Pay your shipping fee of ₱150.00.");                             // the payments first, in the order of the orders
-      expect(rows[0]).toContain("Your last receipt was sent back: Blurry receipt");
-      expect(rows[1]).toContain("Send the remaining ₱250.00 of your payment.");
-      expect(rows[1]).toContain("Short by 250");
-      expect(rows[2]).toContain("Choose the courier you would like (optional).");                  // the optional one last
-      expect(within(box).getByRole("link", { name: "Go to order TF-000005" })).toHaveAttribute("href", "/orders/o5");
+      await screen.findByRole("heading", { level: 2, name: "Order TF-000001" });
+      expect(screen.queryByRole("heading", { name: "What you need to do" })).toBeNull();
+      expect(screen.queryByText(/Pay your shipping fee of/)).toBeNull();
+      expect(screen.queryByRole("switch")).toBeNull();                                            // the sound switch moved to the bell
+      expect(screen.getByText("Payment is short")).toBeInTheDocument();                           // each order still shows its status
       expect(await check(container)).toHaveNoViolations();
-    });
-    it("My orders: the shopper can switch the sound off, and it is remembered separately from the admin's", async () => {
-      asUser();
-      localStorage.clear();
-      const user = userEvent.setup();
-      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }];
-      page("/my-orders", <MyOrders />);
-      const sw = await screen.findByRole("switch", { name: "Play a sound when something new needs me" });
-      expect(sw).toBeChecked();                                                                    // on by default
-      await user.click(sw);
-      expect(sw).not.toBeChecked();
-      expect(localStorage.getItem("shopper_notify_sound")).toBe("off");
-      expect(localStorage.getItem("admin_notify_sound")).toBeNull();                              // the admin's own switch is untouched
-    });
-    it("My orders: says so when nothing is waiting on the shopper, and the list follows live changes", async () => {
-      asUser();
-      fixtures.current.orders = [{ ...order, status: "pending", preferred_courier: "LBC" }];
-      page("/my-orders", <MyOrders />);
-      await screen.findByRole("heading", { level: 2, name: "What you need to do" });
-      expect(screen.getByText("You are all set. Nothing is waiting on you right now.")).toBeInTheDocument();
-      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }];
-      realtime.fire("orders");
-      expect(await screen.findByText("Pay your shipping fee of ₱150.00.", {}, { timeout: 4000 })).toBeInTheDocument();
-      expect(screen.queryByText("You are all set. Nothing is waiting on you right now.")).toBeNull();
     });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();
