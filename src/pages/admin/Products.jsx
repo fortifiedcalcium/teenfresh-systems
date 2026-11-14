@@ -9,6 +9,7 @@ import Modal from "../../components/Modal.jsx";
 import Field from "../../components/Field.jsx";
 import InputWithAction from "../../components/InputWithAction.jsx";
 import { groupVariations } from "../../lib/useShop.js";
+import { COMBOS_MAX, LAYERS_MAX, LAYER_VALUES_MAX, buildCombos, comboKeyOf, finalVariations, normalizeLayers, validateLayers } from "../../lib/variations.js";
 import Alert from "../../components/Alert.jsx";
 import BoldTextarea from "../../components/BoldTextarea.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
@@ -16,8 +17,14 @@ import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconBag, IconClose, IconImage, IconPencil, IconPlus, IconSave, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
-const blank = () => ({ id: null, artist: "", title: "", price: "", discount_percent: "0", pre_order: false, is_new: true, categories: [], image_path: null, image_alt: "", active: true, info_images: [], variations: [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, ""])) });
-const toForm = (p, versions = []) => ({ ...blank(), ...p, variations: versions.map((v) => ({ key: v.id, id: v.id, name: v.name, price: v.price == null ? "" : String(v.price) })), info_images: p.info_images || [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, p[k] || ""])), price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] });
+const blank = () => ({ id: null, artist: "", title: "", price: "", discount_percent: "0", pre_order: false, is_new: true, categories: [], image_path: null, image_alt: "", active: true, info_images: [], variations: [], layers: [], combos: {}, ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, ""])) });
+const toForm = (p, versions = []) => {
+  const layers = (p.variation_layers || []).map((l, i) => ({ key: `l${i}`, name: l.name, values: (l.values || []).join(", ") }));
+  const norm = normalizeLayers(layers);
+  const combos = {};
+  if (norm.length) for (const v of versions) { const k = comboKeyOf(v.options, norm); if (k) combos[k] = { id: v.id, price: v.price == null ? "" : String(v.price), active: v.active !== false }; }
+  return { ...blank(), ...p, layers, combos, variations: norm.length ? [] : versions.map((v) => ({ key: v.id, id: v.id, name: v.name, price: v.price == null ? "" : String(v.price) })), info_images: p.info_images || [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, p[k] || ""])), price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] };
+};
 const ACCEPT = Object.keys(IMAGE_TYPES).join(",");
 
 function Thumb({ p, className = "" }) {
@@ -142,12 +149,13 @@ export default function Products() {
       if (saved.error) throw new Error(saved.error.message);
       const productId = form.id || saved.data?.id;
       // the product is saved; now its variations: remove the ones taken out, update the ones kept, add the new ones, in the order shown
-      const keep = new Set(form.variations.filter((v) => v.id).map((v) => v.id));
+      const list = finalVariations(form);                                       // the combinations of the layers, or the simple list
+      const keep = new Set(list.filter((v) => v.id).map((v) => v.id));
       const gone = (versions[form.id] || []).filter((v) => !keep.has(v.id)).map((v) => v.id);
       const failed = [];
       if (gone.length) { const r = await supabase.from("product_variations").delete().in("id", gone); if (r.error) failed.push(r.error.message); }
-      for (const [i, v] of form.variations.entries()) {
-        const body = { name: v.name.trim(), price: String(v.price).trim() === "" ? null : Number(v.price), position: i };
+      for (const [i, v] of list.entries()) {
+        const body = { name: v.name.trim(), price: String(v.price).trim() === "" ? null : Number(v.price), position: i, active: v.active, options: v.options };
         const r = v.id ? await supabase.from("product_variations").update(body).eq("id", v.id) : await supabase.from("product_variations").insert({ ...body, product_id: productId });
         if (r.error) failed.push(r.error.message);
       }
@@ -264,6 +272,8 @@ export default function Products() {
               <legend className="label">Variations <span className="font-normal text-ink-muted">(versions, sizes, colours: optional)</span></legend>
               <p className="hint">If you add variations, shoppers must pick one before they can buy. Leave a price empty to use this product's price.</p>
               {errors.variations && <p id="p-variations-err" role="alert" className="field-msg"><span className="error-icon error-icon--sm" aria-hidden="true">!</span>{errors.variations}</p>}
+              {form.layers.length === 0 && (
+                <>
               {form.variations.length > 0 && (
                 <ul className="space-y-2">
                   {form.variations.map((v, i) => (
@@ -283,6 +293,54 @@ export default function Products() {
               )}
               <button type="button" id={form.variations.length === 0 ? "p-variations" : undefined} className="btn-secondary" disabled={form.variations.length >= VARIATIONS_MAX}
                 onClick={() => setForm((f) => ({ ...f, variations: [...f.variations, { key: `n${newKey.current++}`, id: null, name: "", price: "" }] }))}><IconPlus />Add a variation</button>
+                </>
+              )}
+              {(() => {
+                const layersN = normalizeLayers(form.layers);
+                const rows = layersN.length && !validateLayers(layersN) ? buildCombos(layersN) : [];
+                const setLayer = (key, patch) => setForm((f) => ({ ...f, layers: f.layers.map((l) => (l.key === key ? { ...l, ...patch } : l)) }));
+                const setCombo = (key, patch) => setForm((f) => ({ ...f, combos: { ...f.combos, [key]: { id: null, price: "", active: true, ...(f.combos[key] || {}), ...patch } } }));
+                return (
+                  <div className="space-y-3 rounded-lg border border-brand-sky p-3">
+                    <h3 className="font-bold">Layers <span className="font-normal text-ink-muted">(for products with combinations, like a phone)</span></h3>
+                    <p className="hint">Add a layer for each choice, such as Color and Storage, and type its values separated by commas (up to {LAYER_VALUES_MAX}). Shoppers pick one value in each layer, and every combination can have its own price. Once a layer has values, it replaces the simple list above.</p>
+                    {form.layers.map((l, i) => (
+                      <div key={l.key} className="flex flex-wrap items-end gap-2">
+                        <div className="w-40">
+                          <label className="label" htmlFor={`p-layer-name-${l.key}`}>Layer {i + 1} name</label>
+                          <input id={`p-layer-name-${l.key}`} className="input" maxLength={30} value={l.name} placeholder="For example Color" onChange={(e) => setLayer(l.key, { name: e.target.value })} />
+                        </div>
+                        <div className="min-w-[12rem] flex-1">
+                          <label className="label" htmlFor={`p-layer-values-${l.key}`}>Values of layer {i + 1}</label>
+                          <input id={`p-layer-values-${l.key}`} className="input" value={l.values} placeholder="Black, White, Gold" onChange={(e) => setLayer(l.key, { values: e.target.value })} />
+                        </div>
+                        <button type="button" className="btn-secondary" onClick={() => setForm((f) => ({ ...f, layers: f.layers.filter((x) => x.key !== l.key) }))}><IconTrash />Remove{" "}<span className="sr-only">layer {l.name || i + 1}</span></button>
+                      </div>
+                    ))}
+                    <button type="button" className="btn-secondary" disabled={form.layers.length >= LAYERS_MAX} onClick={() => setForm((f) => ({ ...f, layers: [...f.layers, { key: `nl${newKey.current++}`, name: "", values: "" }] }))}><IconPlus />Add a layer</button>
+                    {rows.length > 0 && (
+                      <div>
+                        <h4 className="mb-1 text-sm font-bold">Combinations ({rows.length}, the most is {COMBOS_MAX})</h4>
+                        <ul className="space-y-1">
+                          {rows.map((r) => {
+                            const c = form.combos[r.key] || {};
+                            const on = c.active !== false;
+                            return (
+                              <li key={r.key} className="flex flex-wrap items-center gap-2 rounded-md bg-brand-ivory px-3 py-2 text-sm">
+                                <span className="min-w-[10rem] flex-1 font-semibold">{r.name}</span>
+                                <label className="flex items-center gap-2"><span className="sr-only">Price of {r.name}, PHP</span>
+                                  <input className="input w-36" inputMode="decimal" aria-label={`Price of ${r.name}, PHP`} placeholder="Same as product" value={c.price ?? ""} onChange={(e) => setCombo(r.key, { price: e.target.value })} />
+                                </label>
+                                <label className="flex min-h-target items-center gap-2"><input type="checkbox" className="check" checked={on} onChange={(e) => setCombo(r.key, { active: e.target.checked })} />For sale<span className="sr-only">: {r.name}</span></label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </fieldset>
 
             <div className="flex flex-wrap gap-x-6 gap-y-1">

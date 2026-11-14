@@ -6,6 +6,7 @@ import { orderArgs, priceOrder, validateCheckout } from "../../lib/orders.js";
 import { useCart, useCartLines } from "../../lib/cart.jsx";
 import { useCartProducts, useShopSettings } from "../../lib/useShop.js";
 import { peso, receiptPath, validateReceiptFile } from "../../lib/payment.js";
+import { variationLabel } from "../../lib/variations.js";
 import { productImageUrl } from "../../lib/products.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import Alert from "../../components/Alert.jsx";
@@ -135,7 +136,7 @@ export default function Checkout() {
           <h2 className="text-lg font-black">Your order</h2>
           <ul className="space-y-2">
             {lines.map((l) => (
-              <li key={l.key} className="flex items-center gap-3 text-sm"><LineThumb p={l} /><span className="min-w-0 flex-1"><span className="block break-words font-bold">{l.title}</span>{l.variation && <span className="block font-semibold">Version: {l.variation.name}</span>}<span className="text-ink-muted">{peso(l.price)} × {l.quantity}</span></span></li>
+              <li key={l.key} className="flex items-center gap-3 text-sm"><LineThumb p={l} /><span className="min-w-0 flex-1"><span className="block break-words font-bold">{l.title}</span>{l.variation && <span className="block font-semibold">{l.variation.options ? variationLabel(l.variation) : `Version: ${l.variation.name}`}</span>}<span className="text-ink-muted">{peso(l.price)} × {l.quantity}</span></span></li>
             ))}
           </ul>
           <Totals totals={totals} />

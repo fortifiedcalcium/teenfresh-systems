@@ -101,6 +101,7 @@ beforeAll(async () => {
   await db.exec(read("027_payment_references.sql"));
   await db.exec(read("028_admin_delete_orders.sql"));
   await db.exec(read("029_product_variations.sql"));
+  await db.exec(read("030_variation_layers.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1221,6 +1222,37 @@ describe("029 product variations", () => {
     await db.query("insert into public.product_variations (product_id, name) values ($1, 'Gone soon')", [tmp]);
     await db.query("delete from public.products where id = $1", [tmp]);
     expect((await db.query("select count(*)::int as n from public.product_variations where product_id = $1", [tmp])).rows[0].n).toBe(0);
+  });
+});
+
+describe("030 layers of variations", () => {
+  it("a phone: every combination is bought and priced as before, and the order keeps its name", async () => {
+    await asUser("admin");
+    const phone = (await db.query(`insert into public.products (artist, title, price, variation_layers) values ('Maker', 'Phone X', 30000,
+      '[{"name":"Color","values":["Black","White"]},{"name":"Storage","values":["128GB","256GB"]}]'::jsonb) returning id`)).rows[0].id;
+    const mk = async (c, s, price, active = true) => (await db.query("insert into public.product_variations (product_id, name, price, options, active) values ($1, $2, $3, $4::jsonb, $5) returning id",
+      [phone, `${c} / ${s}`, price, JSON.stringify({ Color: c, Storage: s }), active])).rows[0].id;
+    const v = { b128: await mk("Black", "128GB", null), b256: await mk("Black", "256GB", 35000), w128: await mk("White", "128GB", null), w256: await mk("White", "256GB", 35000, false) };
+    expect((await db.query("select variation_layers from public.products where id = $1", [phone])).rows[0].variation_layers).toHaveLength(2);
+    await asUser("alice");
+    const sees = (await db.query("select name from public.product_variations where product_id = $1 order by name", [phone])).rows.map((r) => r.name);
+    expect(sees).toEqual(["Black / 128GB", "Black / 256GB", "White / 128GB"]);                    // the one not for sale is hidden
+    const place = (lines, ref) => db.query("select public.place_order($1::jsonb,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r",
+      [JSON.stringify(lines), "P Person", "alice@example.com", "09171234567", "1 Phone St.", "Makati City, Metro Manila (NCR)", "1210", null, "P P.", ref, `${ids.alice}/${randomUUID()}.jpg`]).then((r) => r.rows[0].r);
+    await fails(place([{ product_id: phone, variation_id: v.w256, quantity: 1 }], "PH-1"), "VARIATION_REQUIRED");              // not for sale
+    const r = await place([{ product_id: phone, variation_id: v.b256, quantity: 1 }, { product_id: phone, variation_id: v.w128, quantity: 2 }], "PH-2");
+    expect(Number(r.total_php)).toBe(35000 + 2 * 30000);
+    await asUser("admin");
+    const lines = (await db.query("select variation_name, unit_price_php, quantity from public.order_items where order_id = $1 order by variation_name", [r.id])).rows;
+    expect(lines.map((l) => [l.variation_name, Number(l.unit_price_php), l.quantity])).toEqual([["Black / 256GB", 35000, 1], ["White / 128GB", 30000, 2]]);
+  });
+  it("the layers and the choices are stored in the right shape", async () => {
+    await asUser("admin");
+    await fails(db.query("insert into public.products (artist, title, price, variation_layers) values ('M', 'Bad', 1, '{}'::jsonb)"), "products_variation_layers_check");        // must be a list
+    await fails(db.query("insert into public.products (artist, title, price, variation_layers) values ('M', 'Bad2', 1, '[{},{},{},{}]'::jsonb)"), "products_variation_layers_check");   // at most 3 layers
+    const p = (await db.query("select id from public.products where title = 'Phone X'")).rows[0].id;
+    await fails(db.query("insert into public.product_variations (product_id, name, options) values ($1, 'Odd', '[1]'::jsonb)", [p]), "product_variations_options_check");
+    expect((await db.query("select count(*)::int as n from public.products where variation_layers = '[]'::jsonb")).rows[0].n).toBeGreaterThan(0);                                   // the default is none
   });
 });
 

@@ -618,6 +618,123 @@ describe("attendee pages", () => {
       expect(w.find((x) => x.op === "update").args[0]).toMatchObject({ name: "Version A2", price: null, position: 0 });
       expect(w.find((x) => x.op === "insert").args[0]).toMatchObject({ product_id: "p1", name: "Version C", price: null, position: 1 });
     });
+    const phoneLayers = [{ name: "Color", values: ["Black", "White"] }, { name: "Storage", values: ["128GB", "256GB"] }];
+    const phoneRows = [
+      { id: "bx1", product_id: "p1", name: "Black / 128GB", price: null, options: { Color: "Black", Storage: "128GB" }, position: 0, active: true },
+      { id: "bx2", product_id: "p1", name: "Black / 256GB", price: 35000, options: { Color: "Black", Storage: "256GB" }, position: 1, active: true },
+      { id: "wx1", product_id: "p1", name: "White / 128GB", price: null, options: { Color: "White", Storage: "128GB" }, position: 2, active: true },
+      // White / 256GB is not for sale: it is not in the list a shopper gets
+    ];
+    it("Product page: layers like a phone, pick the Color then the Storage; what is not for sale is greyed out and the right combination is bought", async () => {
+      asUser();
+      localStorage.clear();
+      const user = userEvent.setup();
+      fixtures.current.products = [{ ...prod, price: 30000, variation_layers: [{ name: "Color", values: ["Black", "White", "Gold"] }, { name: "Storage", values: ["128GB", "256GB"] }] }];
+      fixtures.current.product_variations = phoneRows;                                                  // Gold has no combination for sale, and neither does White with 256GB
+      const { container } = page("/shop/:id", <CartProvider><ProductDetail /></CartProvider>, "/shop/p1");
+      const color = await screen.findByRole("group", { name: /Choose Color/ });
+      const storage = screen.getByRole("group", { name: /Choose Storage/ });
+      expect(await check(container)).toHaveNoViolations();
+      expect(screen.getByText("From")).toBeInTheDocument();                                          // nothing picked: the prices differ, so "From"
+      expect(within(color).getByRole("radio", { name: /Gold/ })).toBeDisabled();                    // in no combination for sale
+      expect(within(color).getByText("(not available)")).toBeInTheDocument();
+      // asking to buy with nothing picked says what is missing
+      await user.click(screen.getByRole("button", { name: /Add to cart/ }));
+      expect(await screen.findByText("Choose Color and Storage first.")).toBeInTheDocument();
+      // White first: 256GB does not go with it, and says so, but can still be picked
+      await user.click(within(color).getByRole("radio", { name: /^White/ }));
+      expect(within(storage).getByRole("radio", { name: /256GB/ })).toBeEnabled();
+      expect(within(storage).getByText("(not with White)")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: /Add to cart/ }));
+      expect(await screen.findByText("Choose Storage first.")).toBeInTheDocument();                  // not complete yet
+      // choosing 256GB drops the White it does not go with; then Black completes a real combination with its own price
+      await user.click(within(storage).getByRole("radio", { name: /256GB/ }));
+      expect(within(color).getByRole("radio", { name: /^White/ })).not.toBeChecked();
+      expect(screen.queryByText("Choose Storage first.")).toBeNull();
+      await user.click(within(color).getByRole("radio", { name: /^Black/ }));
+      expect(screen.queryByText("From")).toBeNull();
+      expect(screen.getAllByText("₱35,000.00").length).toBeGreaterThan(0);
+      expect(screen.getByText(/· Color: Black · Storage: 256GB/)).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: /Add to cart/ }));
+      await waitFor(() => expect(JSON.parse(localStorage.getItem("teenfresh-cart"))).toEqual([{ id: "p1", vid: "bx2", qty: 1 }]));
+    });
+    it("Product page: switching the Color to one the picked Storage does not go with clears the Storage", async () => {
+      asUser();
+      const user = userEvent.setup();
+      fixtures.current.products = [{ ...prod, price: 30000, variation_layers: phoneLayers }];
+      fixtures.current.product_variations = phoneRows;
+      page("/shop/:id", <CartProvider><ProductDetail /></CartProvider>, "/shop/p1");
+      const color = await screen.findByRole("group", { name: /Choose Color/ });
+      const storage = screen.getByRole("group", { name: /Choose Storage/ });
+      await user.click(within(color).getByRole("radio", { name: /^Black/ }));
+      await user.click(within(storage).getByRole("radio", { name: /^256GB/ }));                          // Black + 256GB: fine
+      await user.click(within(color).getByRole("radio", { name: /White/ }));                            // White has no 256GB: that pick is dropped
+      expect(within(storage).getByRole("radio", { name: /^256GB/ })).not.toBeChecked();
+      expect(within(color).getByRole("radio", { name: /White/ })).toBeChecked();
+      expect(within(storage).getByRole("radio", { name: /^128GB/ })).toBeEnabled();
+    });
+    it("Cart: a combination reads Color: Black · Storage: 256GB", async () => {
+      fixtures.current.products = [{ ...prod, price: 30000, variation_layers: phoneLayers }];
+      fixtures.current.product_variations = phoneRows;
+      localStorage.setItem("teenfresh-cart", JSON.stringify([{ id: "p1", vid: "bx2", qty: 1 }]));
+      page("/cart", <CartProvider><Cart /></CartProvider>);
+      expect(await screen.findByText("Color: Black · Storage: 256GB")).toBeInTheDocument();
+      expect(screen.getAllByText("₱35,000.00").length).toBeGreaterThan(0);
+    });
+    it("Products (admin): layers make the combinations; each gets a price and a for-sale tick, and they are saved with the product", async () => {
+      const user = userEvent.setup();
+      fixtures.current.products = [{ id: "p1", artist: "Maker", title: "Phone X", price: 30000, discount_percent: 0, pre_order: false, is_new: false, categories: [], image_path: null, image_alt: null, active: true, variation_layers: [] }];
+      fixtures.current.product_variations = [];
+      admin(<Products />); await settled("Shop products");
+      await user.click(await screen.findByRole("button", { name: /Edit Phone X/ }));
+      const dialog = screen.getByRole("dialog", { name: "Edit product" });
+      await user.click(within(dialog).getByRole("button", { name: "Add a layer" }));
+      await user.click(within(dialog).getByRole("button", { name: "Add a layer" }));
+      expect(within(dialog).queryByRole("button", { name: "Add a variation" })).toBeNull();               // the simple list steps aside once layers are used
+      await user.type(within(dialog).getByLabelText("Layer 1 name"), "Color");
+      await user.type(within(dialog).getByLabelText("Values of layer 1"), "Black, White");
+      await user.type(within(dialog).getByLabelText("Layer 2 name"), "Storage");
+      await user.type(within(dialog).getByLabelText("Values of layer 2"), "128GB, 256GB");
+      expect(await within(dialog).findByText(/Combinations \(4, the most is 60\)/)).toBeInTheDocument();
+      expect(within(dialog).getByText("White / 256GB")).toBeInTheDocument();
+      await user.type(within(dialog).getByLabelText("Price of Black / 256GB, PHP"), "35000");
+      await user.click(within(dialog).getByRole("checkbox", { name: /For sale.*White \/ 256GB/ }));          // not for sale
+      await user.click(within(dialog).getByRole("button", { name: "Save product" }));
+      await waitFor(() => expect(fixtures.current.writes?.filter((w) => w.table === "product_variations" && w.op === "insert")).toHaveLength(4));
+      const rows = fixtures.current.writes.filter((w) => w.table === "product_variations" && w.op === "insert").map((w) => w.args[0]);
+      expect(rows.map((r) => r.name)).toEqual(["Black / 128GB", "Black / 256GB", "White / 128GB", "White / 256GB"]);
+      expect(rows[1]).toMatchObject({ product_id: "p1", price: 35000, position: 1, active: true, options: { Color: "Black", Storage: "256GB" } });
+      expect(rows[3]).toMatchObject({ price: null, active: false });
+      const product = fixtures.current.writes.find((w) => w.table === "products" && w.op === "update").args[0];
+      expect(product.variation_layers).toEqual([{ name: "Color", values: ["Black", "White"] }, { name: "Storage", values: ["128GB", "256GB"] }]);
+    });
+    it("Products (admin): an empty layer is refused with a reason, and nothing is saved", async () => {
+      const user = userEvent.setup();
+      fixtures.current.products = [{ id: "p1", artist: "Maker", title: "Phone X", price: 30000, discount_percent: 0, pre_order: false, is_new: false, categories: [], image_path: null, image_alt: null, active: true, variation_layers: [] }];
+      fixtures.current.product_variations = [];
+      admin(<Products />); await settled("Shop products");
+      await user.click(await screen.findByRole("button", { name: /Edit Phone X/ }));
+      const dialog = screen.getByRole("dialog", { name: "Edit product" });
+      await user.click(within(dialog).getByRole("button", { name: "Add a layer" }));
+      await user.type(within(dialog).getByLabelText("Layer 1 name"), "Color");
+      await user.click(within(dialog).getByRole("button", { name: "Save product" }));
+      expect((await within(dialog).findAllByText(/Add at least one value to "Color"/)).length).toBeGreaterThan(0);
+      expect(fixtures.current.writes?.some((w) => w.table === "product_variations" || w.table === "products")).toBeFalsy();
+    });
+    it("Products (admin): reopening a product with layers shows its layers and combinations with their saved prices", async () => {
+      const user = userEvent.setup();
+      fixtures.current.products = [{ id: "p1", artist: "Maker", title: "Phone X", price: 30000, discount_percent: 0, pre_order: false, is_new: false, categories: [], image_path: null, image_alt: null, active: true, variation_layers: phoneLayers }];
+      fixtures.current.product_variations = [...phoneRows, { id: "wx2", product_id: "p1", name: "White / 256GB", price: 36000, options: { Color: "White", Storage: "256GB" }, position: 3, active: false }];
+      admin(<Products />); await settled("Shop products");
+      await user.click(await screen.findByRole("button", { name: /Edit Phone X/ }));
+      const dialog = screen.getByRole("dialog", { name: "Edit product" });
+      expect(within(dialog).getByLabelText("Layer 1 name")).toHaveValue("Color");
+      expect(within(dialog).getByLabelText("Values of layer 2")).toHaveValue("128GB, 256GB");
+      expect(within(dialog).getByLabelText("Price of Black / 256GB, PHP")).toHaveValue("35000");
+      expect(within(dialog).getByLabelText("Price of White / 256GB, PHP")).toHaveValue("36000");
+      expect(within(dialog).getByRole("checkbox", { name: /For sale.*White \/ 256GB/ })).not.toBeChecked();
+      expect(within(dialog).getByRole("checkbox", { name: /For sale.*Black \/ 256GB/ })).toBeChecked();
+    });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();
       fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150, preferred_courier: "LBC" }];

@@ -31,11 +31,12 @@ export function productImageUrl(p) {
   try { return supabase.storage.from(BUCKET).getPublicUrl(p.image_path).data.publicUrl; } catch { return null; }
 }
 
+import { COMBOS_MAX, finalVariations, normalizeLayers, validateLayers } from "./variations.js";
 export const VARIATIONS_MAX = 20;
 /** A problem with a product's versions (variations), in plain words, or "" when they are fine. Each is { name, price } with an optional price. */
-export function validateVariations(list) {
+export function validateVariations(list, max = VARIATIONS_MAX) {
   const seen = new Set();
-  if (list.length > VARIATIONS_MAX) return `A product can have up to ${VARIATIONS_MAX} variations.`;
+  if (list.length > max) return `A product can have up to ${max} variations.`;
   for (const v of list) {
     const name = String(v.name ?? "").trim();
     if (!name) return "Every variation needs a name, or remove the empty one.";
@@ -58,7 +59,8 @@ export function validateProduct(f) {
   if (!/^\d+(\.\d{1,2})?$/.test(String(f.price).trim()) || Number(f.price) <= 0) e.price = "Enter a price in pesos above 0, with at most 2 decimals";
   const d = String(f.discount_percent).trim();
   if (d !== "" && (!/^\d+$/.test(d) || Number(d) > 90)) e.discount_percent = "Enter a whole number from 0 to 90";
-  const vmsg = validateVariations(f.variations || []);
+  const layers = normalizeLayers(f.layers);
+  const vmsg = layers.length ? validateLayers(layers) || validateVariations(finalVariations(f), COMBOS_MAX) : validateVariations(f.variations || []);       // layers make the combinations; without them it is the simple list
   if (vmsg) e.variations = vmsg;
   for (const [k, label] of INFO_SECTIONS) if ((f[k] || "").length > INFO_MAX) e[k] = `${label} can be ${INFO_MAX} characters at most`;
   return e;
@@ -68,6 +70,7 @@ export function productRow(f) {
   return {
     artist: f.artist.trim(), title: f.title.trim(), price: Number(f.price), discount_percent: String(f.discount_percent).trim() === "" ? 0 : Number(f.discount_percent),
     ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, (f[k] || "").trim() || null])),
+    variation_layers: normalizeLayers(f.layers),
     pre_order: f.pre_order, is_new: f.is_new, categories: f.categories, image_alt: f.image_alt.trim() || null, active: f.active, updated_at: new Date().toISOString(),
   };
 }

@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabaseClient.js";
 import { INFO_SECTIONS, productImageUrl } from "../../lib/products.js";
 import { peso } from "../../lib/payment.js";
 import { lineKey, useCart } from "../../lib/cart.jsx";
+import { normalizeLayers, variationLabel } from "../../lib/variations.js";
 import { useToast } from "../../components/Toast.jsx";
 import Alert from "../../components/Alert.jsx";
 import FormattedText from "../../components/FormattedText.jsx";
@@ -52,18 +53,19 @@ export default function ProductDetail() {
   const [error, setError] = useState("");
   const [qty, setLocalQty] = useState(1);
   const [variations, setVariations] = useState([]);    // this product's versions, in the admin's order
-  const [choice, setChoice] = useState("");             // the id of the version the shopper picked
+  const [choice, setChoice] = useState("");             // the id of the version the shopper picked (a simple product)
+  const [picks, setPicks] = useState({});               // the value picked in each layer, like { Color: "Black" } (a product with layers)
   const [pickError, setPickError] = useState(false);
   const group = useRef(null);
 
   useEffect(() => {
     let alive = true;
-    setProduct(undefined); setError(""); setLocalQty(1); setVariations([]); setChoice(""); setPickError(false);
+    setProduct(undefined); setError(""); setLocalQty(1); setVariations([]); setChoice(""); setPicks({}); setPickError(false);
     supabase.from("product_variations").select("*").eq("product_id", id).eq("active", true).order("position").then(({ data }) => {
       if (!alive) return;
       const list = data || [];
       setVariations(list);
-      if (list.length === 1) setChoice(list[0].id);                          // only one version: no need to ask
+      if (list.length === 1) { setChoice(list[0].id); if (list[0].options) setPicks(list[0].options); }                          // only one version: no need to ask
     });
     supabase.from("products").select("*").eq("active", true).order("created_at", { ascending: false }).then(({ data, error: err }) => {
       if (!alive) return;
@@ -89,15 +91,35 @@ export default function ProductDetail() {
 
   const p = product;
   const src = productImageUrl(p);
-  const chosen = variations.find((v) => v.id === choice) || null;
+  // layers (like Color, then Storage): the shopper picks a value in each, and the matching combination is what they buy
+  const layers = normalizeLayers(p.variation_layers || []);
+  const layered = layers.length > 0 && variations.some((v) => v.options);
+  const fits = (v) => layers.every((l) => picks[l.name] === undefined || v.options?.[l.name] === picks[l.name]);
+  const matching = layered ? variations.filter((v) => fits(v)) : variations;                          // the combinations still possible with what is picked so far
+  const selectedId = layered ? (layers.every((l) => picks[l.name]) ? matching.find((v) => layers.every((l) => v.options?.[l.name] === picks[l.name]))?.id || "" : "") : choice;
+  const chosen = variations.find((v) => v.id === selectedId) || null;
+  // A value that is in no combination for sale at all is greyed out. One that exists, but not together with what is picked in the other layers,
+  // says so and can still be picked: that clears the pick it does not go with (the way phone shops work).
+  const exists = (layer, value) => variations.some((v) => v.options?.[layer.name] === value);
+  const goesWith = (layer, value) => variations.some((v) => v.options?.[layer.name] === value && layers.every((l) => l.name === layer.name || picks[l.name] === undefined || v.options?.[l.name] === picks[l.name]));
+  const clash = (layer) => layers.filter((l) => l.name !== layer.name && picks[l.name] !== undefined).map((l) => picks[l.name]).join(" and ");
+  const pick = (layer, value) => {
+    setPickError(false);
+    setPicks((cur) => {
+      const next = { ...cur, [layer.name]: value };
+      for (const l of layers) if (l.name !== layer.name && next[l.name] !== undefined && !variations.some((v) => layers.every((m) => next[m.name] === undefined || v.options?.[m.name] === next[m.name]))) delete next[l.name];   // drop a pick the new one does not go with
+      return next;
+    });
+  };
+  const missing = layers.filter((l) => picks[l.name] === undefined).map((l) => l.name);
   const unit = chosen?.price != null ? Number(chosen.price) : unitPrice(p);
-  const prices = variations.map((v) => (v.price != null ? Number(v.price) : unitPrice(p)));
+  const prices = (layered ? matching : variations).map((v) => (v.price != null ? Number(v.price) : unitPrice(p)));
   const varies = prices.length > 0 && Math.min(...prices) !== Math.max(...prices);
   const total = unit * qty;
   // a product with versions needs one picked before it can go in the cart
-  const needPick = () => { if (variations.length && !choice) { setPickError(true); group.current?.querySelector("input")?.focus(); return true; } return false; };
-  const addToCart = () => { add(p.id, choice || null); if (qty > 1) setQty(lineKey({ id: p.id, vid: choice || null }), qty); };   // add() puts one in; setQty tops it up to the chosen amount
-  const onAdd = () => { if (needPick()) return; addToCart(); toast(`${p.title}${chosen ? ` (${chosen.name})` : ""} added to your cart`, "success"); };
+  const needPick = () => { if (variations.length && !selectedId) { setPickError(true); group.current?.querySelector("input:not(:disabled)")?.focus(); return true; } return false; };
+  const addToCart = () => { add(p.id, selectedId || null); if (qty > 1) setQty(lineKey({ id: p.id, vid: selectedId || null }), qty); };   // add() puts one in; setQty tops it up to the chosen amount
+  const onAdd = () => { if (needPick()) return; addToCart(); toast(`${p.title}${chosen ? ` (${variationLabel(chosen)})` : ""} added to your cart`, "success"); };
   const onBuy = () => { if (needPick()) return; addToCart(); navigate("/checkout"); };
 
   return (
@@ -130,23 +152,43 @@ export default function ProductDetail() {
           )}
 
           {variations.length > 0 && (
-            <fieldset className="pd-variations" ref={group} aria-describedby={pickError ? "pick-err" : undefined}>
-              <legend className="pd-label">Choose a version <span className="font-normal text-ink-muted">(required)</span></legend>
-              <div className="flex flex-wrap gap-2">
-                {variations.map((v) => (
-                  <label key={v.id} className="flex min-h-target cursor-pointer items-center gap-2 rounded-lg border border-link bg-white px-3 py-2 text-sm font-semibold has-[:checked]:border-2 has-[:checked]:border-ink has-[:checked]:bg-brand-ivory">
-                    <input type="radio" name="variation" className="check" value={v.id} checked={choice === v.id} onChange={() => { setChoice(v.id); setPickError(false); }} />
-                    <span>{v.name}{v.price != null && Number(v.price) !== unitPrice(p) && <span className="ml-1 font-normal text-ink-muted">{peso(v.price)}</span>}</span>
-                  </label>
-                ))}
-              </div>
-              {pickError && <p id="pick-err" role="alert" className="field-msg"><span className="error-icon error-icon--sm" aria-hidden="true">!</span>Choose a version first.</p>}
-            </fieldset>
+            <div ref={group} className="space-y-3" aria-describedby={pickError ? "pick-err" : undefined}>
+              {layered ? layers.map((l) => (
+                <fieldset key={l.name} className="pd-variations">
+                  <legend className="pd-label">Choose {l.name} <span className="font-normal text-ink-muted">(required)</span></legend>
+                  <div className="flex flex-wrap gap-2">
+                    {l.values.map((val) => {
+                      const ok = exists(l, val);
+                      const fits = !ok || goesWith(l, val);
+                      return (
+                        <label key={val} className={`flex min-h-target items-center gap-2 rounded-lg border border-link bg-white px-3 py-2 text-sm font-semibold has-[:checked]:border-2 has-[:checked]:border-ink has-[:checked]:bg-brand-ivory ${!ok ? "cursor-not-allowed opacity-60" : fits ? "cursor-pointer" : "cursor-pointer opacity-70"}`}>
+                          <input type="radio" name={`layer-${l.name}`} className="check" value={val} checked={picks[l.name] === val} disabled={!ok} onChange={() => pick(l, val)} />
+                          <span>{val}{!ok && <span className="ml-1 font-normal text-ink-muted">(not available)</span>}{ok && !fits && <span className="ml-1 font-normal text-ink-muted">(not with {clash(l)})</span>}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              )) : (
+                <fieldset className="pd-variations">
+                  <legend className="pd-label">Choose a version <span className="font-normal text-ink-muted">(required)</span></legend>
+                  <div className="flex flex-wrap gap-2">
+                    {variations.map((v) => (
+                      <label key={v.id} className="flex min-h-target cursor-pointer items-center gap-2 rounded-lg border border-link bg-white px-3 py-2 text-sm font-semibold has-[:checked]:border-2 has-[:checked]:border-ink has-[:checked]:bg-brand-ivory">
+                        <input type="radio" name="variation" className="check" value={v.id} checked={choice === v.id} onChange={() => { setChoice(v.id); setPickError(false); }} />
+                        <span>{v.name}{v.price != null && Number(v.price) !== unitPrice(p) && <span className="ml-1 font-normal text-ink-muted">{peso(v.price)}</span>}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+              {pickError && <p id="pick-err" role="alert" className="field-msg"><span className="error-icon error-icon--sm" aria-hidden="true">!</span>{layered && missing.length ? `Choose ${missing.join(" and ")} first.` : "Choose a version first."}</p>}
+            </div>
           )}
           <div className="pd-option">
             <p className="pd-label" id="opt-label">Select option</p>
             <div className="pd-option-row" role="group" aria-labelledby="opt-label">
-              <span className="pd-option-name">{p.title}{chosen ? ` · ${chosen.name}` : ""}</span>
+              <span className="pd-option-name">{p.title}{chosen ? ` · ${variationLabel(chosen)}` : ""}</span>
               <div className="pd-qty">
                 <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setLocalQty((q) => Math.max(1, q - 1))}>−</button>
                 <output aria-live="polite" aria-label="Quantity">{qty}</output>

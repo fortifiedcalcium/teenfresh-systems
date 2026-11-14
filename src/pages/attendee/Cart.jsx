@@ -5,6 +5,7 @@ import { useCart, useCartLines } from "../../lib/cart.jsx";
 import { useCartProducts, useShopSettings } from "../../lib/useShop.js";
 import { productImageUrl } from "../../lib/products.js";
 import { peso } from "../../lib/payment.js";
+import { variationLabel } from "../../lib/variations.js";
 import { useAnnounce } from "../../a11y.jsx";
 import Alert from "../../components/Alert.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
@@ -52,7 +53,7 @@ export default function Cart() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-ink-muted">{l.artist}</p>
                     <h2 className="break-words text-base font-bold">{l.title}</h2>
-                    {l.variation && <p className="text-sm font-semibold">Version: {l.variation.name}</p>}
+                    {l.variation && <p className="text-sm font-semibold">{l.variation.options ? variationLabel(l.variation) : `Version: ${l.variation.name}`}</p>}
                     <p className="tabular-nums font-bold">{peso(l.price)}{l.discount_percent > 0 && <span className="ml-2 text-danger"><span className="sr-only">Discount </span>{l.discount_percent}%</span>}</p>
                   </div>
                   <div className="flex items-center gap-2">
