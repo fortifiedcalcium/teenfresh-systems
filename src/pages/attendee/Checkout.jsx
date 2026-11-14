@@ -38,7 +38,7 @@ export default function Checkout() {
   if (products === null || !settings) return <Loading label="Loading checkout…" className="p-12" />;
   if (items.length === 0 || lines.length === 0) return <Empty>Your cart is empty. <Link to="/shop">Browse the shop</Link></Empty>;
 
-  const totals = priceOrder(lines, settings);
+  const totals = priceOrder(lines);
   const paymentReady = Boolean(settings.gcash_account_number);
 
   const submit = async (ev) => {

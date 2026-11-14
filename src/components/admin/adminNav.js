@@ -18,6 +18,9 @@ export const TABS = [
 ];
 
 /** Everything, for the desktop sidebar. */
+import { SHOP_ENABLED } from "../../lib/features.js";
+const SHOP_PATHS = ["/admin/products", "/admin/orders", "/admin/order-emails"];
+
 export const SIDEBAR = [
   ["/admin", "Dashboard", IconDashboard, true],
   ["/admin/events", "Events", IconCalendar],
@@ -31,7 +34,7 @@ export const SIDEBAR = [
   ["/admin/order-emails", "Order emails", IconMail],
   ["/admin/users", "Admin users", IconShield],
   ["/admin/changelog", "Change log", IconHistory],
-];
+].filter(([to]) => SHOP_ENABLED || !SHOP_PATHS.includes(to));
 
 /** Page titles for the mobile top bar, and where its back button goes. */
 export const TITLES = [

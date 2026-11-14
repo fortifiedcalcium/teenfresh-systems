@@ -89,6 +89,7 @@ beforeAll(async () => {
   await db.exec(read("015_shop_gcash_qr.sql"));
   await db.exec(read("016_shop_pesos.sql"));
   await db.exec(read("017_product_info_images.sql"));
+  await db.exec(read("018_order_shipping_payment.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -782,7 +783,7 @@ describe("011 orders", () => {
     await asUser("alice");
     const r = await place("alice", items([p1, 2], [p2, 1]));
     expect(r.order_number).toMatch(/^TF-\d{6}$/);
-    expect(Number(r.total_php)).toBe(145);                     // 12.50 x 2 + 20 + 100 shipping
+    expect(Number(r.total_php)).toBe(45);                      // 12.50 x 2 + 20: items only, shipping is paid separately later
     const o = await row("select * from public.orders where id = $1", [r.id]);
     expect(o).toMatchObject({ status: "pending", phone: "+639171234567" });
     expect(Number(o.subtotal_php)).toBe(45);
@@ -834,6 +835,58 @@ describe("011 orders", () => {
     await fails(place("frank", items([p1, 1])), "PAYMENT_NOT_SET_UP");
     await asUser("admin");
     await db.query("update public.shop_settings set gcash_account_number = '09170000000' where id");
+  });
+  it("shipping is paid separately: the admin sets the fee, the shopper pays, the admin confirms, then it can ship", async () => {
+    const sql = (q, a) => db.query(q, a);
+    const rec = () => `${ids.carol}/${randomUUID()}.jpg`;
+    await asUser("carol");
+    const r = await place("carol", items([p1, 1]));
+    let o = await row("select * from public.orders where id = $1", [r.id]);
+    expect(o).toMatchObject({ shipping_status: "none", shipping_fee_php: null });
+    expect(Number(o.total_php)).toBe(12.5);                                           // charged for the items only
+    await asUser("carol");
+    await fails(sql("select public.set_order_shipping($1, 150)", [r.id]), "FORBIDDEN");        // not an admin
+    await asUser("admin");
+    await fails(sql("select public.set_order_shipping($1, 150)", [r.id]), "ORDER_NOT_PAID");   // the order is not confirmed yet
+    await sql("update public.orders set status = 'paid' where id = $1", [r.id]);
+    await fails(sql("update public.orders set status = 'shipped' where id = $1", [r.id]), "orders_ship_after_shipping_paid");
+    await fails(sql("select public.set_order_shipping($1, -5)", [r.id]), "INVALID_FEE");
+    expect((await sql("select public.set_order_shipping($1, 150) as r", [r.id])).rows[0].r).toMatchObject({ shipping_status: "awaiting_payment" });
+    await sql("select public.set_order_shipping($1, 175)", [r.id]);                    // the fee can still change before the shopper pays
+    await asUser("dave");
+    await fails(sql("select public.submit_shipping_payment($1,'Dave D.','SHIPREF-X',$2)", [r.id, `${ids.dave}/${randomUUID()}.jpg`]), "NOT_FOUND");   // someone else's order
+    await asUser("carol");
+    await fails(sql("select public.submit_shipping_payment($1,'','SHIPREF-1',$2)", [r.id, rec()]), "INVALID_SENDER");
+    await fails(sql("select public.submit_shipping_payment($1,'Carol C.','SHIPREF-1',$2)", [r.id, `${ids.alice}/${randomUUID()}.jpg`]), "INVALID_RECEIPT");
+    await fails(sql("select public.submit_shipping_payment($1,'Carol C.','REF-DUP-1',$2)", [r.id, rec()]), "DUPLICATE_REFERENCE");   // already used for an order
+    await sql("select public.submit_shipping_payment($1,'Carol C.','SHIPREF-1',$2)", [r.id, rec()]);
+    o = await row("select * from public.orders where id = $1", [r.id]);
+    expect(o).toMatchObject({ shipping_status: "pending_review", shipping_sender_name: "Carol C.", shipping_reference_number: "SHIPREF-1" });
+    expect(Number(o.shipping_fee_php)).toBe(175);
+    await asUser("carol");
+    await fails(sql("select public.submit_shipping_payment($1,'Carol C.','SHIPREF-2',$2)", [r.id, rec()]), "SHIPPING_NOT_DUE");   // already sent
+    await asUser("admin");
+    await fails(sql("select public.set_order_shipping($1, 10)", [r.id]), "SHIPPING_LOCKED");
+    await fails(sql("select public.review_shipping_payment($1, false, '  ')", [r.id]), "REASON_REQUIRED");
+    await sql("select public.review_shipping_payment($1, false, 'The receipt is blurry')", [r.id]);
+    o = await row("select * from public.orders where id = $1", [r.id]);
+    expect(o).toMatchObject({ shipping_status: "awaiting_payment", shipping_note: "The receipt is blurry", shipping_reference_number: null });
+    await asUser("carol");
+    await sql("select public.submit_shipping_payment($1,'Carol C.','SHIPREF-1',$2)", [r.id, rec()]);   // the same reference can be sent again after a rejection
+    await asUser("alice");
+    await fails(sql("select public.review_shipping_payment($1, true, null)", [r.id]), "FORBIDDEN");
+    await asUser("admin");
+    await sql("select public.review_shipping_payment($1, true, null)", [r.id]);
+    await sql("update public.orders set status = 'shipped' where id = $1", [r.id]);       // allowed now
+    expect((await row("select status, shipping_status from public.orders where id = $1", [r.id]))).toEqual({ status: "shipped", shipping_status: "paid" });
+  });
+  it("free shipping (fee 0) needs no payment", async () => {
+    await asUser("carol");
+    const r = await place("carol", items([p1, 1]));
+    await asUser("admin");
+    await db.query("update public.orders set status = 'paid' where id = $1", [r.id]);
+    expect((await db.query("select public.set_order_shipping($1, 0) as r", [r.id])).rows[0].r).toMatchObject({ shipping_status: "paid" });
+    await db.query("update public.orders set status = 'shipped' where id = $1", [r.id]);
   });
 });
 

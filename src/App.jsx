@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { isConfigured } from "./lib/supabaseClient.js";
+import { SHOP_ENABLED } from "./lib/features.js";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import AdminRoute from "./routes/AdminRoute.jsx";
 import AttendeeLayout from "./layouts/AttendeeLayout.jsx";
@@ -54,12 +55,16 @@ export default function App() {
     <Routes>
       <Route element={<AttendeeLayout />}>
         <Route index element={<Home />} />
-        <Route path="shop" element={<Shop />} />
-        <Route path="shop/:id" element={<ProductDetail />} />
-        <Route path="cart"element={<Cart />} />
-        <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-        <Route path="orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
-        <Route path="my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
+        {SHOP_ENABLED && (
+          <>
+            <Route path="shop" element={<Shop />} />
+            <Route path="shop/:id" element={<ProductDetail />} />
+            <Route path="cart" element={<Cart />} />
+            <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+            <Route path="orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+            <Route path="my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
+          </>
+        )}
         <Route path="events/:id/register" element={<ProtectedRoute><EventRegister /></ProtectedRoute>} />
         <Route path="my-registrations" element={<ProtectedRoute><MyRegistrations /></ProtectedRoute>} />
         <Route path="my-ticket/:id" element={<ProtectedRoute><MyTicket /></ProtectedRoute>} />
@@ -74,9 +79,13 @@ export default function App() {
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="events" element={<Events />} />
-        <Route path="products" element={<Products />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="order-emails" element={<OrderEmails />} />
+        {SHOP_ENABLED && (
+          <>
+            <Route path="products" element={<Products />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="order-emails" element={<OrderEmails />} />
+          </>
+        )}
         <Route path="payments" element={<Payments />} />
         <Route path="attendees" element={<Attendees />} />
         <Route path="scanner" element={<Scanner />} />

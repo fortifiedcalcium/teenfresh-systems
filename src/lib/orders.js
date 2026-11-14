@@ -8,15 +8,21 @@ export const STATUS = {
   shipped:   { tone: "info", label: "Shipped" },
   cancelled: { tone: "bad",  label: "Cancelled" },
 };
+/** The shipping payment that comes after the order is confirmed. */
+export const SHIPPING = {
+  none:             { tone: "neutral", label: "Shipping fee not set yet" },
+  awaiting_payment: { tone: "warn",    label: "Shipping fee to pay" },
+  pending_review:   { tone: "warn",    label: "Checking shipping payment" },
+  paid:             { tone: "ok",      label: "Shipping paid" },
+};
 const cents = (n) => Math.round(Number(n || 0) * 100);
 
-/** The totals of a cart: lines are { price, quantity } in pesos; settings hold the shipping fee in pesos.
+/** The totals of a cart: lines are { price, quantity } in pesos; the shipping fee is set later by an admin and paid separately, so checkout only charges for the items.
  *  The database repeats this sum in place_order() and uses its own prices; this is only what the shopper sees first. */
-export function priceOrder(lines, settings) {
+export function priceOrder(lines) {
   const subtotalCents = lines.reduce((a, l) => a + cents(l.price) * l.quantity, 0);
   const subtotalPhp = subtotalCents / 100;
-  const shippingPhp = Number(settings?.shipping_fee_php || 0);
-  return { subtotalPhp, shippingPhp, totalPhp: Math.round((subtotalPhp + shippingPhp) * 100) / 100 };
+  return { subtotalPhp, totalPhp: subtotalPhp };
 }
 
 /** One problem per field, in plain words. The database checks the same rules. */

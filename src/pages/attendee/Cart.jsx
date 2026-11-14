@@ -21,8 +21,8 @@ export function Totals({ totals, shippingNote = true }) {
   return (
     <dl className="space-y-1 text-sm">
       <div className="flex justify-between gap-4"><dt>Items</dt><dd className="tabular-nums">{peso(totals.subtotalPhp)}</dd></div>
-      <div className="flex justify-between gap-4"><dt>Shipping</dt><dd className="tabular-nums">{totals.shippingPhp > 0 ? peso(totals.shippingPhp) : shippingNote ? "Free" : peso(0)}</dd></div>
-      <div className="flex justify-between gap-4 border-t border-brand-sky pt-2 text-base font-black"><dt>Total to pay (GCash)</dt><dd className="tabular-nums">{peso(totals.totalPhp)}</dd></div>
+      <div className="flex justify-between gap-4"><dt>Shipping</dt><dd className="text-right">{shippingNote ? "Set after we confirm your order" : "Paid separately"}</dd></div>
+      <div className="flex justify-between gap-4 border-t border-brand-sky pt-2 text-base font-black"><dt>Total to pay now (GCash)</dt><dd className="tabular-nums">{peso(totals.totalPhp)}</dd></div>
     </dl>
   );
 }
@@ -35,7 +35,7 @@ export default function Cart() {
   const announce = useAnnounce();
   useEffect(() => { gone.forEach(remove); if (gone.length) announce("A product in your cart is no longer available and was removed."); }, [gone, remove, announce]);
 
-  const totals = priceOrder(lines, settings);
+  const totals = priceOrder(lines);
   return (
     <div className="space-y-4">
       <h1 className="flex items-center gap-2 text-3xl"><IconCart />Your cart</h1>

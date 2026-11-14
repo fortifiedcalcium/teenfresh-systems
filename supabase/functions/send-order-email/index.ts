@@ -1,6 +1,6 @@
 // POST { kind, order_id }
 //   kind "order_received"                                         the person who placed the order (or an admin), once per order
-//   kind "order_paid" | "order_shipped" | "order_cancelled"       admin only, and only while the order is in that status
+//   kind "order_paid" | "order_shipping_due" | "order_shipped" | "order_cancelled"   admin only, and only while the order is in that status
 // The email goes to the address saved on the order. Every attempt is written to order_emails.
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { getCaller, serviceClient, siteUrl } from "../_shared/send.ts";
@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
   } else {
     if (!caller.isAdmin) return json({ error: "Admins only" }, 403);
     if (order.status !== KIND_STATUS[kind]) return json({ error: `The order is not ${KIND_STATUS[kind]}` }, 400);
+    if (kind === "order_shipping_due" && order.shipping_status !== "awaiting_payment") return json({ error: "No shipping fee is waiting for payment" }, 400);
   }
 
   const { data: custom } = await db.from("order_email_templates").select("subject,heading,body").eq("kind", kind).maybeSingle();   // none = the built-in wording

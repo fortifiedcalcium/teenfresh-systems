@@ -7,14 +7,15 @@ import Field from "../../components/Field.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { IconMail, IconRefresh, IconSave } from "../../components/NavIcons.jsx";
 
-const LABEL = { order_received: "Order received", order_paid: "Payment confirmed", order_shipped: "Order shipped", order_cancelled: "Order cancelled" };
+const LABEL = { order_received: "Order received", order_paid: "Payment confirmed", order_shipping_due: "Shipping fee to pay", order_shipped: "Order shipped", order_cancelled: "Order cancelled" };
 const WHEN = {
   order_received: "Sent right after the shopper places the order.",
   order_paid: "Sent when you mark an order as paid.",
+  order_shipping_due: "Sent when you set a shipping fee on a confirmed order. It asks the shopper to pay it and upload the receipt.",
   order_shipped: "Sent when you mark an order as shipped.",
   order_cancelled: "Sent when you cancel an order.",
 };
-const SAMPLE_ORDER = { id: "sample", order_number: "TF-000123", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St., Brgy. Poblacion", city: "Makati", postal_code: "1210", subtotal_php: 1500, shipping_php: 150, total_php: 1650 };
+const SAMPLE_ORDER = { id: "sample", order_number: "TF-000123", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St., Brgy. Poblacion", city: "Makati", postal_code: "1210", subtotal_php: 1500, shipping_php: 0, total_php: 1500, shipping_fee_php: 150, shipping_status: "awaiting_payment" };
 const SAMPLE_ITEMS = [{ artist: "Marv", title: "ÖRBITAL", unit_price_php: 750, quantity: 2 }];
 
 const wording = (rows, k) => { const r = rows?.[k]; return r ? { subject: r.subject, heading: r.heading, body: r.body } : DEFAULT_TEMPLATES[k]; };

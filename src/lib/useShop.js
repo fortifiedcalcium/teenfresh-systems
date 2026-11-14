@@ -19,12 +19,12 @@ export function useCartProducts() {
   return state;
 }
 
-/** The shipping fee and GCash details. null while loading. */
+/** The GCash details. null while loading. */
 export function useShopSettings() {
   const [settings, setSettings] = useState(null);
   useEffect(() => {
     let alive = true;
-    supabase.from("shop_settings").select("*").maybeSingle().then(({ data }) => { if (alive) setSettings(data || { shipping_fee_php: 0 }); });
+    supabase.from("shop_settings").select("*").maybeSingle().then(({ data }) => { if (alive) setSettings(data || {}); });
     return () => { alive = false; };
   }, []);
   return settings;

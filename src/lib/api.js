@@ -71,6 +71,12 @@ const ERRORS = {
   INVALID_POSTAL: "Enter your 4-digit postal code.",
   INVALID_PHONE: "Enter a Philippine mobile number, like 09171234567.",
   PRODUCT_UNAVAILABLE: "One of the products in your cart is no longer available. Review your cart and try again.",
+  ORDER_NOT_PAID: "This order is not confirmed yet.",
+  SHIPPING_NOT_DUE: "There is no shipping fee to pay for this order right now.",
+  SHIPPING_LOCKED: "The shopper already sent a shipping receipt, so the fee can no longer be changed.",
+  INVALID_FEE: "Enter a shipping fee from 0 to 100,000 pesos.",
+  NOT_PENDING: "There is no shipping receipt waiting to be checked.",
+  NOT_FOUND: "We could not find that order.",
   PAYMENT_NOT_SET_UP: "Checkout is not open yet because payment details are not set up. Please try again later.",
 };
 

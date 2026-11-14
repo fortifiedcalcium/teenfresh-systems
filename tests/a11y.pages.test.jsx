@@ -136,7 +136,7 @@ describe("attendee pages", () => {
   describe("shop checkout", () => {
     const prod = { id: "p1", artist: "Marv", title: "ÖRBITAL", price: 741.24, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: null, active: true };
     const settings = { id: true, shipping_fee_php: 150, gcash_account_name: "BR**N CA**O S.", gcash_account_number: "09171234567" };
-    const order = { id: "o1", order_number: "TF-000001", user_id: "u1", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati", postal_code: "1210", notes: null, subtotal_php: 1482.48, shipping_php: 150, total_php: 1632.48, sender_name: "Juan D.", reference_number: "123456", receipt_path: "u1/a.png", status: "pending", admin_note: null, created_at: future };
+    const order = { id: "o1", order_number: "TF-000001", user_id: "u1", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati", postal_code: "1210", notes: null, subtotal_php: 1482.48, shipping_php: 0, total_php: 1482.48, shipping_status: "none", shipping_fee_php: null, sender_name: "Juan D.", reference_number: "123456", receipt_path: "u1/a.png", status: "pending", admin_note: null, created_at: future };
     const withCart = (path, el) => { localStorage.setItem("teenfresh-cart", JSON.stringify([{ id: "p1", qty: 2 }])); return page(path, <CartProvider>{el}</CartProvider>); };
     beforeEach(() => { localStorage.clear(); fixtures.current.products = [prod]; fixtures.current.shop_settings = [settings]; fixtures.current.orders = [order]; fixtures.current.order_items = [{ id: "i1", order_id: "o1", product_id: "p1", artist: "Marv", title: "ÖRBITAL", unit_price_php: 741.24, quantity: 2 }]; });
 
@@ -144,8 +144,8 @@ describe("attendee pages", () => {
       const { container } = withCart("/cart", <Cart />);
       await screen.findByRole("heading", { level: 2, name: "ÖRBITAL" });
       expect(screen.getByLabelText("Quantity of ÖRBITAL")).toHaveValue("2");
-      expect(screen.getByText("₱1,482.48")).toBeInTheDocument();
-      expect(screen.getByText("₱1,632.48")).toBeInTheDocument();           // 741.24 x 2 + 150 shipping
+      expect(screen.getAllByText("₱1,482.48").length).toBeGreaterThan(0);   // 741.24 x 2: items and total are the same, shipping comes later
+      expect(screen.getByText(/Set after we confirm your order/)).toBeInTheDocument();
       expect(await check(container)).toHaveNoViolations();
     });
     it("Cart: says so when it is empty", async () => {
@@ -196,11 +196,26 @@ describe("attendee pages", () => {
       expect(await screen.findByText(/48 to 72 hours/)).toBeInTheDocument();
       expect(await check(b.container)).toHaveNoViolations();
     });
+    it("Order page: a confirmed order asks for the shipping fee and sends the receipt", async () => {
+      asUser();
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }];
+      fixtures.current.rpc = { submit_shipping_payment: { shipping_status: "pending_review" } };
+      const user = userEvent.setup();
+      const b = render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>));
+      expect(await screen.findByRole("heading", { level: 2, name: "Pay your shipping fee" })).toBeInTheDocument();
+      expect(screen.getAllByText(/₱150\.00/).length).toBeGreaterThan(0);
+      expect(await check(b.container)).toHaveNoViolations();
+      await user.type(screen.getByLabelText(/^GCash sender name/), "Juan D.");
+      await user.type(screen.getByLabelText(/^Reference number/), "SHIP123");
+      await user.upload(b.container.querySelector("#ship_receipt"), new File(["x"], "receipt.png", { type: "image/png" }));
+      await user.click(screen.getByRole("button", { name: "Send shipping receipt" }));
+      await waitFor(() => expect(fixtures.current.rpcCalls?.some((c) => c.name === "submit_shipping_payment" && c.args.p_order === "o1" && c.args.p_reference === "SHIP123")).toBe(true));
+    });
     it("Admin orders: settings, the list, and marking an order paid", async () => {
       const user = userEvent.setup();
       const { container } = admin(<Orders />); await settled("Shop orders");
       expect(await screen.findByRole("heading", { level: 2, name: /TF-000001/ })).toBeInTheDocument();
-      expect(screen.getByLabelText(/^Shipping fee/)).toHaveValue("150");
+      expect(screen.getByLabelText(/^GCash number/)).toHaveValue("09171234567");
       expect(await check(container)).toHaveNoViolations();
       await user.click(screen.getByRole("button", { name: /Review order TF-000001/ }));
       const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });

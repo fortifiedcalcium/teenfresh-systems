@@ -4,10 +4,10 @@ import { orderArgs, priceOrder, validateCheckout } from "../src/lib/orders.js";
 const good = { name: "Juan Dela Cruz", email: "juan@example.com", phone: "0917 123 4567", address: "12 Rizal St., Brgy. Poblacion", city: "Makati", postal_code: "1210", notes: "", sender_name: "Juan D.", reference_number: "1234 567 890" };
 
 describe("priceOrder", () => {
-  it("adds up the peso prices and the shipping fee", () => {
+  it("charges for the items only: shipping is set and paid later", () => {
     const t = priceOrder([{ price: 12.69, quantity: 2 }, { price: 75.81, quantity: 1 }], { shipping_fee_php: 150 });
     expect(t.subtotalPhp).toBe(101.19);
-    expect(t.totalPhp).toBe(251.19);
+    expect(t.totalPhp).toBe(101.19);
   });
   it("has no floating point drift", () => {
     expect(priceOrder([{ price: 0.1, quantity: 3 }], { shipping_fee_php: 0 }).subtotalPhp).toBe(0.3);
