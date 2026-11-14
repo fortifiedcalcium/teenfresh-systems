@@ -6,7 +6,7 @@ import logo from "../logo/teenfresh-logo.png";
 import { useCart } from "../lib/cart.jsx";
 import { SHOP_ENABLED } from "../lib/features.js";
 import { useShopperTodos } from "../hooks/useShopperTodos.js";
-import { requiredCount } from "../lib/orderTodos.js";
+import TodoBell from "../components/TodoBell.jsx";
 import { useToast } from "../components/Toast.jsx";
 import { playChime, unlockChime } from "../lib/chime.js";
 import { IconBag, IconCart, IconPackage, IconCalendar, IconTicket, IconDashboard, IconLogIn, IconLogOut, IconUserPlus } from "../components/NavIcons.jsx";
@@ -28,7 +28,6 @@ export default function AttendeeLayout() {
   // something is waiting on the shopper (a payment, a receipt): a badge on My orders, and a toast when a new one appears
   const { todos } = useShopperTodos(user?.id, SHOP_ENABLED && Boolean(user), (fresh) => { fresh.forEach((t) => toast(`Order ${t.orderNumber}: ${t.text}`, "info")); playChime("shopper"); });
   useEffect(() => unlockChime(), []);                                        // the browser allows sound after the first click or key press
-  const todoCount = todos ? requiredCount(todos) : 0;
   return (
     <div className="flex min-h-screen flex-col">
       <SkipLink />
@@ -39,7 +38,8 @@ export default function AttendeeLayout() {
             <NavLink to="/" end className="nav-link" title="Events"><IconCalendar /><span className="sr-only">Events</span></NavLink>
             {SHOP_ENABLED && <NavLink to="/shop" className="nav-link" title="Shop"><IconBag /><span className="sr-only">Shop</span></NavLink>}
             {SHOP_ENABLED && <NavLink to="/cart" className="nav-link" title="Cart"><IconCart /><span className="sr-only">Cart</span>{count > 0 && <span aria-hidden="true">({count})</span>}{count > 0 && <span className="sr-only">, {count} items</span>}</NavLink>}
-            {SHOP_ENABLED && user && <NavLink to="/my-orders" className="nav-link relative" title="My orders"><IconPackage /><span className="sr-only">My orders{todoCount > 0 ? `, ${todoCount} to do` : ""}</span>{todoCount > 0 && <span aria-hidden="true" className="notif-badge">{todoCount > 99 ? "99+" : todoCount}</span>}</NavLink>}
+            {SHOP_ENABLED && user && <TodoBell todos={todos} />}
+            {SHOP_ENABLED && user && <NavLink to="/my-orders" className="nav-link" title="My orders"><IconPackage /><span className="sr-only">My orders</span></NavLink>}
             {user && <NavLink to="/my-registrations" className="nav-link" title="My registrations"><IconTicket /><span className="sr-only">My registrations</span></NavLink>}
             {isAdmin && <NavLink to="/admin" className="nav-link" title="Admin"><IconDashboard /><span className="sr-only">Admin</span></NavLink>}
             {user ? (
