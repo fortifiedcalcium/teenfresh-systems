@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { CHIPS, productImageUrl, productMatches, usd } from "../../lib/products.js";
 import { useCart } from "../../lib/cart.jsx";
@@ -15,14 +16,16 @@ function ProductCard({ p }) {
   return (
     <li>
       <article className="shop-card">
+        <Link to={`/shop/${p.id}`} className="block" aria-label={`View ${p.title}`} tabIndex={-1}>
         <div className="shop-thumb">
           {src ? <img src={src} alt={p.image_alt || ""} loading="lazy" className="shop-art h-full w-full object-cover" />
             : <div className="flex h-full w-full items-center justify-center text-link" aria-hidden="true"><IconImage /></div>}
         </div>
+        </Link>
         <div className="flex flex-col gap-1 px-1 pb-2 pt-3">
           {p.pre_order && <p className="shop-pre">Pre-order</p>}
           <p className="text-sm text-ink-muted">{p.artist}</p>
-          <h2 className="shop-title">{p.title}</h2>
+          <h2 className="shop-title"><Link to={`/shop/${p.id}`} className="no-underline text-ink">{p.title}</Link></h2>
           <p className="flex items-baseline gap-2 text-lg font-bold tabular-nums">
             {p.discount_percent > 0 && <span className="text-danger"><span className="sr-only">Discount </span>{p.discount_percent}%</span>}
             <span className="text-ink">{usd(p.price)}</span>

@@ -17,6 +17,7 @@ import EventRegister from "./pages/attendee/EventRegister.jsx";
 import MyRegistrations from "./pages/attendee/MyRegistrations.jsx";
 import MyTicket from "./pages/attendee/MyTicket.jsx";
 import Shop from "./pages/attendee/Shop.jsx";
+import ProductDetail from "./pages/attendee/ProductDetail.jsx";
 import Cart from "./pages/attendee/Cart.jsx";
 import Checkout from "./pages/attendee/Checkout.jsx";
 import OrderDetail from "./pages/attendee/OrderDetail.jsx";
@@ -54,7 +55,8 @@ export default function App() {
       <Route element={<AttendeeLayout />}>
         <Route index element={<Home />} />
         <Route path="shop" element={<Shop />} />
-        <Route path="cart" element={<Cart />} />
+        <Route path="shop/:id" element={<ProductDetail />} />
+        <Route path="cart"element={<Cart />} />
         <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
         <Route path="orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
         <Route path="my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />

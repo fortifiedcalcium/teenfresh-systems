@@ -12,6 +12,25 @@
   .shop-title { @apply m-0 text-base font-bold leading-snug text-ink; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
   .shop-new { @apply mt-1 self-start rounded-md bg-ink px-2 py-0.5 text-sm font-bold text-brand-ivory; }
 
+  /* Product detail page (src/pages/attendee/ProductDetail.jsx): image left, buying panel right, monochrome */
+  .pd-layout { @apply grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-10; }
+  .pd-media { @apply aspect-square overflow-hidden rounded-2xl border border-link bg-brand-ivory md:sticky md:top-4 md:self-start; }
+  .pd-info { @apply flex flex-col gap-4; }
+  .pd-artist { @apply m-0 text-sm font-semibold text-ink-muted; }
+  .pd-title { @apply m-0 text-2xl font-black leading-snug text-ink; overflow-wrap: anywhere; }
+  .pd-price { @apply m-0 flex items-baseline gap-2 text-3xl font-bold tabular-nums text-ink; }
+  .pd-status { @apply flex flex-wrap items-center gap-2 rounded-xl border border-link bg-brand-ivory px-4 py-3; }
+  .pd-status-main { @apply m-0 text-sm font-bold; }
+  .pd-label { @apply m-0 mb-2 text-sm font-bold text-ink; }
+  .pd-option-row { @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-link px-4 py-3; }
+  .pd-option-name { @apply min-w-0 flex-1 text-sm font-semibold; overflow-wrap: anywhere; }
+  .pd-qty { @apply inline-flex items-center overflow-hidden rounded-full border border-link; }
+  .pd-qty button { @apply min-h-target min-w-target bg-white text-lg font-bold text-ink hover:bg-brand-ivory disabled:opacity-50; }
+  .pd-qty output { @apply min-w-8 text-center font-bold tabular-nums; }
+  .pd-total { @apply m-0 flex items-baseline justify-between border-t border-link pt-4 text-base font-bold; }
+  .pd-total strong { @apply text-2xl; }
+  .pd-actions { @apply grid grid-cols-2 gap-3; }
+
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     .shop-card:hover { box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 18%, transparent); }
     .shop-card:hover .shop-art { transform: scale(1.05); }
