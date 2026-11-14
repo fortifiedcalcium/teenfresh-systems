@@ -14,7 +14,6 @@ export const INFO_SECTIONS = [
 ];
 export const INFO_MAX = 4000;
 
-export const usd =(n) => `$${Number(n).toFixed(2)}`;
 export const productMatches = (p, chip) => chip === "All" || (chip === "Pre-Order" ? p.pre_order : (p.categories || []).includes(chip));
 
 export function productImageUrl(p) {
@@ -29,7 +28,7 @@ export function validateProduct(f) {
   else if (f.artist.trim().length > 80) e.artist = "The artist can be 80 characters at most";
   if (!f.title.trim()) e.title = "Enter the product title";
   else if (f.title.trim().length > 160) e.title = "The title can be 160 characters at most";
-  if (!/^\d+(\.\d{1,2})?$/.test(String(f.price).trim()) || Number(f.price) <= 0) e.price = "Enter a price above 0, with at most 2 decimals";
+  if (!/^\d+(\.\d{1,2})?$/.test(String(f.price).trim()) || Number(f.price) <= 0) e.price = "Enter a price in pesos above 0, with at most 2 decimals";
   const d = String(f.discount_percent).trim();
   if (d !== "" && (!/^\d+$/.test(d) || Number(d) > 90)) e.discount_percent = "Enter a whole number from 0 to 90";
   for (const [k, label] of INFO_SECTIONS) if ((f[k] || "").length > INFO_MAX) e[k] = `${label} can be ${INFO_MAX} characters at most`;

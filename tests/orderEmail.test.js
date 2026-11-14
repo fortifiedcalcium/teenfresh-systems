@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_TEMPLATES, KIND_STATUS, ORDER_KINDS, fillOrderFields, renderOrderEmail, unknownOrderFields } from "../supabase/functions/_shared/orderEmail.ts";
 
-const order = { id: "o1", order_number: "TF-000007", name: "Juan <b>Dela</b> Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati", postal_code: "1210", subtotal_usd: "25.56", usd_to_php: "58.00", shipping_php: "150.00", total_php: "1632.48" };
-const items = [{ artist: "Marv", title: "ÖRBITAL & more", unit_price_usd: "12.78", quantity: 2 }];
+const order = { id: "o1", order_number: "TF-000007", name: "Juan <b>Dela</b> Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati", postal_code: "1210", subtotal_php: "1482.48", shipping_php: "150.00", total_php: "1632.48" };
+const items = [{ artist: "Marv", title: "ÖRBITAL & more", unit_price_php: "741.24", quantity: 2 }];
 
 describe("renderOrderEmail", () => {
   it("has a subject, a heading and the order number for every kind", () => {
@@ -16,8 +16,8 @@ describe("renderOrderEmail", () => {
   });
   it("lists the items, the totals and the delivery address, and links to the order", () => {
     const m = renderOrderEmail("order_received", order, items, "https://shop.example/");
-    expect(m.text).toContain("$12.78 x 2");
-    expect(m.text).toContain("Items (at PHP 58 per $1): $25.56");
+    expect(m.text).toContain("PHP 741.24 x 2");
+    expect(m.text).toContain("Items: PHP 1,482.48");
     expect(m.text).toContain("12 Rizal St.");
     expect(m.html).toContain('href="https://shop.example/orders/o1"');
     expect(m.text).toContain("https://shop.example/orders/o1");
@@ -42,7 +42,7 @@ describe("editable wording", () => {
     expect(m.text).toContain("Salamat!");
     expect(m.text).toContain("Your total is PHP 1,632.48.");
     expect(m.html).toContain("<p style=\"margin:0 0 16px 0;\">Your total is PHP 1,632.48.<br>See you soon.</p>");
-    expect(m.text).toContain("$12.78 x 2");                       // the items are still added
+    expect(m.text).toContain("PHP 741.24 x 2");                       // the items are still added
   });
   it("escapes the admin's text in the HTML, never lets it add markup", () => {
     const m = renderOrderEmail("order_paid", order, items, "", { heading: "<script>alert(1)</script>", body: "<img src=x onerror=alert(1)>" });

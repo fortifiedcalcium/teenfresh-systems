@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
 import { STATUS, sendOrderEmail } from "../../lib/orders.js";
-import { usd } from "../../lib/products.js";
+import { productImageUrl, removeProductImage, uploadProductImage } from "../../lib/products.js";
+import { IMAGE_TYPES, validateImageFile } from "../../lib/eventImages.js";
 import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import { useToast } from "../../components/Toast.jsx";
@@ -10,7 +11,7 @@ import Badge from "../../components/Badge.jsx";
 import Field from "../../components/Field.jsx";
 import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
-import { IconBag, IconCheck, IconClose, IconPackage, IconSave } from "../../components/NavIcons.jsx";
+import { IconBag, IconCheck, IconClose, IconImage, IconPackage, IconSave, IconUpload } from "../../components/NavIcons.jsx";
 
 const MAIL_LABEL = { order_received: "Order received", order_paid: "Payment confirmed", order_shipped: "Shipped", order_cancelled: "Cancelled" };
 const FILTERS = [["all", "All"], ["pending", "Awaiting payment check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
@@ -23,31 +24,62 @@ function SettingsCard() {
   const [error, setError] = useState("");
   useEffect(() => {
     supabase.from("shop_settings").select("*").maybeSingle().then(({ data }) => setS({
-      usd_to_php: String(data?.usd_to_php ?? 58), shipping_fee_php: String(data?.shipping_fee_php ?? 0),
-      gcash_account_name: data?.gcash_account_name || "", gcash_account_number: data?.gcash_account_number || "",
+      shipping_fee_php: String(data?.shipping_fee_php ?? 0),
+      gcash_account_name: data?.gcash_account_name || "", gcash_account_number: data?.gcash_account_number || "", gcash_qr_path: data?.gcash_qr_path || null,
     }));
   }, []);
+  const [file, setFile] = useState(null);          // a newly chosen QR image, uploaded on Save
+  const [removeQr, setRemoveQr] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const inputRef = useRef(null);
+  useEffect(() => {
+    if (!file) { setPreview(null); return undefined; }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
   if (!s) return <Loading label="Loading settings…" />;
+  const shownQr = preview || (!removeQr && s.gcash_qr_path ? productImageUrl({ image_path: s.gcash_qr_path }) : null);
   const set = (k) => (e) => setS((x) => ({ ...x, [k]: e.target.value }));
   const save = async (ev) => {
     ev.preventDefault(); setError("");
-    if (!(Number(s.usd_to_php) > 0)) return setError("Enter an exchange rate above 0.");
     if (!(Number(s.shipping_fee_php) >= 0) || s.shipping_fee_php.trim() === "") return setError("Enter a shipping fee of 0 or more.");
     setSaving(true);
-    const { error: err } = await supabase.from("shop_settings").update({ usd_to_php: Number(s.usd_to_php), shipping_fee_php: Number(s.shipping_fee_php), gcash_account_name: s.gcash_account_name.trim() || null, gcash_account_number: s.gcash_account_number.trim() || null, updated_at: new Date().toISOString() }).eq("id", true);
+    let newPath = null;
+    try { if (file) newPath = await uploadProductImage(file); } catch (e) { setSaving(false); return setError(e.message); }
+    const qrPath = newPath || (removeQr ? null : s.gcash_qr_path);
+    const { error: err } = await supabase.from("shop_settings").update({ gcash_qr_path: qrPath, shipping_fee_php: Number(s.shipping_fee_php), gcash_account_name: s.gcash_account_name.trim() || null, gcash_account_number: s.gcash_account_number.trim() || null, updated_at: new Date().toISOString() }).eq("id", true);
     setSaving(false);
-    if (err) setError(err.message); else toast("Shop settings saved", "success");
+    if (err) { if (newPath) await removeProductImage(newPath); setError(err.message); return; }
+    if (s.gcash_qr_path && qrPath !== s.gcash_qr_path) await removeProductImage(s.gcash_qr_path);   // tidy up the replaced file
+    setS((x) => ({ ...x, gcash_qr_path: qrPath })); setFile(null); setRemoveQr(false);
+    toast("Shop settings saved", "success");
   };
   return (
     <form onSubmit={save} className="card space-y-4 p-4" noValidate aria-labelledby="settings-h">
       <h2 id="settings-h" className="text-lg font-black">Checkout settings</h2>
       {error && <Alert tone="bad">{error}</Alert>}
       <div className="grid gap-4 md:grid-cols-2">
-        <Field id="usd_to_php" label="Pesos per US dollar" required hint="Orders use this rate. Orders already placed keep the rate they were placed at."><input className="input" inputMode="decimal" value={s.usd_to_php} onChange={set("usd_to_php")} /></Field>
         <Field id="shipping_fee_php" label="Shipping fee (PHP)" hint="Added to every order. 0 = free shipping"><input className="input" inputMode="decimal" value={s.shipping_fee_php} onChange={set("shipping_fee_php")} /></Field>
         <Field id="gcash_account_name" label="GCash account name" hint="Shown to shoppers. Store it masked, for example BR**N CA**O S."><input className="input" value={s.gcash_account_name} onChange={set("gcash_account_name")} /></Field>
         <Field id="gcash_account_number" label="GCash number" hint="Checkout stays closed until this is set"><input className="input" inputMode="numeric" value={s.gcash_account_number} onChange={set("gcash_account_number")} /></Field>
       </div>
+      <fieldset className="space-y-3">
+        <legend className="label">GCash QR code</legend>
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="w-40 overflow-hidden rounded-2xl border border-link bg-brand-ivory">
+            {shownQr ? <img src={shownQr} alt="GCash QR code preview" className="w-full" />
+              : <div className="flex aspect-square w-full items-center justify-center text-link" aria-hidden="true"><IconImage /></div>}
+          </div>
+          <div className="min-w-0 flex-1 space-y-2">
+            <input ref={inputRef} id="gcash_qr" type="file" accept={Object.keys(IMAGE_TYPES).join(",")} className="file-input sr-only" aria-describedby="gcash_qr-hint"
+              onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (!f) return; const bad = validateImageFile(f); if (bad) setError(bad); else { setError(""); setFile(f); setRemoveQr(false); } }} />
+            <label htmlFor="gcash_qr" className="btn-secondary cursor-pointer"><IconUpload />{shownQr ? "Replace QR code" : "Choose QR code"}</label>
+            {(file || (s.gcash_qr_path && !removeQr)) && <button type="button" className="btn-secondary ml-2" onClick={() => { if (file) setFile(null); else setRemoveQr(true); }}><IconClose />{file ? "Undo choice" : "Remove"}</button>}
+            <p id="gcash_qr-hint" className="hint">Shown to shoppers at checkout next to the GCash number. JPG, PNG or WebP. It uploads when you save.</p>
+          </div>
+        </div>
+      </fieldset>
       <div className="flex justify-end"><button className="btn-primary" disabled={saving}><IconSave />{saving ? "Saving…" : "Save settings"}</button></div>
     </form>
   );
@@ -96,10 +128,10 @@ function OrderDialog({ order, onClose, onChanged }) {
       <div className="space-y-4 text-sm">
         <div className="grid gap-4 md:grid-cols-2">
           <section aria-labelledby="o-ship"><h3 id="o-ship" className="font-black">Deliver to</h3><p>{order.name}<br />{order.address}<br />{order.city} {order.postal_code}<br />{order.phone}<br />{order.email}</p>{order.notes && <p className="mt-1"><span className="font-semibold">Buyer's note:</span> {order.notes}</p>}</section>
-          <section aria-labelledby="o-pay"><h3 id="o-pay" className="font-black">Payment to check</h3><p>Expect <strong>{peso(order.total_php)}</strong> ({usd(order.subtotal_usd)} at ₱{Number(order.usd_to_php)} per $1{Number(order.shipping_php) > 0 ? ` plus ${peso(order.shipping_php)} shipping` : ""})<br />Sender: {order.sender_name}<br />Reference: <span className="font-mono">{order.reference_number}</span></p></section>
+          <section aria-labelledby="o-pay"><h3 id="o-pay" className="font-black">Payment to check</h3><p>Expect <strong>{peso(order.total_php)}</strong> ({peso(order.subtotal_php)} items{Number(order.shipping_php) > 0 ? ` plus ${peso(order.shipping_php)} shipping` : ""})<br />Sender: {order.sender_name}<br />Reference: <span className="font-mono">{order.reference_number}</span></p></section>
         </div>
         <ul className="divide-y divide-brand-sky rounded-lg border border-brand-sky px-3">
-          {items.map((i) => <li key={i.id} className="flex justify-between gap-3 py-2"><span className="break-words">{i.artist}: <strong>{i.title}</strong></span><span className="tabular-nums">{usd(i.unit_price_usd)} × {i.quantity}</span></li>)}
+          {items.map((i) => <li key={i.id} className="flex justify-between gap-3 py-2"><span className="break-words">{i.artist}: <strong>{i.title}</strong></span><span className="tabular-nums">{peso(i.unit_price_php)} × {i.quantity}</span></li>)}
         </ul>
         {order.receipt_path ? <Receipt path={order.receipt_path} /> : <p className="text-ink-muted">No receipt file is stored for this order.</p>}
         {mails.length > 0 && (

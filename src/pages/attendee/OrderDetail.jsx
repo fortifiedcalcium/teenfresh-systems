@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { STATUS } from "../../lib/orders.js";
-import { usd } from "../../lib/products.js";
 import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
@@ -49,11 +48,11 @@ export default function OrderDetail() {
           <h2 id="items-h" className="mb-2 text-lg font-black">Items</h2>
           <ul className="divide-y divide-brand-sky">
             {items.map((i) => (
-              <li key={i.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2"><span className="min-w-0"><span className="block text-sm text-ink-muted">{i.artist}</span><span className="break-words font-bold">{i.title}</span></span><span className="tabular-nums">{usd(i.unit_price_usd)} × {i.quantity}</span></li>
+              <li key={i.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2"><span className="min-w-0"><span className="block text-sm text-ink-muted">{i.artist}</span><span className="break-words font-bold">{i.title}</span></span><span className="tabular-nums">{peso(i.unit_price_php)} × {i.quantity}</span></li>
             ))}
           </ul>
           <dl className="mt-3 space-y-1 border-t border-brand-sky pt-3 text-sm">
-            <div className="flex justify-between"><dt>Items</dt><dd className="tabular-nums">{usd(order.subtotal_usd)} at ₱{Number(order.usd_to_php)} per $1</dd></div>
+            <div className="flex justify-between"><dt>Items</dt><dd className="tabular-nums">{peso(order.subtotal_php)}</dd></div>
             <div className="flex justify-between"><dt>Shipping</dt><dd className="tabular-nums">{Number(order.shipping_php) > 0 ? peso(order.shipping_php) : "Free"}</dd></div>
             <div className="flex justify-between text-base font-black"><dt>Total paid (GCash)</dt><dd className="tabular-nums">{peso(order.total_php)}</dd></div>
           </dl>

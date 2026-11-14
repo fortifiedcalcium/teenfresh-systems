@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
-import { CHIPS, productImageUrl, productMatches, usd } from "../../lib/products.js";
+import { CHIPS, productImageUrl, productMatches } from "../../lib/products.js";
+import { peso } from "../../lib/payment.js";
 import { useCart } from "../../lib/cart.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import { useAnnounce } from "../../a11y.jsx";
@@ -28,7 +29,7 @@ function ProductCard({ p }) {
           <h2 className="shop-title"><Link to={`/shop/${p.id}`} className="no-underline text-ink">{p.title}</Link></h2>
           <p className="flex items-baseline gap-2 text-lg font-bold tabular-nums">
             {p.discount_percent > 0 && <span className="text-danger"><span className="sr-only">Discount </span>{p.discount_percent}%</span>}
-            <span className="text-ink">{usd(p.price)}</span>
+            <span className="text-ink">{peso(p.price)}</span>
           </p>
           {p.is_new && <span className="shop-new">NEW</span>}
           <button type="button" className="btn-secondary mt-2 w-full" onClick={() => { add(p.id); toast(`${p.title} added to your cart`, "success"); }}><IconCart />Add to cart{" "}<span className="sr-only">{p.title}</span></button>

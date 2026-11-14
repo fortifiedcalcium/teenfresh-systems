@@ -4,14 +4,13 @@ import { orderArgs, priceOrder, validateCheckout } from "../src/lib/orders.js";
 const good = { name: "Juan Dela Cruz", email: "juan@example.com", phone: "0917 123 4567", address: "12 Rizal St., Brgy. Poblacion", city: "Makati", postal_code: "1210", notes: "", sender_name: "Juan D.", reference_number: "1234 567 890" };
 
 describe("priceOrder", () => {
-  it("converts the dollar total at the rate and adds shipping in pesos", () => {
-    const t = priceOrder([{ price: 12.69, quantity: 2 }, { price: 75.81, quantity: 1 }], { usd_to_php: 58, shipping_fee_php: 150 });
-    expect(t.subtotalUsd).toBe(101.19);
-    expect(t.subtotalPhp).toBe(5869.02);
-    expect(t.totalPhp).toBe(6019.02);
+  it("adds up the peso prices and the shipping fee", () => {
+    const t = priceOrder([{ price: 12.69, quantity: 2 }, { price: 75.81, quantity: 1 }], { shipping_fee_php: 150 });
+    expect(t.subtotalPhp).toBe(101.19);
+    expect(t.totalPhp).toBe(251.19);
   });
   it("has no floating point drift", () => {
-    expect(priceOrder([{ price: 0.1, quantity: 3 }], { usd_to_php: 1, shipping_fee_php: 0 }).subtotalUsd).toBe(0.3);
+    expect(priceOrder([{ price: 0.1, quantity: 3 }], { shipping_fee_php: 0 }).subtotalPhp).toBe(0.3);
   });
 });
 

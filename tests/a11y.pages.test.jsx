@@ -115,7 +115,7 @@ describe("attendee pages", () => {
   it("Shop: loads products, the chips narrow the grid, and the page has no violations", async () => {
     const user = userEvent.setup();
     fixtures.current.products = [
-      { id: "p1", artist: "Marv", title: "ÖRBITAL", price: 12.78, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: "products/a.png", image_alt: "Black cover", active: true },
+      { id: "p1", artist: "Marv", title: "ÖRBITAL", price: 741.24, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: "products/a.png", image_alt: "Black cover", active: true },
       { id: "p2", artist: "KASSY", title: "EP [ODYSSEY]", price: 17.04, discount_percent: 0, pre_order: true, is_new: false, categories: ["ALBUM"], image_path: null, image_alt: null, active: true },
     ];
     const { container } = page("/shop", <Shop />);
@@ -134,18 +134,18 @@ describe("attendee pages", () => {
     expect(await screen.findByText(/No products yet/)).toBeInTheDocument();
   });
   describe("shop checkout", () => {
-    const prod = { id: "p1", artist: "Marv", title: "ÖRBITAL", price: 12.78, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: null, active: true };
-    const settings = { id: true, usd_to_php: 58, shipping_fee_php: 150, gcash_account_name: "BR**N CA**O S.", gcash_account_number: "09171234567" };
-    const order = { id: "o1", order_number: "TF-000001", user_id: "u1", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati", postal_code: "1210", notes: null, subtotal_usd: 25.56, usd_to_php: 58, shipping_php: 150, total_php: 1632.48, sender_name: "Juan D.", reference_number: "123456", receipt_path: "u1/a.png", status: "pending", admin_note: null, created_at: future };
+    const prod = { id: "p1", artist: "Marv", title: "ÖRBITAL", price: 741.24, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: null, active: true };
+    const settings = { id: true, shipping_fee_php: 150, gcash_account_name: "BR**N CA**O S.", gcash_account_number: "09171234567" };
+    const order = { id: "o1", order_number: "TF-000001", user_id: "u1", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati", postal_code: "1210", notes: null, subtotal_php: 1482.48, shipping_php: 150, total_php: 1632.48, sender_name: "Juan D.", reference_number: "123456", receipt_path: "u1/a.png", status: "pending", admin_note: null, created_at: future };
     const withCart = (path, el) => { localStorage.setItem("teenfresh-cart", JSON.stringify([{ id: "p1", qty: 2 }])); return page(path, <CartProvider>{el}</CartProvider>); };
-    beforeEach(() => { localStorage.clear(); fixtures.current.products = [prod]; fixtures.current.shop_settings = [settings]; fixtures.current.orders = [order]; fixtures.current.order_items = [{ id: "i1", order_id: "o1", product_id: "p1", artist: "Marv", title: "ÖRBITAL", unit_price_usd: 12.78, quantity: 2 }]; });
+    beforeEach(() => { localStorage.clear(); fixtures.current.products = [prod]; fixtures.current.shop_settings = [settings]; fixtures.current.orders = [order]; fixtures.current.order_items = [{ id: "i1", order_id: "o1", product_id: "p1", artist: "Marv", title: "ÖRBITAL", unit_price_php: 741.24, quantity: 2 }]; });
 
-    it("Cart: lines, quantity, totals in dollars and pesos, and no violations", async () => {
+    it("Cart: lines, quantity, totals in pesos, and no violations", async () => {
       const { container } = withCart("/cart", <Cart />);
       await screen.findByRole("heading", { level: 2, name: "ÖRBITAL" });
       expect(screen.getByLabelText("Quantity of ÖRBITAL")).toHaveValue("2");
-      expect(screen.getByText(/\$25\.56 ≈ ₱1,482\.48/)).toBeInTheDocument();
-      expect(screen.getByText("₱1,632.48")).toBeInTheDocument();           // 25.56 x 58 + 150 shipping
+      expect(screen.getByText("₱1,482.48")).toBeInTheDocument();
+      expect(screen.getByText("₱1,632.48")).toBeInTheDocument();           // 741.24 x 2 + 150 shipping
       expect(await check(container)).toHaveNoViolations();
     });
     it("Cart: says so when it is empty", async () => {
@@ -200,7 +200,7 @@ describe("attendee pages", () => {
       const user = userEvent.setup();
       const { container } = admin(<Orders />); await settled("Shop orders");
       expect(await screen.findByRole("heading", { level: 2, name: /TF-000001/ })).toBeInTheDocument();
-      expect(screen.getByLabelText(/^Pesos per US dollar/)).toHaveValue("58");
+      expect(screen.getByLabelText(/^Shipping fee/)).toHaveValue("150");
       expect(await check(container)).toHaveNoViolations();
       await user.click(screen.getByRole("button", { name: /Review order TF-000001/ }));
       const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
@@ -231,7 +231,7 @@ describe("attendee pages", () => {
   });
   it("Products (admin): lists products, validates, and saves a new one", async () => {
     const user = userEvent.setup();
-    fixtures.current.products = [{ id: "p1", artist: "Marv", title: "ÖRBITAL", price: 12.78, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: null, active: true }];
+    fixtures.current.products = [{ id: "p1", artist: "Marv", title: "ÖRBITAL", price: 741.24, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: null, active: true }];
     const { container } = admin(<Products />); await settled("Shop products");
     expect(await screen.findByRole("heading", { level: 2, name: "ÖRBITAL" })).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();

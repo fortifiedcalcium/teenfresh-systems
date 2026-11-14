@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { CATEGORIES, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, usd, validateProduct } from "../../lib/products.js";
+import { CATEGORIES, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateProduct } from "../../lib/products.js";
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "../../lib/eventImages.js";
+import { peso } from "../../lib/payment.js";
 import { useToast } from "../../components/Toast.jsx";
 import { useAnnounce } from "../../a11y.jsx";
 import Modal from "../../components/Modal.jsx";
@@ -106,7 +107,7 @@ export default function Products() {
         <h1 className="flex items-center gap-2 text-2xl"><IconBag />Shop products</h1>
         <button type="button" className="btn-primary" onClick={() => open(null)}><IconPlus />Add a product</button>
       </div>
-      <p className="text-sm text-ink-muted">These appear on the public Shop page. Prices are in US dollars. A hidden product stays here but is not shown to visitors.</p>
+      <p className="text-sm text-ink-muted">These appear on the public Shop page. Prices are in Philippine pesos. A hidden product stays here but is not shown to visitors.</p>
 
       {rows === null ? <Loading label="Loading products…" /> : rows.length === 0 ? <Empty>No products yet. Add the first one.</Empty> : (
         <ul className="space-y-3">
@@ -115,7 +116,7 @@ export default function Products() {
               <Thumb p={p} className="h-16 w-16 shrink-0 rounded-lg border border-link" />
               <div className="min-w-0 flex-1">
                 <h2 className="break-words text-base font-black">{p.title}</h2>
-                <p className="text-sm text-ink-muted">{p.artist} · {usd(p.price)}{p.discount_percent > 0 ? ` · ${p.discount_percent}% off` : ""}</p>
+                <p className="text-sm text-ink-muted">{p.artist} · {peso(p.price)}{p.discount_percent > 0 ? ` · ${p.discount_percent}% off` : ""}</p>
                 <p className="mt-1 flex flex-wrap gap-1">
                   <span className={`badge ${p.active ? "badge-ok" : "badge-neutral"}`}>{p.active ? "Visible" : "Hidden"}</span>
                   {p.pre_order && <span className="badge badge-info">Pre-order</span>}
@@ -140,7 +141,7 @@ export default function Products() {
             <div className="grid gap-4 md:grid-cols-2">
               <Field id="p-artist" label="Artist" required error={errors.artist}><input className="input" maxLength={80} value={form.artist} onChange={set("artist")} /></Field>
               <Field id="p-title" label="Product title" required error={errors.title}><input className="input" maxLength={160} value={form.title} onChange={set("title")} /></Field>
-              <Field id="p-price" label="Price (USD)" required error={errors.price} hint="The price shown to visitors, for example 12.69"><input className="input" inputMode="decimal" value={form.price} onChange={set("price")} /></Field>
+              <Field id="p-price" label="Price (PHP)" required error={errors.price} hint="The price shown to visitors, for example 750"><input className="input" inputMode="decimal" value={form.price} onChange={set("price")} /></Field>
               <Field id="p-discount_percent" label="Discount (%)" error={errors.discount_percent} hint="Shown in red next to the price. 0 hides it"><input className="input" inputMode="numeric" value={form.discount_percent} onChange={set("discount_percent")} /></Field>
             </div>
 

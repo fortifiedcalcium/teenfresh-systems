@@ -85,6 +85,9 @@ beforeAll(async () => {
   await db.exec(read("011_orders.sql"));
   await db.exec(read("012_order_emails.sql"));
   await db.exec(read("013_order_email_templates.sql"));
+  await db.exec(read("014_product_info.sql"));
+  await db.exec(read("015_shop_gcash_qr.sql"));
+  await db.exec(read("016_shop_pesos.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -772,20 +775,20 @@ describe("011 orders", () => {
     p1 = (await db.query("insert into public.products (artist, title, price) values ('A', 'One', 12.50) returning id")).rows[0].id;
     p2 = (await db.query("insert into public.products (artist, title, price) values ('B', 'Two', 20) returning id")).rows[0].id;
     hidden = (await db.query("insert into public.products (artist, title, price, active) values ('C', 'Hidden', 5, false) returning id")).rows[0].id;
-    await db.query("update public.shop_settings set usd_to_php = 50, shipping_fee_php = 100, gcash_account_number = '09170000000' where id");
+    await db.query("update public.shop_settings set shipping_fee_php = 100, gcash_account_number = '09170000000' where id");
   });
-  it("prices the order from the products table at the saved rate", async () => {
+  it("prices the order in pesos from the products table", async () => {
     await asUser("alice");
     const r = await place("alice", items([p1, 2], [p2, 1]));
     expect(r.order_number).toMatch(/^TF-\d{6}$/);
-    expect(Number(r.total_php)).toBe(2350);                    // (25 + 20) USD x 50 + 100 shipping
+    expect(Number(r.total_php)).toBe(145);                     // 12.50 x 2 + 20 + 100 shipping
     const o = await row("select * from public.orders where id = $1", [r.id]);
     expect(o).toMatchObject({ status: "pending", phone: "+639171234567" });
-    expect(Number(o.subtotal_usd)).toBe(45);
+    expect(Number(o.subtotal_php)).toBe(45);
     expect((await row("select count(*)::int as n from public.order_items where order_id = $1", [r.id])).n).toBe(2);
     await asUser("admin");
     await db.query("update public.products set price = 99 where id = $1", [p1]);
-    expect(Number((await row("select unit_price_usd from public.order_items where order_id = $1 and title = 'One'", [r.id])).unit_price_usd)).toBe(12.5);   // old orders keep their price
+    expect(Number((await row("select unit_price_php from public.order_items where order_id = $1 and title = 'One'", [r.id])).unit_price_php)).toBe(12.5);   // old orders keep their price
     await db.query("update public.products set price = 12.50 where id = $1", [p1]);
   });
   it("rejects hidden products, bad quantities, bad details and another person's receipt", async () => {
@@ -811,7 +814,7 @@ describe("011 orders", () => {
     await asUser("erin");
     expect((await db.query("select id from public.orders where id = $1", [r.id])).rows).toHaveLength(0);
     expect((await db.query("select id from public.order_items where order_id = $1", [r.id])).rows).toHaveLength(0);
-    await fails(db.query("insert into public.orders (order_number, user_id, name, email, phone, address, city, postal_code, subtotal_usd, usd_to_php, total_php, sender_name, reference_number) values ('X', $1, 'a', 'a@b.co', '1', 'a', 'a', '1234', 1, 1, 1, 'a', 'zz')", [ids.erin]), "row-level security");
+    await fails(db.query("insert into public.orders (order_number, user_id, name, email, phone, address, city, postal_code, subtotal_php, total_php, sender_name, reference_number) values ('X', $1, 'a', 'a@b.co', '1', 'a', 'a', '1234', 1, 1, 'a', 'zz')", [ids.erin]), "row-level security");
     await asUser("dave");
     expect((await db.query("select id from public.orders where id = $1", [r.id])).rows).toHaveLength(1);
     await db.query("update public.orders set status = 'paid' where id = $1", [r.id]);
@@ -822,8 +825,8 @@ describe("011 orders", () => {
   });
   it("checkout stays closed until a GCash number is set, and only admins can change the settings", async () => {
     await asUser("alice");
-    await db.query("update public.shop_settings set usd_to_php = 1 where id");
-    expect(Number((await row("select usd_to_php from public.shop_settings")).usd_to_php)).toBe(50);
+    await db.query("update public.shop_settings set shipping_fee_php = 1 where id");
+    expect(Number((await row("select shipping_fee_php from public.shop_settings")).shipping_fee_php)).toBe(100);
     await asUser("admin");
     await db.query("update public.shop_settings set gcash_account_number = null where id");
     await asUser("frank");

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
-import { INFO_SECTIONS, productImageUrl, usd } from "../../lib/products.js";
+import { INFO_SECTIONS, productImageUrl } from "../../lib/products.js";
+import { peso } from "../../lib/payment.js";
 import { useCart } from "../../lib/cart.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import Alert from "../../components/Alert.jsx";
@@ -29,7 +30,7 @@ function Related({ items }) {
                 <div className="flex flex-col gap-1 px-1 pb-2 pt-3">
                   <p className="text-sm text-ink-muted">{r.artist}</p>
                   <p className="shop-title">{r.title}</p>
-                  <p className="text-lg font-bold tabular-nums">{usd(unitPrice(r))}</p>
+                  <p className="text-lg font-bold tabular-nums">{peso(unitPrice(r))}</p>
                 </div>
               </Link>
             </li>
@@ -99,7 +100,7 @@ export default function ProductDetail() {
 
           <p className="pd-price">
             {p.discount_percent > 0 && <span className="text-danger"><span className="sr-only">Discount </span>{p.discount_percent}%</span>}
-            <span>{usd(unitPrice(p))}</span>
+            <span>{peso(unitPrice(p))}</span>
           </p>
 
           {(p.pre_order || p.is_new) && (
@@ -121,7 +122,7 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <p className="pd-total"><span>Total</span><strong className="tabular-nums">{usd(total)}</strong></p>
+          <p className="pd-total"><span>Total</span><strong className="tabular-nums">{peso(total)}</strong></p>
 
           <div className="pd-actions">
             <button type="button" className="btn-secondary" onClick={onAdd}><IconCart />Add to cart</button>

@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
   }
 
   const { data: custom } = await db.from("order_email_templates").select("subject,heading,body").eq("kind", kind).maybeSingle();   // none = the built-in wording
-  const { data: items } = await db.from("order_items").select("artist,title,unit_price_usd,quantity").eq("order_id", order.id).order("title");
+  const { data: items } = await db.from("order_items").select("artist,title,unit_price_php,quantity").eq("order_id", order.id).order("title");
   let status: "sent" | "failed" = "sent";
   let error: string | null = null;
   try {

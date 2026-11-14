@@ -6,10 +6,9 @@ export type OrderKind = (typeof ORDER_KINDS)[number];
 /** The order status each admin email announces (order_received is sent when the order is placed, status "pending"). */
 export const KIND_STATUS: Record<OrderKind, string> = { order_received: "pending", order_paid: "paid", order_shipped: "shipped", order_cancelled: "cancelled" };
 
-export interface OrderRow { id: string; order_number: string; name: string; email: string; phone: string; address: string; city: string; postal_code: string; subtotal_usd: number | string; usd_to_php: number | string; shipping_php: number | string; total_php: number | string }
-export interface ItemRow { artist: string; title: string; unit_price_usd: number | string; quantity: number }
+export interface OrderRow { id: string; order_number: string; name: string; email: string; phone: string; address: string; city: string; postal_code: string; subtotal_php: number | string; shipping_php: number | string; total_php: number | string }
+export interface ItemRow { artist: string; title: string; unit_price_php: number | string; quantity: number }
 
-const usd = (n: unknown) => "$" + Number(n).toFixed(2);
 const php = (n: unknown) => "PHP " + Number(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export interface OrderTemplate { subject: string; heading: string; body: string }
@@ -47,7 +46,7 @@ export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[],
   const vals = { "Name": o.name, "Order Number": o.order_number, "Total": php(o.total_php) };
   const c = { subject: fillOrderFields(pick(custom?.subject, d.subject), vals), heading: fillOrderFields(pick(custom?.heading, d.heading), vals), body: fillOrderFields(pick(custom?.body, d.body), vals) };
   const link = site ? `${site.replace(/\/$/, "")}/orders/${o.id}` : "";
-  const rows = items.map((i) => `<tr><td style="padding:6px 0;">${e(i.artist)}<br><strong>${e(i.title)}</strong></td><td style="padding:6px 0;text-align:right;white-space:nowrap;">${usd(i.unit_price_usd)} × ${i.quantity}</td></tr>`).join("");
+  const rows = items.map((i) => `<tr><td style="padding:6px 0;">${e(i.artist)}<br><strong>${e(i.title)}</strong></td><td style="padding:6px 0;text-align:right;white-space:nowrap;">${php(i.unit_price_php)} × ${i.quantity}</td></tr>`).join("");
   const shipping = Number(o.shipping_php) > 0 ? php(o.shipping_php) : "Free";
   const html = `<!doctype html><html><body style="margin:0;background:#f1d0d9;font-family:Arial,Helvetica,sans-serif;color:#17303f;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px;">
@@ -59,7 +58,7 @@ ${paragraphs(c.body)}
 <p style="margin:0 0 8px 0;"><strong>Order ${e(o.order_number)}</strong></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #c4d6ea;border-bottom:1px solid #c4d6ea;font-size:14px;">${rows}</table>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin-top:8px;">
-<tr><td>Items (at PHP ${Number(o.usd_to_php)} per $1)</td><td style="text-align:right;">${usd(o.subtotal_usd)}</td></tr>
+<tr><td>Items</td><td style="text-align:right;">${php(o.subtotal_php)}</td></tr>
 <tr><td>Shipping</td><td style="text-align:right;">${e(shipping)}</td></tr>
 <tr><td style="padding-top:6px;"><strong>Total paid (GCash)</strong></td><td style="padding-top:6px;text-align:right;"><strong>${php(o.total_php)}</strong></td></tr></table>
 <p style="margin:16px 0 4px 0;"><strong>Deliver to</strong></p>
@@ -69,8 +68,8 @@ ${link ? `<p style="margin:0 0 8px 0;"><a href="${e(link)}" style="color:#1c5a85
 </td></tr></table></td></tr></table></body></html>`;
   const text = [
     c.heading, "", c.body, "", `Order ${o.order_number}`,
-    ...items.map((i) => `- ${i.artist}: ${i.title}  ${usd(i.unit_price_usd)} x ${i.quantity}`), "",
-    `Items (at PHP ${Number(o.usd_to_php)} per $1): ${usd(o.subtotal_usd)}`, `Shipping: ${shipping}`, `Total paid (GCash): ${php(o.total_php)}`, "",
+    ...items.map((i) => `- ${i.artist}: ${i.title}  ${php(i.unit_price_php)} x ${i.quantity}`), "",
+    `Items: ${php(o.subtotal_php)}`, `Shipping: ${shipping}`, `Total paid (GCash): ${php(o.total_php)}`, "",
     "Deliver to:", o.name, o.address, `${o.city} ${o.postal_code}`, o.phone,
     ...(link ? ["", `View your order: ${link}`] : []),
   ].join("\n");

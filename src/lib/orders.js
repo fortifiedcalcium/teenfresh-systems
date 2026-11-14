@@ -10,14 +10,13 @@ export const STATUS = {
 };
 const cents = (n) => Math.round(Number(n || 0) * 100);
 
-/** The totals of a cart: lines are { price, quantity } in US dollars; settings hold the rate and the shipping fee in pesos.
+/** The totals of a cart: lines are { price, quantity } in pesos; settings hold the shipping fee in pesos.
  *  The database repeats this sum in place_order() and uses its own prices; this is only what the shopper sees first. */
 export function priceOrder(lines, settings) {
   const subtotalCents = lines.reduce((a, l) => a + cents(l.price) * l.quantity, 0);
-  const rate = Number(settings?.usd_to_php || 0);
-  const subtotalPhp = Math.round(subtotalCents * rate) / 100;                // dollars x rate, rounded to the centavo
+  const subtotalPhp = subtotalCents / 100;
   const shippingPhp = Number(settings?.shipping_fee_php || 0);
-  return { subtotalUsd: subtotalCents / 100, subtotalPhp, shippingPhp, totalPhp: Math.round((subtotalPhp + shippingPhp) * 100) / 100 };
+  return { subtotalPhp, shippingPhp, totalPhp: Math.round((subtotalPhp + shippingPhp) * 100) / 100 };
 }
 
 /** One problem per field, in plain words. The database checks the same rules. */

@@ -6,7 +6,7 @@ import { orderArgs, priceOrder, sendOrderEmail, validateCheckout } from "../../l
 import { useCart, useCartLines } from "../../lib/cart.jsx";
 import { useCartProducts, useShopSettings } from "../../lib/useShop.js";
 import { peso, receiptPath, validateReceiptFile } from "../../lib/payment.js";
-import { usd } from "../../lib/products.js";
+import { productImageUrl } from "../../lib/products.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import Alert from "../../components/Alert.jsx";
 import CopyButton from "../../components/CopyButton.jsx";
@@ -95,6 +95,12 @@ export default function Checkout() {
                 <p>Send <strong>{peso(totals.totalPhp)}</strong> to:</p>
                 <p className="mt-1 font-bold">{settings.gcash_account_name || "Teenfresh"}</p>
                 <p className="flex flex-wrap items-center gap-2"><span className="font-mono text-base font-bold">{settings.gcash_account_number}</span><CopyButton text={settings.gcash_account_number} label="Copy GCash number" /></p>
+                {settings.gcash_qr_path && (
+                  <figure className="mt-3 w-48 max-w-full">
+                    <img src={productImageUrl({ image_path: settings.gcash_qr_path })} alt={`GCash QR code for ${settings.gcash_account_name || "Teenfresh"}. Scan it in the GCash app to pay.`} className="w-full rounded-lg border border-link bg-white" />
+                    <figcaption className="mt-1 text-sm">Or scan this QR code in the GCash app.</figcaption>
+                  </figure>
+                )}
                 <p className="mt-2">Then enter the details below and attach your receipt. We check it within 48 to 72 hours.</p>
               </div>
             )}
@@ -110,7 +116,7 @@ export default function Checkout() {
           <h2 className="text-lg font-black">Your order</h2>
           <ul className="space-y-2">
             {lines.map((l) => (
-              <li key={l.id} className="flex items-center gap-3 text-sm"><LineThumb p={l} /><span className="min-w-0 flex-1"><span className="block break-words font-bold">{l.title}</span><span className="text-ink-muted">{usd(l.price)} × {l.quantity}</span></span></li>
+              <li key={l.id} className="flex items-center gap-3 text-sm"><LineThumb p={l} /><span className="min-w-0 flex-1"><span className="block break-words font-bold">{l.title}</span><span className="text-ink-muted">{peso(l.price)} × {l.quantity}</span></span></li>
             ))}
           </ul>
           <Totals totals={totals} />
