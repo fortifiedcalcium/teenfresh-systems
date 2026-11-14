@@ -9,6 +9,7 @@ import { fmtDateTime } from "../../lib/availability.js";
 import { useToast } from "../../components/Toast.jsx";
 import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
+import OrderStatusBadge from "../../components/OrderStatusBadge.jsx";
 import Field from "../../components/Field.jsx";
 import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
@@ -272,11 +273,10 @@ export default function Orders() {
       {orders === null ? <Loading label="Loading orders…" /> : shown.length === 0 ? <Empty>No orders here yet.</Empty> : (
         <ul className="space-y-3">
           {shown.map((o) => {
-            const st = STATUS[o.status] || STATUS.pending;
             return (
               <li key={o.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
                 <div><h2 className="font-black">{o.order_number} · {o.name}</h2><p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)} · ref {o.reference_number}{o.preferred_courier ? ` · wants ${o.preferred_courier}` : ""}</p></div>
-                <div className="flex items-center gap-3"><Badge tone={st.tone}>{st.label}</Badge>{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
+                <div className="flex items-center gap-3"><OrderStatusBadge status={o.status} />{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
               </li>
             );
           })}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
-import { SHIPPING, STATUS } from "../../lib/orders.js";
+import { SHIPPING } from "../../lib/orders.js";
 import ShippingPayment from "../../components/ShippingPayment.jsx";
 import CopyButton from "../../components/CopyButton.jsx";
 import CourierChoice from "../../components/CourierChoice.jsx";
@@ -9,6 +9,7 @@ import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
+import OrderStatusBadge from "../../components/OrderStatusBadge.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { IconArrowLeft, IconCheck, IconPackage } from "../../components/NavIcons.jsx";
 
@@ -49,14 +50,13 @@ export default function OrderDetail() {
 
   if (order === undefined) return <Loading label="Loading your order…" className="p-12" />;
   if (order === null) return <Alert tone="bad">We could not find that order. <Link to="/my-orders">Go to My orders</Link></Alert>;
-  const st = STATUS[order.status] || STATUS.pending;
   const hasFee = order.shipping_fee_php != null;
   return (
     <div className="space-y-4">
       {placed && <Alert tone="ok"><span><strong>Thank you! Your order was placed.</strong> Keep your order number: {order.order_number}.</span></Alert>}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-3xl"><IconPackage />Order {order.order_number}</h1>
-        <Badge tone={st.tone}>{st.label}</Badge>
+        <OrderStatusBadge status={order.status} />
       </div>
       <p className="text-ink-muted">Placed {fmtDateTime(order.created_at)}. {nextText(order)}</p>
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">

@@ -59,6 +59,8 @@
   .badge-warn { @apply bg-brand-cream text-warning-ink; } .badge-warn::before { content: "!" / ""; font-weight: 800; }
   .badge-bad { @apply bg-brand-blush text-danger; } .badge-bad::before { content: "✕" / ""; }
   .badge-info { @apply bg-brand-sky text-ink; } .badge-info::before { content: "i" / ""; font-style: italic; }
+  .badge-has-icon::before { content: none; }
+  .badge-has-icon svg { width: 0.95rem; height: 0.95rem; }
   .badge-neutral { @apply bg-brand-ivory text-ink border-link; } .badge-neutral::before { content: "–" / ""; }
 
   .alert { @apply flex gap-3 rounded-lg border-l-4 border-y border-r p-3 text-sm; }
