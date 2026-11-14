@@ -91,6 +91,7 @@ beforeAll(async () => {
   await db.exec(read("017_product_info_images.sql"));
   await db.exec(read("018_order_shipping_payment.sql"));
   await db.exec(read("019_order_tracking.sql"));
+  await db.exec(read("020_preferred_courier.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -885,6 +886,32 @@ describe("011 orders", () => {
     expect(await row("select courier from public.orders where id = $1", [r.id])).toEqual({ courier: "LBC" });
     await asUser("admin");
     expect((await row("select status, shipping_status from public.orders where id = $1", [r.id]))).toEqual({ status: "shipped", shipping_status: "paid" });
+  });
+  it("the shopper picks a preferred courier until the order ships; nobody else can", async () => {
+    const sql = (q, a) => db.query(q, a);
+    await asUser("carol");
+    const r = await place("carol", items([p1, 1]));
+    await sql("select public.set_preferred_courier($1, 'LBC')", [r.id]);                    // while pending
+    expect((await row("select preferred_courier from public.orders where id = $1", [r.id])).preferred_courier).toBe("LBC");
+    await asUser("carol");
+    await sql("select public.set_preferred_courier($1, '  Mr. Speedy  ')", [r.id]);          // changed, trimmed, any name
+    await fails(sql("select public.set_preferred_courier($1, '   ')", [r.id]), "INVALID_COURIER");
+    await fails(sql("select public.set_preferred_courier($1, repeat('x', 61))", [r.id]), "INVALID_COURIER");
+    await asUser("dave");
+    await fails(sql("select public.set_preferred_courier($1, 'LBC')", [r.id]), "NOT_FOUND");   // someone else's order
+    await asUser(null);
+    await fails(sql("select public.set_preferred_courier($1, 'LBC')", [r.id]), "permission denied");
+    await asUser("admin");
+    expect((await row("select preferred_courier from public.orders where id = $1", [r.id])).preferred_courier).toBe("Mr. Speedy");
+    await asUser("admin");
+    await sql("update public.orders set status = 'paid' where id = $1", [r.id]);
+    await asUser("carol");
+    await sql("select public.set_preferred_courier($1, 'J&T Express')", [r.id]);             // still allowed once paid
+    await asUser("admin");
+    await sql("select public.set_order_shipping($1, 0)", [r.id]);
+    await sql("update public.orders set status = 'shipped', courier = 'J&T Express' where id = $1", [r.id]);
+    await asUser("carol");
+    await fails(sql("select public.set_preferred_courier($1, 'LBC')", [r.id]), "ORDER_LOCKED");   // shipped: too late
   });
   it("free shipping (fee 0) needs no payment", async () => {
     await asUser("carol");

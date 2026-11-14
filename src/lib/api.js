@@ -77,6 +77,8 @@ const ERRORS = {
   INVALID_FEE: "Enter a shipping fee from 0 to 100,000 pesos.",
   NOT_PENDING: "There is no shipping receipt waiting to be checked.",
   NOT_FOUND: "We could not find that order.",
+  ORDER_LOCKED: "This order can no longer be changed.",
+  INVALID_COURIER: "Choose a courier (up to 60 characters).",
   PAYMENT_NOT_SET_UP: "Checkout is not open yet because payment details are not set up. Please try again later.",
 };
 

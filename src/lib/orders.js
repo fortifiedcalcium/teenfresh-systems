@@ -19,6 +19,11 @@ export const SHIPPING = {
 export const COURIERS = ["J&T Express", "LBC", "JRS Express", "Ninja Van", "Flash Express", "2GO", "Lalamove", "Grab Express", "Pick-up by the shopper"];
 export const OTHER_COURIER = "Other";
 export const MAX_TRACKING = 60;
+/** A saved courier name as the dropdown shows it: a listed courier, or "Other" with the typed name. */
+export function splitCourier(name) {
+  if (!name) return { choice: "", other: "" };
+  return COURIERS.includes(name) ? { choice: name, other: "" } : { choice: OTHER_COURIER, other: name };
+}
 /** The courier name to save, or an error message. `other` is the typed name when "Other" is chosen. */
 export function courierValue(choice, other) {
   const name = (choice === OTHER_COURIER ? other : choice || "").trim();

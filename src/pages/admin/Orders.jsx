@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { COURIERS, MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, sendOrderEmail } from "../../lib/orders.js";
+import { COURIERS, MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, sendOrderEmail, splitCourier } from "../../lib/orders.js";
 import { productImageUrl, removeProductImage, uploadProductImage } from "../../lib/products.js";
 import { IMAGE_TYPES, validateImageFile } from "../../lib/eventImages.js";
 import { peso, parseAmount } from "../../lib/payment.js";
@@ -114,8 +114,9 @@ function OrderDialog({ order, onClose, onChanged }) {
   const [feeError, setFeeError] = useState("");
   useEffect(() => { supabase.from("order_emails").select("*").eq("order_id", order.id).order("sent_at", { ascending: false }).then(({ data }) => setMails(data || [])); }, [order.id]);
   useEffect(() => { supabase.from("order_items").select("*").eq("order_id", order.id).order("title").then(({ data }) => setItems(data || [])); }, [order.id]);
-  const [courierChoice, setCourierChoice] = useState(order.courier ? (COURIERS.includes(order.courier) ? order.courier : OTHER_COURIER) : "");
-  const [courierOther, setCourierOther] = useState(order.courier && !COURIERS.includes(order.courier) ? order.courier : "");
+  const startCourier = splitCourier(order.courier || order.preferred_courier);       // the courier already used, else what the shopper asked for
+  const [courierChoice, setCourierChoice] = useState(startCourier.choice);
+  const [courierOther, setCourierOther] = useState(startCourier.other);
   const [tracking, setTracking] = useState(order.tracking_number || "");
   const [shipError, setShipError] = useState("");
   /** The courier and tracking number to save, or null (and a message on screen) when they are not valid. */
@@ -176,7 +177,7 @@ function OrderDialog({ order, onClose, onChanged }) {
     <Modal title={`Order ${order.order_number}`} onClose={onClose} wide>
       <div className="space-y-4 text-sm">
         <div className="grid gap-4 md:grid-cols-2">
-          <section aria-labelledby="o-ship"><h3 id="o-ship" className="font-black">Deliver to</h3><p>{order.name}<br />{order.address}<br />{order.city} {order.postal_code}<br />{order.phone}<br />{order.email}</p>{order.notes && <p className="mt-1"><span className="font-semibold">Buyer's note:</span> {order.notes}</p>}</section>
+          <section aria-labelledby="o-ship"><h3 id="o-ship" className="font-black">Deliver to</h3><p>{order.name}<br />{order.address}<br />{order.city} {order.postal_code}<br />{order.phone}<br />{order.email}</p>{order.notes && <p className="mt-1"><span className="font-semibold">Buyer's note:</span> {order.notes}</p>}<p className="mt-1"><span className="font-semibold">Preferred courier:</span> {order.preferred_courier || <span className="text-ink-muted">not chosen yet</span>}</p></section>
           <section aria-labelledby="o-pay"><h3 id="o-pay" className="font-black">Payment to check</h3><p>Expect <strong>{peso(order.total_php)}</strong> ({peso(order.subtotal_php)} items{Number(order.shipping_php) > 0 ? ` plus ${peso(order.shipping_php)} shipping` : ""})<br />Sender: {order.sender_name}<br />Reference: <span className="font-mono">{order.reference_number}</span></p></section>
         </div>
         <ul className="divide-y divide-brand-sky rounded-lg border border-brand-sky px-3">
@@ -274,7 +275,7 @@ export default function Orders() {
             const st = STATUS[o.status] || STATUS.pending;
             return (
               <li key={o.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
-                <div><h2 className="font-black">{o.order_number} · {o.name}</h2><p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)} · ref {o.reference_number}</p></div>
+                <div><h2 className="font-black">{o.order_number} · {o.name}</h2><p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)} · ref {o.reference_number}{o.preferred_courier ? ` · wants ${o.preferred_courier}` : ""}</p></div>
                 <div className="flex items-center gap-3"><Badge tone={st.tone}>{st.label}</Badge>{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
               </li>
             );

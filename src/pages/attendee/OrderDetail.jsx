@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabaseClient.js";
 import { SHIPPING, STATUS } from "../../lib/orders.js";
 import ShippingPayment from "../../components/ShippingPayment.jsx";
 import CopyButton from "../../components/CopyButton.jsx";
+import CourierChoice from "../../components/CourierChoice.jsx";
 import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
@@ -82,6 +83,8 @@ export default function OrderDetail() {
           <h2 id="ship-h" className="text-lg font-black">Delivery</h2>
           <p><strong>{order.name}</strong><br />{order.address}<br />{order.city} {order.postal_code}<br />{order.phone}<br />{order.email}</p>
           {order.notes && <p><span className="font-semibold">Your note:</span> {order.notes}</p>}
+          {(order.status === "pending" || order.status === "paid") && <CourierChoice key={order.preferred_courier || "none"} order={order} onSaved={() => setReload((n) => n + 1)} />}
+          {(order.status === "shipped" || order.status === "cancelled") && order.preferred_courier && <p><span className="font-semibold">Preferred courier:</span> {order.preferred_courier}</p>}
           {order.status === "shipped" && order.courier && (
             <div className="rounded-lg bg-brand-sky p-3">
               <p><span className="font-semibold">Courier:</span> {order.courier}</p>

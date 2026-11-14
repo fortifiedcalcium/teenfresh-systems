@@ -210,6 +210,26 @@ describe("attendee pages", () => {
       await user.click(within(dialog).getByRole("button", { name: "Mark as shipped" }));
       await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.args[0]?.status === "shipped" && w.args[0]?.courier === "LBC" && w.args[0]?.tracking_number === "LBC123456")).toBe(true));
     });
+    it("Order page: the shopper picks a preferred courier, and the admin sees it", async () => {
+      asUser();
+      fixtures.current.rpc = { set_preferred_courier: { preferred_courier: "LBC" } };
+      const user = userEvent.setup();
+      const b = render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>));
+      await screen.findByRole("heading", { level: 3, name: "Preferred courier" });
+      await user.click(screen.getByRole("button", { name: "Save courier" }));
+      expect(await screen.findByText("Choose the courier.")).toBeInTheDocument();                  // nothing was sent
+      expect(fixtures.current.rpcCalls?.some((c) => c.name === "set_preferred_courier")).toBeFalsy();
+      await user.selectOptions(screen.getByRole("combobox", { name: /^Courier/ }), "LBC");
+      await user.click(screen.getByRole("button", { name: "Save courier" }));
+      await waitFor(() => expect(fixtures.current.rpcCalls?.some((c) => c.name === "set_preferred_courier" && c.args.p_order === "o1" && c.args.p_courier === "LBC")).toBe(true));
+      b.unmount();
+      fixtures.current.orders = [{ ...order, preferred_courier: "Ninja Van" }];
+      admin(<Orders />); await settled("Shop orders");
+      expect(await screen.findByText(/wants Ninja Van/)).toBeInTheDocument();                       // in the list
+      await user.click(screen.getByRole("button", { name: /Review order TF-000001/ }));
+      const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
+      expect(within(dialog).getByText("Ninja Van")).toBeInTheDocument();                           // in the order
+    });
     it("Order page: a confirmed order asks for the shipping fee and sends the receipt", async () => {
       asUser();
       fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }];
