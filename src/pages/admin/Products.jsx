@@ -8,6 +8,7 @@ import { useAnnounce } from "../../a11y.jsx";
 import Modal from "../../components/Modal.jsx";
 import Field from "../../components/Field.jsx";
 import Alert from "../../components/Alert.jsx";
+import BoldTextarea from "../../components/BoldTextarea.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
@@ -225,8 +226,8 @@ export default function Products() {
                 <p id="p-desc-images-hint" className="hint">Shown at the top of the Description, in the order added. Each image keeps its own proportions and is scaled down to fit the page width, never cropped. Up to {INFO_IMAGES_MAX} images; they upload when you save.</p>
               </div>
               {INFO_SECTIONS.map(([k, label]) => (
-                <Field key={k} id={`p-${k}`} label={label} error={errors[k]} hint="Leave empty to hide this section. Line breaks are kept.">
-                  <textarea className="input" rows={4} maxLength={INFO_MAX} value={form[k]} onChange={set(k)} />
+                <Field key={k} id={`p-${k}`} label={label} error={errors[k]} hint="Leave empty to hide this section. Select text and press the B button (or Ctrl/Cmd+B) to make it bold. Line breaks are kept.">
+                  <BoldTextarea rows={4} maxLength={INFO_MAX} value={form[k]} onChange={(v) => setForm((f) => ({ ...f, [k]: v }))} />
                 </Field>
               ))}
             </fieldset>

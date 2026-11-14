@@ -63,6 +63,17 @@ npm test                  # schema/RLS (real Postgres via PGlite), email merge, 
 ```
 Camera scanning needs **HTTPS or localhost**; phones need the deployed HTTPS site.
 
+## Dev copy (work without touching the live site)
+
+`npm run dev` can use its own Supabase project so test orders, products and migrations never reach live data.
+
+1. Create a second Supabase project (for example `teen-fresh-dev`) on the free plan.
+2. `node scripts/build-dev-sql.mjs`, then paste all of `supabase/dev-setup.sql` into that project's **SQL Editor** and run it once. Never run it on the live project.
+3. Create `.env.development` with the dev project's `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Vite uses it for `npm run dev` only; `npm run build` and `npm run deploy` keep using `.env` (live).
+4. In the dev project: **Authentication → URL Configuration**: Site URL `http://localhost:5173`, Redirect URL `http://localhost:5173/**`. For Google sign-in, enable the Google provider there and add the dev project's `https://<dev-ref>.supabase.co/auth/v1/callback` to the Google OAuth client's authorised redirect URIs.
+5. Make yourself admin in the dev project (step 4 below, in its SQL Editor).
+6. The Supabase CLI is linked to the live project. For the dev project always pass `--project-ref <dev-ref>` (for example `supabase functions deploy send-order-email --project-ref <dev-ref> --yes`), and set its own function secrets, or use a throwaway mail key so tests never email real people.
+
 ## 4. Create the first admin
 Sign up on the site once, then in the SQL Editor:
 ```sql

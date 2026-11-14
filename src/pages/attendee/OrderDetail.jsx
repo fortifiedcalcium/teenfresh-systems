@@ -8,7 +8,7 @@ import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
 import { Loading } from "../../components/Spinner.jsx";
-import { IconCheck, IconPackage } from "../../components/NavIcons.jsx";
+import { IconArrowLeft, IconCheck, IconPackage } from "../../components/NavIcons.jsx";
 
 export const NEXT = {
   pending: "We are checking your GCash payment. This takes 48 to 72 hours. We will update this page when it is confirmed.",
@@ -85,7 +85,7 @@ export default function OrderDetail() {
         </section>
       </div>
       {order.status === "paid" && order.shipping_status === "awaiting_payment" && <ShippingPayment order={order} onSent={() => setReload((n) => n + 1)} />}
-      <p><Link to="/my-orders">All my orders</Link> · <Link to="/shop">Back to the shop</Link></p>
+      <p className="flex flex-wrap gap-2"><Link to="/shop" className="btn-secondary no-underline"><IconArrowLeft />Back to the shop</Link><Link to="/my-orders" className="btn-secondary no-underline"><IconPackage />All my orders</Link></p>
     </div>
   );
 }

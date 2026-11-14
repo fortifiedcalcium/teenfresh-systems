@@ -6,8 +6,9 @@ import { peso } from "../../lib/payment.js";
 import { useCart } from "../../lib/cart.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import Alert from "../../components/Alert.jsx";
+import FormattedText from "../../components/FormattedText.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
-import { IconCart, IconImage } from "../../components/NavIcons.jsx";
+import { IconArrowLeft, IconCart, IconImage } from "../../components/NavIcons.jsx";
 import { MAX_QTY } from "../../lib/orders.js";
 
 const unitPrice = (p) => Number(p.price);
@@ -71,7 +72,7 @@ export default function ProductDetail() {
       <section className="rounded-2xl border border-link bg-white p-4 sm:p-6">
         {error && <Alert tone="bad" className="mb-4">{error}</Alert>}
         <Empty>This product is not available.</Empty>
-        <p className="mt-4 text-center"><Link to="/shop" className="shop-link">Back to the shop</Link></p>
+        <p className="mt-4 text-center"><Link to="/shop" className="btn-secondary no-underline"><IconArrowLeft />Back to the shop</Link></p>
       </section>
     );
   }
@@ -86,7 +87,7 @@ export default function ProductDetail() {
   return (
     <section className="rounded-2xl border border-link bg-white p-4 sm:p-6" aria-labelledby="product-title">
       <nav aria-label="Breadcrumb" className="mb-4">
-        <Link to="/shop" className="shop-link"><span aria-hidden="true">←</span> Shop</Link>
+        <Link to="/shop" className="btn-secondary no-underline"><IconArrowLeft />Shop</Link>
       </nav>
       <div className="pd-layout">
         <div className="pd-media">
@@ -96,17 +97,19 @@ export default function ProductDetail() {
 
         <div className="pd-info">
           <p className="pd-artist">{p.artist}</p>
-          <h1 id="product-title" className="pd-title">{p.title}</h1>
+          <div className="flex items-start gap-2">
+            <h1 id="product-title" className="pd-title min-w-0 flex-1">{p.title}</h1>
+            {p.is_new && <span className="shop-new mt-1">NEW</span>}
+          </div>
 
           <p className="pd-price">
             {p.discount_percent > 0 && <span className="text-danger"><span className="sr-only">Discount </span>{p.discount_percent}%</span>}
             <span>{peso(unitPrice(p))}</span>
           </p>
 
-          {(p.pre_order || p.is_new) && (
+          {p.pre_order && (
             <div className="pd-status">
-              {p.pre_order && <p className="pd-status-main">Pre-order<span aria-hidden="true"> ∙ </span><span className="font-normal">This is a pre-order product.</span></p>}
-              {p.is_new && <span className="shop-new">NEW</span>}
+              <p className="pd-status-main">Pre-order<span aria-hidden="true"> ∙ </span><span className="font-normal">This is a pre-order product.</span></p>
             </div>
           )}
 
@@ -137,7 +140,7 @@ export default function ProductDetail() {
               <summary>{label}</summary>
               <div className="pd-prose">
                 {k === "info_description" && (p.info_images || []).map((path, n) => <img key={path} src={productImageUrl({ image_path: path })} alt={`${p.title}, detail ${n + 1}`} loading="lazy" className="pd-desc-img" />)}
-                {p[k]}
+                <FormattedText text={p[k]} />
               </div>
             </details>
           ))}

@@ -27,18 +27,18 @@ export default function AttendeeLayout() {
         <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2" aria-label="Main">
           <Link to="/" className="nav-link" aria-label="Teenfresh Events, home"><img src={logo} alt="" width="188" height="40" className="h-10 w-auto" /></Link>
           <div className="flex flex-wrap items-center gap-1">
-            <NavLink to="/" end className="nav-link"><IconCalendar />Events</NavLink>
-            {SHOP_ENABLED && <NavLink to="/shop" className="nav-link"><IconBag />Shop</NavLink>}
-            {SHOP_ENABLED && <NavLink to="/cart" className="nav-link"><IconCart />Cart{count > 0 && <span> ({count}<span className="sr-only"> items</span>)</span>}</NavLink>}
-            {SHOP_ENABLED && user && <NavLink to="/my-orders" className="nav-link"><IconPackage />My orders</NavLink>}
-            {user && <NavLink to="/my-registrations" className="nav-link"><IconTicket />My registrations</NavLink>}
-            {isAdmin && <NavLink to="/admin" className="nav-link"><IconDashboard />Admin</NavLink>}
+            <NavLink to="/" end className="nav-link" title="Events"><IconCalendar /><span className="sr-only">Events</span></NavLink>
+            {SHOP_ENABLED && <NavLink to="/shop" className="nav-link" title="Shop"><IconBag /><span className="sr-only">Shop</span></NavLink>}
+            {SHOP_ENABLED && <NavLink to="/cart" className="nav-link" title="Cart"><IconCart /><span className="sr-only">Cart</span>{count > 0 && <span aria-hidden="true">({count})</span>}{count > 0 && <span className="sr-only">, {count} items</span>}</NavLink>}
+            {SHOP_ENABLED && user && <NavLink to="/my-orders" className="nav-link" title="My orders"><IconPackage /><span className="sr-only">My orders</span></NavLink>}
+            {user && <NavLink to="/my-registrations" className="nav-link" title="My registrations"><IconTicket /><span className="sr-only">My registrations</span></NavLink>}
+            {isAdmin && <NavLink to="/admin" className="nav-link" title="Admin"><IconDashboard /><span className="sr-only">Admin</span></NavLink>}
             {user ? (
-              <button className="btn-secondary ml-2" onClick={signOut}><IconLogOut />Sign out</button>
+              <button className="btn-secondary ml-2" onClick={signOut} title="Sign out"><IconLogOut /><span className="sr-only">Sign out</span></button>
             ) : (
               <>
-                <NavLink to="/login" className="nav-link"><IconLogIn />Sign in</NavLink>
-                <Link to="/register" className="btn-primary ml-1"><IconUserPlus />Sign up</Link>
+                <NavLink to="/login" className="nav-link" title="Sign in"><IconLogIn /><span className="sr-only">Sign in</span></NavLink>
+                <Link to="/register" className="btn-primary ml-1" title="Sign up"><IconUserPlus /><span className="sr-only">Sign up</span></Link>
               </>
             )}
           </div>

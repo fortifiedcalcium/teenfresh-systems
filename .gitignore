@@ -11,3 +11,4 @@ test-results
 dist-csp
 .firebase
 .DS_Store
+supabase/dev-setup.sql

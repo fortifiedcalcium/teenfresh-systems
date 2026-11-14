@@ -5,19 +5,18 @@
   .shop-chip[aria-pressed="true"] { @apply border-ink bg-ink text-brand-ivory hover:bg-ink; }
 
   .shop-grid { @apply grid grid-cols-1 gap-x-5 gap-y-8 xs:grid-cols-2 lg:grid-cols-4; }
-  .shop-card { @apply rounded-2xl transition-shadow duration-200; }
-  .shop-thumb { @apply aspect-square overflow-hidden rounded-2xl border border-link bg-brand-ivory; }
+  /* The title link stretches over the whole card, so any click opens the product (one link for keyboards and screen readers, no nested links). */
+  .shop-card-link::after { content: ""; position: absolute; inset: 0; border-radius: 1rem; }
+  .shop-card:has(.shop-card-link) { cursor: pointer; }
+  .shop-card:focus-within { outline: 3px solid var(--link); outline-offset: 2px; }
+  .shop-card { @apply relative h-full rounded-2xl border border-link bg-brand-ivory p-3 transition-shadow duration-200; }   /* a tinted, outlined card, so it stands out from the white page */
+  .shop-thumb { @apply aspect-square overflow-hidden rounded-xl border border-link bg-white; }
   .shop-art { transition: transform 0.4s ease; }
   .shop-pre { @apply m-0 text-sm font-bold uppercase tracking-wide; color: var(--social-pink); }
   .shop-title { @apply m-0 text-base font-bold leading-snug text-ink; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-  .shop-new { @apply mt-1 self-start rounded-md bg-ink px-2 py-0.5 text-sm font-bold text-brand-ivory; }
+  .shop-new { @apply shrink-0 rounded-md bg-ink px-2 py-0.5 text-sm font-bold text-brand-ivory; }
 
   /* Product detail page (src/pages/attendee/ProductDetail.jsx): image left, buying panel right, monochrome */
-  /* The "Shop" link back to the product list: clearly a link (link colour, bold, underline) and a comfortable tap target */
-  .shop-link { @apply inline-flex min-h-target items-center gap-1 rounded-md px-1 text-base font-bold text-link underline underline-offset-4 decoration-2; }
-  .shop-link:hover { @apply bg-brand-sky; text-decoration-thickness: 3px; }
-  .shop-link:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
-
   .pd-layout { @apply grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-10; }
   .pd-media { @apply aspect-square overflow-hidden rounded-2xl border border-link bg-brand-ivory md:sticky md:top-4 md:self-start; }
   .pd-info { @apply flex flex-col gap-4; }
