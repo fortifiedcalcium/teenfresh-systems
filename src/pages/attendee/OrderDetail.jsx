@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { SHIPPING } from "../../lib/orders.js";
 import ShippingPayment from "../../components/ShippingPayment.jsx";
 import CopyButton from "../../components/CopyButton.jsx";
@@ -36,6 +37,7 @@ export function nextText(order) {
 }
 
 export default function OrderDetail() {
+  const { user } = useAuth();
   const { id } = useParams();
   const placed = useLocation().state?.placed;
   const [order, setOrder] = useState(undefined);       // undefined loading, null not found
@@ -44,12 +46,14 @@ export default function OrderDetail() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [o, it] = await Promise.all([supabase.from("orders").select("*").eq("id", id).maybeSingle(), supabase.from("order_items").select("*").eq("order_id", id).order("title")]);
+      // Only MY order: admins can read every order in the database, so ask for mine explicitly. Someone else's order reads as "not found".
+      const o = await supabase.from("orders").select("*").eq("id", id).eq("user_id", user.id).maybeSingle();
+      const it = o.data ? await supabase.from("order_items").select("*").eq("order_id", id).order("title") : { data: [] };
       if (!alive) return;
       setOrder(o.data || null); setItems(it.data || []);
     })();
     return () => { alive = false; };
-  }, [id, reload]);
+  }, [id, reload, user.id]);
 
   if (order === undefined) return <Loading label="Loading your order…" className="p-12" />;
   if (order === null) return <Alert tone="bad">We could not find that order. <Link to="/my-orders">Go to My orders</Link></Alert>;

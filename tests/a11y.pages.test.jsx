@@ -11,7 +11,7 @@ vi.mock("../src/context/AuthContext.jsx", async () => { const m = await import("
 
 import { LiveRegionProvider } from "../src/a11y.jsx";
 import { ToastProvider } from "../src/components/Toast.jsx";
-import { asGuest, asUser, fixtures } from "./helpers/mockSupabase.js";
+import { asGuest, asUser, authState, fixtures } from "./helpers/mockSupabase.js";
 import Login from "../src/pages/auth/Login.jsx";
 import Register from "../src/pages/auth/Register.jsx";
 import ForgotPassword from "../src/pages/auth/ForgotPassword.jsx";
@@ -370,6 +370,23 @@ describe("attendee pages", () => {
       expect(screen.getAllByText("Shipping fee payment is short").length).toBeGreaterThan(0);        // the order status says it is the shipping fee
       expect(screen.getByText(/Still to pay \(underpaid\)/)).toBeInTheDocument();
       expect(screen.queryByText("Paid")).toBeNull();
+    });
+    it("My orders and the order page ask only for MY orders, so an admin does not see anyone else's", async () => {
+      for (const adminUser of [false, true]) {
+        asUser(adminUser);
+        const me = authState.current.user.id;
+        fixtures.current.eqs = [];
+        const a = page("/my-orders", <MyOrders />);
+        await screen.findByRole("heading", { level: 1, name: "My orders" });
+        expect(fixtures.current.eqs).toContainEqual({ table: "orders", col: "user_id", val: me });        // my rows, whoever I am
+        a.unmount();
+        fixtures.current.eqs = [];
+        fixtures.current.orders = [{ ...order, user_id: me }];
+        const b = render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>));
+        await screen.findByRole("heading", { level: 1, name: "Order TF-000001" });
+        expect(fixtures.current.eqs).toEqual(expect.arrayContaining([{ table: "orders", col: "user_id", val: me }, { table: "orders", col: "id", val: "o1" }]));
+        b.unmount();
+      }
     });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();

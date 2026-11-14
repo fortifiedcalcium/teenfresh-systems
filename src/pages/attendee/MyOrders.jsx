@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
@@ -9,17 +10,20 @@ import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconEye, IconPackage } from "../../components/NavIcons.jsx";
 
 export default function MyOrders() {
+  const { user } = useAuth();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
   useEffect(() => {
     let alive = true;
-    supabase.from("orders").select("*").order("created_at", { ascending: false }).then(({ data, error: err }) => {
+    // "My" orders: ask for my own rows explicitly. The database lets admins read every order (they need that in Admin), so
+    // without this filter an admin saw every customer's orders on this page.
+    supabase.from("orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data, error: err }) => {
       if (!alive) return;
       if (err) setError("We could not load your orders. Check your connection and refresh the page.");
       setOrders(data || []);
     });
     return () => { alive = false; };
-  }, []);
+  }, [user.id]);
   return (
     <div className="space-y-4">
       <h1 className="flex items-center gap-2 text-3xl"><IconPackage />My orders</h1>
