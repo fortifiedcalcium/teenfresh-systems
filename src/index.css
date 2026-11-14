@@ -12,8 +12,8 @@
   body { @apply bg-brand-blush font-sans text-base text-ink antialiased; line-height: 1.5; }
   h1, h2, h3, h4 { @apply font-black text-ink; }   /* titles use the Black weight (900) */
   /* 1.4.1: links are always underlined, never distinguished by colour alone */
-  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab) { @apply text-link underline underline-offset-2; }
-  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):hover { text-decoration-thickness: 2px; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link) { @apply text-link underline underline-offset-2; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):hover { text-decoration-thickness: 2px; }
   /* 2.4.7: one visible focus indicator for everything interactive: 3px ink, 2px offset */
   :focus { outline: none; }
   :focus-visible, [tabindex="-1"]:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
@@ -45,11 +45,27 @@
   .btn-primary:disabled:hover, .btn-primary[aria-disabled="true"]:hover { @apply bg-brand-blue text-ink; }
 
   .input { @apply block min-h-target w-full rounded-lg border border-link bg-white px-3 py-2 text-base text-ink; }
-  .input[aria-invalid="true"] { @apply border-2 border-danger; }
+  .input[aria-invalid="true"] { border: 2px solid var(--error-red); }
   .label { @apply mb-1 block text-sm font-semibold text-ink; }
   .hint { @apply mt-1 text-xs text-ink-muted; }
   /* A field with a problem: a red bar and a soft red background, so it is easy to spot while scrolling a long form. */
-  .field-error { @apply rounded-lg border-l-4 border-danger bg-brand-blush py-2 pl-3 pr-2; }
+  .field-error { @apply rounded-lg py-2 pl-3 pr-2; background: var(--error-bg); border-left: 4px solid var(--error-red); }
+
+  /* The error icon: a filled red circle with a white "!" (put it in an aria-hidden span; the words carry the meaning). */
+  .error-icon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: var(--error-red); color: var(--white); font-size: 0.95rem; font-weight: 800; line-height: 1; }
+  .error-icon--sm { width: 1.125rem; height: 1.125rem; font-size: 0.75rem; margin-top: 0.1rem; }
+  /* The message under an invalid field. */
+  .field-msg { display: flex; align-items: flex-start; gap: 0.4rem; margin-top: 0.25rem; font-size: 0.875rem; font-weight: 600; color: var(--error-red); }
+
+  /* The error summary at the top of a form: a light card with a thick red left edge, so it stands out from the pink page. */
+  .error-summary { display: flex; align-items: flex-start; gap: 0.75rem; padding: 1.125rem 1.25rem; border-radius: 8px; background: var(--error-bg); color: var(--error-text); font-size: 0.9375rem;
+    border: 1px solid var(--error-red); border-left: 4px solid var(--error-red); box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 18%, transparent); }
+  .error-summary__title { margin: 0; font-size: 1.0625rem; font-weight: 800; line-height: 1.35; color: var(--error-heading); }
+  .error-summary__list { margin: 0.5rem 0 0; padding-left: 1.25rem; list-style: disc; }
+  .error-summary__list li + li { margin-top: 0.375rem; }
+  .error-summary__link { color: var(--error-link); font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; border-radius: 2px; }
+  .error-summary__link:hover { text-decoration-thickness: 3px; }
+  .error-summary__link:focus-visible { outline: 2px solid var(--error-link); outline-offset: 2px; }
   /* When a field gets focus (from the error summary), keep it clear of the sticky header. */
   input, select, textarea, .field-error { scroll-margin-top: 7rem; }
   .card { @apply rounded-xl border border-link bg-white; }
@@ -114,6 +130,13 @@
 /* Windows High Contrast / forced colours: state must not depend on background colour alone */
 @media (forced-colors: active) {
   .badge, .alert, .card, .btn, .input { border: 2px solid CanvasText; }
+  /* error summary and invalid fields: keep the border and the shapes, never rely on the background colour */
+  .error-summary { border: 2px solid CanvasText; border-left-width: 8px; box-shadow: none; }
+  .error-summary__link { color: LinkText; }
+  .error-icon { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  .field-error { border-left: 6px solid CanvasText; }
+  .field-msg { color: CanvasText; }
+  .input[aria-invalid="true"] { border: 4px double CanvasText; }
   .progress-fill { background: Highlight !important; forced-color-adjust: none; }
   .progress-track { border: 1px solid CanvasText; }
   .nav-link[aria-current="page"] { outline: 3px solid Highlight; }

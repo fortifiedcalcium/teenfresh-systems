@@ -9,7 +9,7 @@ export default function Field({ label, error, hint, id, required, children }) {
       <label htmlFor={id} className="label">{label}{required && <span className="font-normal text-ink-muted"> (required)</span>}</label>
       {React.cloneElement(children, { id, "aria-invalid": error ? "true" : undefined, "aria-describedby": describedBy, "aria-required": required ? "true" : undefined })}
       {hint && <p id={`${id}-hint`} className="hint">{hint}</p>}
-      {error && <p id={`${id}-err`} className="mt-1 flex gap-1 text-sm font-semibold text-danger"><span aria-hidden="true">✕</span>{error}</p>}
+      {error && <p id={`${id}-err`} className="field-msg"><span className="error-icon error-icon--sm" aria-hidden="true">!</span>{error}</p>}
     </div>
   );
 }

@@ -72,7 +72,7 @@ export default function Checkout() {
   const PAYMENT = ["sender_name", "reference_number", "receipt"];
   const flag = (keys) => {                 // "2 fields need attention" beside a section's title, when it has problems
     const n = keys.filter((k) => errors[k]).length;
-    return n > 0 ? <span className="ml-2 text-sm font-bold text-danger"><span aria-hidden="true">✕ </span>{n} {n === 1 ? "field needs" : "fields need"} attention</span> : null;
+    return n > 0 ? <span className="ml-2 inline-flex items-center gap-1 text-sm font-bold" style={{ color: "var(--error-red)" }}><span className="error-icon error-icon--sm" aria-hidden="true">!</span>{n} {n === 1 ? "field needs" : "fields need"} attention</span> : null;
   };
   const text = (name, label, props = {}, hint) => <Field id={name} label={label} required error={errors[name]} hint={hint}><input className="input" value={f[name]} onChange={set(name)} {...props} /></Field>;
   return (

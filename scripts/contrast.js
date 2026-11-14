@@ -52,6 +52,11 @@ export const APPROVED = [
   T("ink-muted", "brand-ivory", 3, "ticket perforation"), T("ink-muted", "white", 3, "ticket perforation"), T("link", "brand-blush", 3, "ticket outline on the page"),
   T("ink", "white", 3, "focus ring"), T("ink", "brand-ivory", 3, "focus ring"), T("ink", "brand-cream", 3, "focus ring"), T("ink", "brand-sky", 3, "focus ring"), T("ink", "brand-blush", 3, "focus ring on the page background"), T("link", "brand-blush", 3, "border / icon on the page background"),
   T("ink", "brand-blue", 3, "button outline / chart outline"), T("ink", "brand-coral", 3, "chart outline"), T("brand-ivory", "ink", 3, "focus ring on ink surfaces"),
+  // error summary and invalid fields
+  T("error-heading", "error-bg", 7, "error banner heading"), T("error-text", "error-bg", 4.5, "error banner list text"), T("error-link", "error-bg", 4.5, "error banner links"),
+  T("error-red", "white", 4.5, "field error message"), T("error-red", "error-bg", 4.5, "field error message on the highlighted field"), T("white", "error-red", 4.5, "! in the error icon"),
+  T("ink", "error-bg", 4.5, "label on the highlighted field"), T("ink-muted", "error-bg", 4.5, "hint on the highlighted field"),
+  T("error-red", "brand-blush", 3, "error banner border and icon against the page"), T("error-red", "white", 3, "invalid input border and error icon"), T("error-red", "error-bg", 3, "banner border and invalid input on the highlighted field"),
   T("danger", "white", 3, "invalid input border"), T("success", "brand-mint", 3, "alert bar"), T("warning-ink", "brand-cream", 3, "alert bar"), T("danger", "brand-blush", 3, "alert bar"),
 ];
 
