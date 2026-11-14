@@ -75,7 +75,7 @@ export default function OrderDetail() {
           <h2 id="items-h" className="mb-2 text-lg font-black">Items</h2>
           <ul className="divide-y divide-brand-sky">
             {items.map((i) => (
-              <li key={i.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2"><span className="min-w-0"><span className="block text-sm text-ink-muted">{i.artist}</span><span className="break-words font-bold">{i.title}</span></span><span className="tabular-nums">{shippingStage ? `× ${i.quantity}` : `${peso(i.unit_price_php)} × ${i.quantity}`}</span></li>
+              <li key={i.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2"><span className="min-w-0"><span className="block text-sm text-ink-muted">{i.artist}</span><span className="break-words font-bold">{i.title}</span>{i.variation_name && <span className="block text-sm font-semibold">Version: {i.variation_name}</span>}</span><span className="tabular-nums">{shippingStage ? `× ${i.quantity}` : `${peso(i.unit_price_php)} × ${i.quantity}`}</span></li>
             ))}
           </ul>
           {shippingStage ? (

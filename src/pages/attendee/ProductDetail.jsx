@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { INFO_SECTIONS, productImageUrl } from "../../lib/products.js";
 import { peso } from "../../lib/payment.js";
-import { useCart } from "../../lib/cart.jsx";
+import { lineKey, useCart } from "../../lib/cart.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import Alert from "../../components/Alert.jsx";
 import FormattedText from "../../components/FormattedText.jsx";
@@ -51,10 +51,20 @@ export default function ProductDetail() {
   const [related, setRelated] = useState([]);
   const [error, setError] = useState("");
   const [qty, setLocalQty] = useState(1);
+  const [variations, setVariations] = useState([]);    // this product's versions, in the admin's order
+  const [choice, setChoice] = useState("");             // the id of the version the shopper picked
+  const [pickError, setPickError] = useState(false);
+  const group = useRef(null);
 
   useEffect(() => {
     let alive = true;
-    setProduct(undefined); setError(""); setLocalQty(1);
+    setProduct(undefined); setError(""); setLocalQty(1); setVariations([]); setChoice(""); setPickError(false);
+    supabase.from("product_variations").select("*").eq("product_id", id).eq("active", true).order("position").then(({ data }) => {
+      if (!alive) return;
+      const list = data || [];
+      setVariations(list);
+      if (list.length === 1) setChoice(list[0].id);                          // only one version: no need to ask
+    });
     supabase.from("products").select("*").eq("active", true).order("created_at", { ascending: false }).then(({ data, error: err }) => {
       if (!alive) return;
       if (err) { setError("We could not load this product. Check your connection and refresh the page."); setProduct(null); return; }
@@ -79,10 +89,16 @@ export default function ProductDetail() {
 
   const p = product;
   const src = productImageUrl(p);
-  const total = unitPrice(p) * qty;
-  const addToCart = () => { add(p.id); if (qty > 1) setQty(p.id, qty); };   // add() puts one in; setQty tops it up to the chosen amount
-  const onAdd = () => { addToCart(); toast(`${p.title} added to your cart`, "success"); };
-  const onBuy = () => { addToCart(); navigate("/checkout"); };
+  const chosen = variations.find((v) => v.id === choice) || null;
+  const unit = chosen?.price != null ? Number(chosen.price) : unitPrice(p);
+  const prices = variations.map((v) => (v.price != null ? Number(v.price) : unitPrice(p)));
+  const varies = prices.length > 0 && Math.min(...prices) !== Math.max(...prices);
+  const total = unit * qty;
+  // a product with versions needs one picked before it can go in the cart
+  const needPick = () => { if (variations.length && !choice) { setPickError(true); group.current?.querySelector("input")?.focus(); return true; } return false; };
+  const addToCart = () => { add(p.id, choice || null); if (qty > 1) setQty(lineKey({ id: p.id, vid: choice || null }), qty); };   // add() puts one in; setQty tops it up to the chosen amount
+  const onAdd = () => { if (needPick()) return; addToCart(); toast(`${p.title}${chosen ? ` (${chosen.name})` : ""} added to your cart`, "success"); };
+  const onBuy = () => { if (needPick()) return; addToCart(); navigate("/checkout"); };
 
   return (
     <section className="rounded-2xl border border-link bg-white p-4 sm:p-6" aria-labelledby="product-title">
@@ -104,7 +120,7 @@ export default function ProductDetail() {
 
           <p className="pd-price">
             {p.discount_percent > 0 && <span className="text-danger"><span className="sr-only">Discount </span>{p.discount_percent}%</span>}
-            <span>{peso(unitPrice(p))}</span>
+            <span>{!chosen && varies ? <><span className="text-base font-semibold">From </span>{peso(Math.min(...prices))}</> : peso(unit)}</span>
           </p>
 
           {p.pre_order && (
@@ -113,10 +129,24 @@ export default function ProductDetail() {
             </div>
           )}
 
+          {variations.length > 0 && (
+            <fieldset className="pd-variations" ref={group} aria-describedby={pickError ? "pick-err" : undefined}>
+              <legend className="pd-label">Choose a version <span className="font-normal text-ink-muted">(required)</span></legend>
+              <div className="flex flex-wrap gap-2">
+                {variations.map((v) => (
+                  <label key={v.id} className="flex min-h-target cursor-pointer items-center gap-2 rounded-lg border border-link bg-white px-3 py-2 text-sm font-semibold has-[:checked]:border-2 has-[:checked]:border-ink has-[:checked]:bg-brand-ivory">
+                    <input type="radio" name="variation" className="check" value={v.id} checked={choice === v.id} onChange={() => { setChoice(v.id); setPickError(false); }} />
+                    <span>{v.name}{v.price != null && Number(v.price) !== unitPrice(p) && <span className="ml-1 font-normal text-ink-muted">{peso(v.price)}</span>}</span>
+                  </label>
+                ))}
+              </div>
+              {pickError && <p id="pick-err" role="alert" className="field-msg"><span className="error-icon error-icon--sm" aria-hidden="true">!</span>Choose a version first.</p>}
+            </fieldset>
+          )}
           <div className="pd-option">
             <p className="pd-label" id="opt-label">Select option</p>
             <div className="pd-option-row" role="group" aria-labelledby="opt-label">
-              <span className="pd-option-name">{p.title}</span>
+              <span className="pd-option-name">{p.title}{chosen ? ` · ${chosen.name}` : ""}</span>
               <div className="pd-qty">
                 <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setLocalQty((q) => Math.max(1, q - 1))}>−</button>
                 <output aria-live="polite" aria-label="Quantity">{qty}</output>

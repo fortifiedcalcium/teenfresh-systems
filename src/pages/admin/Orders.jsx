@@ -14,14 +14,19 @@ import CourierEditor from "../../components/admin/CourierEditor.jsx";
 import Receipt from "../../components/admin/Receipt.jsx";
 import BalanceSection from "../../components/admin/BalanceSection.jsx";
 import BusyOverlay from "../../components/BusyOverlay.jsx";
+import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import InputWithAction from "../../components/InputWithAction.jsx";
 import { useLiveReload } from "../../hooks/useLiveReload.js";
+import TopBarAction from "../../components/admin/TopBarAction.jsx";
+import { exportReportSheets } from "../../lib/excel.js";
+import { orderReport, orderReportFilename } from "../../lib/orderReport.js";
+import { fetchAll } from "../../lib/api.js";
 import CourierManager from "../../components/admin/CourierManager.jsx";
 import { useCouriers } from "../../lib/useShop.js";
 import Field from "../../components/Field.jsx";
 import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
-import { IconBag, IconCheck, IconClose, IconImage, IconPackage, IconSave, IconSend, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
+import { IconBag, IconCheck, IconClose, IconDownload, IconImage, IconPackage, IconSave, IconSend, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
 const MAIL_LABEL = { order_received: "Order received (old, no longer sent)", order_paid: "Payment confirmed", order_balance_due: "Payment short: remaining amount", order_shipping_due: "Shipping fee to pay", order_shipped: "Shipped", order_cancelled: "Cancelled" };
 const FILTERS = [["all", "All"], ["pending", "Awaiting payment"], ["set_fee", "Set shipping fee"], ["underpaid", "Underpaid"], ["ship_review", "Shipping payment to check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
@@ -202,7 +207,7 @@ function OrderDialog({ order, onClose, onChanged }) {
           <section aria-labelledby="o-pay"><h3 id="o-pay" className="font-black">Payment to check</h3><p>Expect <strong>{peso(order.total_php)}</strong> ({peso(order.subtotal_php)} items{Number(order.shipping_php) > 0 ? ` plus ${peso(order.shipping_php)} shipping` : ""})<br />Sender: {order.sender_name}<br />Reference: <span className="font-mono">{order.reference_number}</span></p></section>
         </div>
         <ul className="divide-y divide-brand-sky rounded-lg border border-brand-sky px-3">
-          {items.map((i) => <li key={i.id} className="flex justify-between gap-3 py-2"><span className="break-words">{i.artist}: <strong>{i.title}</strong></span><span className="tabular-nums">{peso(i.unit_price_php)} × {i.quantity}</span></li>)}
+          {items.map((i) => <li key={i.id} className="flex justify-between gap-3 py-2"><span className="break-words">{i.artist}: <strong>{i.title}</strong>{i.variation_name ? <> · {i.variation_name}</> : null}</span><span className="tabular-nums">{peso(i.unit_price_php)} × {i.quantity}</span></li>)}
         </ul>
         {fullyPaid ? (
           <div className="space-y-2 rounded-lg bg-brand-ivory p-3">
@@ -280,6 +285,8 @@ export default function Orders() {
   const [orders, setOrders] = useState(null);
   const [filter, setFilter] = useState("all");
   const [openId, setOpenId] = useState(null);
+  const [deleting, setDeleting] = useState(null);           // the order waiting for "Yes, delete"
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const load = useCallback(async (quiet = false) => {
     const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
     if (error) { if (!quiet) toast("Could not load the orders: " + error.message, "error"); if (quiet) return; }       // a background refresh that fails keeps what is on screen
@@ -288,6 +295,29 @@ export default function Orders() {
   useEffect(() => { load(); }, [load]);
   useLiveReload("orders", () => load(true));                                  // new orders and changes show up by themselves, no browser refresh
   const open = (orders || []).find((o) => o.id === openId) || null;           // the open order is always the freshest copy
+  // Deleting removes the order, its items and its email log, then its receipt files. The Change log keeps who did it.
+  const removeOrder = async () => {
+    const o = deleting;
+    setDeleteBusy(true);
+    const { data, error } = await supabase.from("orders").delete().eq("id", o.id).select("id");
+    if (error || !data?.length) { setDeleteBusy(false); toast(error ? error.message : "The order was not deleted. Check that you are signed in as an admin.", "error"); return; }   // nothing was removed: keep the files
+    const paths = [o.receipt_path, o.shipping_receipt_path, o.balance_receipt_path].filter(Boolean);
+    if (paths.length) await supabase.storage.from("payment-receipts").remove(paths);
+    setOrders((cur) => (cur || []).filter((x) => x.id !== o.id));
+    if (openId === o.id) setOpenId(null);
+    setDeleting(null); setDeleteBusy(false);
+    toast(`Order ${o.order_number} deleted`, "success");
+  };
+  // The whole rundown, not just what is on screen: every order and every product line, straight from the database.
+  const [exporting, setExporting] = useState(false);
+  const exportAll = async () => {
+    setExporting(true);
+    try {
+      const [all, lines] = await Promise.all([fetchAll(() => supabase.from("orders").select("*").order("created_at", { ascending: false }).order("id")), fetchAll(() => supabase.from("order_items").select("*").order("id"))]);
+      await exportReportSheets(toast, orderReportFilename(), orderReport(all, lines));
+    } catch (e) { toast("Could not collect the orders for the Excel file. Please try again.", "error"); }
+    setExporting(false);
+  };
   const matches = {
     set_fee: (o) => o.status === "paid" && o.shipping_status === "none",
     ship_review: (o) => o.shipping_status === "pending_review",
@@ -296,7 +326,10 @@ export default function Orders() {
   const shown = (orders || []).filter((o) => filter === "all" || (matches[filter] ? matches[filter](o) : displayStatus(o) === filter));
   return (
     <div className="space-y-4">
-      <h1 className="flex items-center gap-2 text-2xl"><IconBag />Shop orders</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="flex items-center gap-2 text-2xl"><IconBag />Shop orders</h1>
+        <TopBarAction icon={IconDownload} label={exporting ? "Preparing…" : "Export all orders to Excel"} short="Export" disabled={exporting || !orders?.length} onClick={exportAll} />
+      </div>
       <SettingsCard />
       <CourierManager />
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter orders">
@@ -308,11 +341,18 @@ export default function Orders() {
             return (
               <li key={o.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
                 <div><h2 className="font-black">{o.order_number} · {o.name}</h2><p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)} · ref {o.reference_number}{o.preferred_courier ? ` · wants ${o.preferred_courier}` : ""}</p></div>
-                <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge order={o} />{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpenId(o.id)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
+                <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge order={o} />{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-danger" onClick={() => setDeleting(o)}><IconTrash />Delete{" "}<span className="sr-only">order {o.order_number}</span></button><button type="button" className="btn-secondary" onClick={() => setOpenId(o.id)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
               </li>
             );
           })}
         </ul>
+      )}
+      {deleting && (
+        <ConfirmDialog title={`Delete order ${deleting.order_number}?`} confirmLabel="Yes, delete this order" busy={deleteBusy} onCancel={() => setDeleting(null)} onConfirm={removeOrder}>
+          <p>This deletes order <strong>{deleting.order_number}</strong> for <strong>{deleting.name}</strong>, its items, its email log and any receipt files, for good. The shopper will no longer see it. This cannot be undone.</p>
+          {(deleting.status === "paid" || deleting.status === "shipped") && <p className="mt-2 font-semibold text-danger">This order is {deleting.status === "shipped" ? "shipped" : "confirmed as paid"}. Deleting it removes its payment record. If you only want to stop it, cancel it instead.</p>}
+          <p className="mt-2 text-ink-muted">The Change log records that you deleted it, without the shopper's details.</p>
+        </ConfirmDialog>
       )}
       {open && <OrderDialog order={open} onClose={() => setOpenId(null)} onChanged={() => { setOpenId(null); load(); }} />}
     </div>

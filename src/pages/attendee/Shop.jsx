@@ -3,13 +3,16 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { chipsFor, productImageUrl, productMatches } from "../../lib/products.js";
 import { peso } from "../../lib/payment.js";
-import { useProductCategories } from "../../lib/useShop.js";
+import { groupVariations, useProductCategories } from "../../lib/useShop.js";
 import { useAnnounce } from "../../a11y.jsx";
 import Alert from "../../components/Alert.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconBag, IconImage } from "../../components/NavIcons.jsx";
 
-function ProductCard({ p }) {
+function ProductCard({ p, options = [] }) {
+  // a product whose versions cost different amounts shows "From" its lowest price
+  const prices = options.map((v) => (v.price != null ? Number(v.price) : Number(p.price)));
+  const from = prices.length > 0 && Math.min(...prices) !== Math.max(...prices) ? Math.min(...prices) : null;
   const src = productImageUrl(p);
   return (
     <li>
@@ -29,7 +32,7 @@ function ProductCard({ p }) {
           </div>
           <p className="mt-auto flex items-baseline gap-2 pt-1 text-lg font-bold tabular-nums">
             {p.discount_percent > 0 && <span className="text-danger"><span className="sr-only">Discount </span>{p.discount_percent}%</span>}
-            <span className="text-ink">{peso(p.price)}</span>
+            <span className="text-ink">{from != null && <span className="text-sm font-semibold">From </span>}{peso(from ?? p.price)}</span>
           </p>
         </div>
       </article>
@@ -40,6 +43,7 @@ function ProductCard({ p }) {
 export default function Shop() {
   const [products, setProducts] = useState(null);
   const [error, setError] = useState("");
+  const [versions, setVersions] = useState({});             // each product's versions, by product id
   const [chip, setChip] = useState("All");
   const announce = useAnnounce();
 
@@ -50,6 +54,7 @@ export default function Shop() {
       if (err) { setError("We could not load the products. Check your connection and refresh the page."); setProducts([]); return; }
       setProducts(data || []);
     });
+    supabase.from("product_variations").select("*").eq("active", true).order("position").then(({ data }) => { if (alive) setVersions(groupVariations(data || [])); });
     return () => { alive = false; };
   }, []);
 
@@ -71,7 +76,7 @@ export default function Shop() {
       {error && <Alert tone="bad" className="mb-4">{error}</Alert>}
       {products === null ? <Loading label="Loading products…" className="p-12" />
         : shown.length === 0 ? <Empty>{chip === "All" ? "No products yet. Check back soon!" : `No products in ${chip} yet.`}</Empty>
-        : <ul className="shop-grid">{shown.map((p) => <ProductCard key={p.id} p={p} />)}</ul>}
+        : <ul className="shop-grid">{shown.map((p) => <ProductCard key={p.id} p={p} options={versions[p.id] || []} />)}</ul>}
     </section>
   );
 }

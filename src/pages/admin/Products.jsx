@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { CATEGORY_MAX, INFO_IMAGES_MAX, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateCategoryName, validateProduct } from "../../lib/products.js";
+import { VARIATIONS_MAX, CATEGORY_MAX, INFO_IMAGES_MAX, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateCategoryName, validateProduct } from "../../lib/products.js";
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "../../lib/eventImages.js";
 import { peso } from "../../lib/payment.js";
 import { useToast } from "../../components/Toast.jsx";
@@ -8,6 +8,7 @@ import { useAnnounce } from "../../a11y.jsx";
 import Modal from "../../components/Modal.jsx";
 import Field from "../../components/Field.jsx";
 import InputWithAction from "../../components/InputWithAction.jsx";
+import { groupVariations } from "../../lib/useShop.js";
 import Alert from "../../components/Alert.jsx";
 import BoldTextarea from "../../components/BoldTextarea.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
@@ -15,8 +16,8 @@ import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconBag, IconClose, IconImage, IconPencil, IconPlus, IconSave, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
-const blank = () => ({ id: null, artist: "", title: "", price: "", discount_percent: "0", pre_order: false, is_new: true, categories: [], image_path: null, image_alt: "", active: true, info_images: [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, ""])) });
-const toForm = (p) => ({ ...blank(), ...p, info_images: p.info_images || [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, p[k] || ""])), price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] });
+const blank = () => ({ id: null, artist: "", title: "", price: "", discount_percent: "0", pre_order: false, is_new: true, categories: [], image_path: null, image_alt: "", active: true, info_images: [], variations: [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, ""])) });
+const toForm = (p, versions = []) => ({ ...blank(), ...p, variations: versions.map((v) => ({ key: v.id, id: v.id, name: v.name, price: v.price == null ? "" : String(v.price) })), info_images: p.info_images || [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, p[k] || ""])), price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] });
 const ACCEPT = Object.keys(IMAGE_TYPES).join(",");
 
 function Thumb({ p, className = "" }) {
@@ -43,10 +44,14 @@ export default function Products() {
   const [formError, setFormError] = useState("");
   const [deleting, setDeleting] = useState(null);
   const inputRef = useRef(null);
+  const [versions, setVersions] = useState({});             // each product's variations, by product id
+  const newKey = useRef(0);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
     if (error) { toast("Could not load the products: " + error.message, "error"); setRows([]); return; }
+    const v = await supabase.from("product_variations").select("*").order("position");        // every version, hidden ones too (an admin sees all)
+    setVersions(groupVariations(v.data || []));
     setRows(data || []);
   }, [toast]);
   useEffect(() => { load(); }, [load]);
@@ -72,7 +77,7 @@ export default function Products() {
   }, [file]);
 
   const clearDesc = () => setDescFiles((cur) => { cur.forEach((d) => URL.revokeObjectURL(d.url)); return []; });
-  const open = (p) => { clearDesc(); setForm(p ? toForm(p) : blank()); setFile(null); setFileError(""); setErrors({}); setFormError(""); };
+  const open = (p) => { clearDesc(); setForm(p ? toForm(p, versions[p.id] || []) : blank()); setFile(null); setFileError(""); setErrors({}); setFormError(""); };
   const close = () => { clearDesc(); setForm(null); };
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const addCategory = async () => {
@@ -133,8 +138,20 @@ export default function Products() {
       if (file) { newPath = await uploadProductImage(file); row.image_path = newPath; }
       for (const d of descFiles) newDesc.push(await uploadProductImage(d.file));
       row.info_images = [...form.info_images, ...newDesc];
-      const { error } = form.id ? await supabase.from("products").update(row).eq("id", form.id) : await supabase.from("products").insert(row);
-      if (error) throw new Error(error.message);
+      const saved = form.id ? await supabase.from("products").update(row).eq("id", form.id) : await supabase.from("products").insert(row).select("id").single();
+      if (saved.error) throw new Error(saved.error.message);
+      const productId = form.id || saved.data?.id;
+      // the product is saved; now its variations: remove the ones taken out, update the ones kept, add the new ones, in the order shown
+      const keep = new Set(form.variations.filter((v) => v.id).map((v) => v.id));
+      const gone = (versions[form.id] || []).filter((v) => !keep.has(v.id)).map((v) => v.id);
+      const failed = [];
+      if (gone.length) { const r = await supabase.from("product_variations").delete().in("id", gone); if (r.error) failed.push(r.error.message); }
+      for (const [i, v] of form.variations.entries()) {
+        const body = { name: v.name.trim(), price: String(v.price).trim() === "" ? null : Number(v.price), position: i };
+        const r = v.id ? await supabase.from("product_variations").update(body).eq("id", v.id) : await supabase.from("product_variations").insert({ ...body, product_id: productId });
+        if (r.error) failed.push(r.error.message);
+      }
+      if (failed.length) throw new Error(`The product was saved, but its variations were not: ${failed[0]}`);
       if (newPath && form.image_path) await removeProductImage(form.image_path);   // tidy up the replaced file
       const before = rows.find((r) => r.id === form.id)?.info_images || [];
       await Promise.all(before.filter((x) => !form.info_images.includes(x)).map(removeProductImage));   // and description images that were removed
@@ -179,6 +196,7 @@ export default function Products() {
                   <span className={`badge ${p.active ? "badge-ok" : "badge-neutral"}`}>{p.active ? "Visible" : "Hidden"}</span>
                   {p.pre_order && <span className="badge badge-info">Pre-order</span>}
                   {p.is_new && <span className="badge badge-info">New</span>}
+                  {(versions[p.id] || []).length > 0 && <span className="badge badge-neutral">{(versions[p.id] || []).length} {(versions[p.id] || []).length === 1 ? "variation" : "variations"}</span>}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -240,6 +258,31 @@ export default function Products() {
                   )}
                 </div>
               </details>
+            </fieldset>
+
+            <fieldset className="space-y-3">
+              <legend className="label">Variations <span className="font-normal text-ink-muted">(versions, sizes, colours: optional)</span></legend>
+              <p className="hint">If you add variations, shoppers must pick one before they can buy. Leave a price empty to use this product's price.</p>
+              {errors.variations && <p id="p-variations-err" role="alert" className="field-msg"><span className="error-icon error-icon--sm" aria-hidden="true">!</span>{errors.variations}</p>}
+              {form.variations.length > 0 && (
+                <ul className="space-y-2">
+                  {form.variations.map((v, i) => (
+                    <li key={v.key} className="flex flex-wrap items-end gap-2 rounded-lg border border-brand-sky p-2">
+                      <div className="min-w-[10rem] flex-1">
+                        <label className="label" htmlFor={i === 0 ? "p-variations" : `p-var-name-${v.key}`}>Name <span className="sr-only">of variation {i + 1}</span></label>
+                        <input id={i === 0 ? "p-variations" : `p-var-name-${v.key}`} className="input" maxLength={60} value={v.name} placeholder="For example Version A" onChange={(e) => setForm((f) => ({ ...f, variations: f.variations.map((x) => (x.key === v.key ? { ...x, name: e.target.value } : x)) }))} />
+                      </div>
+                      <div className="w-40">
+                        <label className="label" htmlFor={`p-var-price-${v.key}`}>Price (PHP) <span className="sr-only">of variation {i + 1}</span></label>
+                        <input id={`p-var-price-${v.key}`} className="input" inputMode="decimal" value={v.price} placeholder="Same as product" onChange={(e) => setForm((f) => ({ ...f, variations: f.variations.map((x) => (x.key === v.key ? { ...x, price: e.target.value } : x)) }))} />
+                      </div>
+                      <button type="button" className="btn-secondary" onClick={() => setForm((f) => ({ ...f, variations: f.variations.filter((x) => x.key !== v.key) }))}><IconTrash />Remove{" "}<span className="sr-only">variation {v.name || i + 1}</span></button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <button type="button" id={form.variations.length === 0 ? "p-variations" : undefined} className="btn-secondary" disabled={form.variations.length >= VARIATIONS_MAX}
+                onClick={() => setForm((f) => ({ ...f, variations: [...f.variations, { key: `n${newKey.current++}`, id: null, name: "", price: "" }] }))}><IconPlus />Add a variation</button>
             </fieldset>
 
             <div className="flex flex-wrap gap-x-6 gap-y-1">

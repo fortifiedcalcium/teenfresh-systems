@@ -86,6 +86,7 @@ const ERRORS = {
   INVALID_BALANCE: "Enter an amount above 0 that is not more than the order asks for.",
   ORDER_NOT_PENDING: "The items of this order are already paid.",
   SHIPPING_NOT_PENDING: "There is no shipping receipt being checked for this order.",
+  VARIATION_REQUIRED: "Choose a version for each product in your cart that has one, then try again.",
   PAYMENT_NOT_SET_UP: "Checkout is not open yet because payment details are not set up. Please try again later.",
 };
 

@@ -29,9 +29,9 @@ export function Totals({ totals, shippingNote = true }) {
 
 export default function Cart() {
   const { items, setQty, remove } = useCart();
-  const { products, error } = useCartProducts();
+  const { products, variations, error } = useCartProducts();
   const settings = useShopSettings();
-  const { lines, gone } = useCartLines(products);
+  const { lines, gone } = useCartLines(products, variations);
   const announce = useAnnounce();
   useEffect(() => { gone.forEach(remove); if (gone.length) announce("A product in your cart is no longer available and was removed."); }, [gone, remove, announce]);
 
@@ -47,19 +47,20 @@ export default function Cart() {
           <div className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
             <ul className="space-y-3">
               {lines.map((l) => (
-                <li key={l.id} className="card flex flex-wrap items-center gap-3 p-3">
+                <li key={l.key} className="card flex flex-wrap items-center gap-3 p-3">
                   <LineThumb p={l} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-ink-muted">{l.artist}</p>
                     <h2 className="break-words text-base font-bold">{l.title}</h2>
+                    {l.variation && <p className="text-sm font-semibold">Version: {l.variation.name}</p>}
                     <p className="tabular-nums font-bold">{peso(l.price)}{l.discount_percent > 0 && <span className="ml-2 text-danger"><span className="sr-only">Discount </span>{l.discount_percent}%</span>}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <label htmlFor={`qty-${l.id}`} className="sr-only">Quantity of {l.title}</label>
-                    <select id={`qty-${l.id}`} className="input w-20" value={l.quantity} onChange={(e) => setQty(l.id, Number(e.target.value))}>
+                    <label htmlFor={`qty-${l.key}`} className="sr-only">Quantity of {l.title}{l.variation ? `, ${l.variation.name}` : ""}</label>
+                    <select id={`qty-${l.key}`} className="input w-20" value={l.quantity} onChange={(e) => setQty(l.key, Number(e.target.value))}>
                       {Array.from({ length: MAX_QTY }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
                     </select>
-                    <button type="button" className="btn-secondary" onClick={() => { remove(l.id); announce(`${l.title} removed from your cart`); }}><IconTrash />Remove{" "}<span className="sr-only">{l.title}</span></button>
+                    <button type="button" className="btn-secondary" onClick={() => { remove(l.key); announce(`${l.title}${l.variation ? `, ${l.variation.name},` : ""} removed from your cart`); }}><IconTrash />Remove{" "}<span className="sr-only">{l.title}{l.variation ? `, ${l.variation.name}` : ""}</span></button>
                   </div>
                 </li>
               ))}

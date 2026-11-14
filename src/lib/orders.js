@@ -93,7 +93,7 @@ export function validateCheckout(f) {
 }
 
 export const orderArgs = (f, items, receiptPathValue) => ({
-  p_items: items.map((i) => ({ product_id: i.id, quantity: i.qty })),
+  p_items: items.map((i) => ({ product_id: i.id, ...(i.vid ? { variation_id: i.vid } : {}), quantity: i.qty })),
   p_name: f.name.trim(), p_email: f.email.trim(), p_phone: f.phone, p_address: f.address.trim(), p_city: `${f.city}, ${f.province}`,                       // the city column keeps both, for example "Makati City, Metro Manila (NCR)"
    p_postal: f.postal_code.trim(),
   p_notes: f.notes.trim() || null, p_sender: f.sender_name.trim(), p_reference: normalizeReference(f.reference_number), p_receipt_path: receiptPathValue,

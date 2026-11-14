@@ -10,12 +10,8 @@ const argb = (cssVar) => {
 
 const clean = (v) => (v == null ? "" : typeof v === "number" || typeof v === "boolean" || v instanceof Date ? v : String(v));
 
-/** Builds the workbook: one sheet, a styled frozen header row with filters, and column widths that fit the content. */
-export async function buildWorkbook(head, rows, { sheet = "Report", colors = {} } = {}) {
-  const { default: ExcelJS } = await import("exceljs");
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "Teenfresh Events";
-  wb.created = new Date();
+// One styled sheet: a frozen header row with filters, and column widths that fit the content.
+function addSheet(wb, head, rows, { sheet = "Report", colors = {} } = {}) {
   const ws = wb.addWorksheet(String(sheet).replace(/[\\/?*[\]:]/g, " ").slice(0, 31) || "Report", { views: [{ state: "frozen", ySplit: 1 }] });
   ws.addRow(head);
   for (const r of rows) ws.addRow(r.map(clean));
@@ -31,6 +27,28 @@ export async function buildWorkbook(head, rows, { sheet = "Report", colors = {} 
     const longest = rows.reduce((m, r) => Math.max(m, String(r[i] ?? "").length), String(h).length);
     ws.getColumn(i + 1).width = Math.min(Math.max(longest + 2, 10), 50);
   });
+  return ws;
+}
+
+const newWorkbook = async () => {
+  const { default: ExcelJS } = await import("exceljs");
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Teenfresh Events";
+  wb.created = new Date();
+  return wb;
+};
+
+/** Builds the workbook: one sheet, a styled frozen header row with filters, and column widths that fit the content. */
+export async function buildWorkbook(head, rows, opts = {}) {
+  const wb = await newWorkbook();
+  addSheet(wb, head, rows, opts);
+  return wb;
+}
+
+/** Several sheets in one workbook: sheets = [{ name, head, rows }]. */
+export async function buildMultiWorkbook(sheets, { colors = {} } = {}) {
+  const wb = await newWorkbook();
+  for (const s of sheets) addSheet(wb, s.head, s.rows, { sheet: s.name, colors });
   return wb;
 }
 
@@ -54,3 +72,16 @@ export async function downloadExcel(filename, head, rows, opts = {}) {
 /** What the pages call: downloads the report, and tells the person if it could not be made. */
 export const exportReport = (toast, filename, head, rows, opts) =>
   downloadExcel(filename, head, rows, opts).catch(() => toast("Could not create the Excel file. Please try again.", "error"));
+
+/** Downloads a workbook with several sheets. */
+export async function downloadExcelSheets(filename, sheets, opts = {}) {
+  const buffer = await (await buildMultiWorkbook(sheets, opts)).xlsx.writeBuffer();
+  const url = URL.createObjectURL(new Blob([buffer], { type: XLSX_TYPE }));
+  const a = Object.assign(document.createElement("a"), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+export const exportReportSheets = (toast, filename, sheets, opts) =>
+  downloadExcelSheets(filename, sheets, opts).catch(() => toast("Could not create the Excel file. Please try again.", "error"));

@@ -99,6 +99,8 @@ beforeAll(async () => {
   await db.exec(read("025_universal_change_log.sql"));
   await db.exec(read("026_notifications_realtime.sql"));
   await db.exec(read("027_payment_references.sql"));
+  await db.exec(read("028_admin_delete_orders.sql"));
+  await db.exec(read("029_product_variations.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1104,6 +1106,121 @@ describe("025 universal change log", () => {
     expect((await db.query("select * from public.change_log")).rows).toHaveLength(0);
     await asUser("admin");
     await fails(db.query("insert into public.change_log (table_name, action) values ('x','insert')"), "row-level security");
+  });
+});
+
+describe("028 admin can delete orders", () => {
+  const place = async (who, ref) => {
+    const pid = (await row("select id from public.products where title = 'Logged product'")).id;
+    await asUser(who);
+    return (await db.query("select public.place_order($1::jsonb,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r",
+      [JSON.stringify([{ product_id: pid, quantity: 1 }]), "Delete Me Person", who + "@example.com", "09171234567", "7 Gone St.", "Makati City, Metro Manila (NCR)", "1210", null, "D. Me", ref, `${ids[who]}/${randomUUID()}.jpg`])).rows[0].r;
+  };
+  it("a shopper cannot delete an order, not even their own; nothing is removed", async () => {
+    const r = await place("erin", "DEL-REF-1");
+    await db.query("delete from public.orders where id = $1", [r.id]);                      // RLS: no row is deleted
+    expect((await row("select count(*)::int as n from public.orders where id = $1", [r.id])).n).toBe(1);
+    await asUser("dave");
+    await db.query("delete from public.orders where id = $1", [r.id]);
+    expect((await row("select count(*)::int as n from public.orders where id = $1", [r.id])).n).toBe(1);
+  });
+  it("an admin deletes an order with its items and email log, and the Change log records it without personal details", async () => {
+    const r = await place("frank", "DEL-REF-2");
+    await asSuper();
+    await db.query("insert into public.order_emails (order_id, kind, recipient, status) values ($1, 'order_paid', 'x@y.co', 'sent')", [r.id]);
+    expect((await row("select count(*)::int as n from public.order_items where order_id = $1", [r.id])).n).toBe(1);
+    await asUser("admin");
+    const gone = await db.query("delete from public.orders where id = $1 returning id", [r.id]);
+    expect(gone.rows).toHaveLength(1);                                                       // the admin page checks this to know it worked
+    expect((await row("select count(*)::int as n from public.orders where id = $1", [r.id])).n).toBe(0);
+    expect((await row("select count(*)::int as n from public.order_items where order_id = $1", [r.id])).n).toBe(0);
+    expect((await row("select count(*)::int as n from public.order_emails where order_id = $1", [r.id])).n).toBe(0);
+    await asUser("admin");
+    const log = (await db.query("select action, actor_email, changes from public.change_log where table_name = 'orders' and row_id = $1 order by id", [r.id])).rows;
+    expect(log.map((x) => x.action)).toEqual(["insert", "delete"]);
+    expect(log[1].actor_email).toContain("admin");
+    const all = JSON.stringify(log);
+    for (const secret of ["Delete Me Person", "7 Gone St.", "09171234567", "DEL-REF-2", "D. Me"]) expect(all).not.toContain(secret);
+  });
+});
+
+describe("029 product variations", () => {
+  let prod, other, vA, vB, vOld;
+  const place = async (who, lines, ref) => {
+    await asUser(who);
+    return db.query("select public.place_order($1::jsonb,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r",
+      [JSON.stringify(lines), "V Person", who + "@example.com", "09171234567", "1 Version St.", "Makati City, Metro Manila (NCR)", "1210", null, "V P.", ref, `${ids[who]}/${randomUUID()}.jpg`]).then((r) => r.rows[0].r);
+  };
+  it("setup: a product with two versions and one hidden, and another without any", async () => {
+    await asUser("admin");
+    prod = (await db.query("insert into public.products (artist, title, price) values ('V', 'Versioned', 500) returning id")).rows[0].id;
+    other = (await db.query("insert into public.products (artist, title, price) values ('V', 'Plain', 200) returning id")).rows[0].id;
+    vA = (await db.query("insert into public.product_variations (product_id, name, position) values ($1, 'Version A', 0) returning id", [prod])).rows[0].id;            // no price: the product's
+    vB = (await db.query("insert into public.product_variations (product_id, name, price, position) values ($1, 'Version B', 650.50, 1) returning id", [prod])).rows[0].id;
+    vOld = (await db.query("insert into public.product_variations (product_id, name, active, position) values ($1, 'Retired', false, 2) returning id", [prod])).rows[0].id;
+    expect(vA && vB && vOld).toBeTruthy();
+  });
+  it("everyone sees the active versions of an active product; only admins see or change the rest", async () => {
+    for (const who of [null, "alice"]) {
+      await asUser(who);
+      expect((await db.query("select name from public.product_variations where product_id = $1 order by position", [prod])).rows.map((r) => r.name)).toEqual(["Version A", "Version B"]);
+    }
+    await asUser("admin");
+    expect((await db.query("select count(*)::int as n from public.product_variations where product_id = $1", [prod])).rows[0].n).toBe(3);
+    await asUser("alice");
+    await fails(db.query("insert into public.product_variations (product_id, name) values ($1, 'Sneaky')", [prod]), "row-level security");
+    await db.query("update public.product_variations set price = 1 where id = $1", [vB]);
+    await asUser("admin");
+    expect(Number((await db.query("select price from public.product_variations where id = $1", [vB])).rows[0].price)).toBe(650.5);      // unchanged
+  });
+  it("names are unique within a product (any capitals), trimmed, and a price is above 0", async () => {
+    await asUser("admin");
+    await fails(db.query("insert into public.product_variations (product_id, name) values ($1, 'VERSION a')", [prod]), "product_variations_name_key");
+    await db.query("insert into public.product_variations (product_id, name) values ($1, 'Version A')", [other]);                      // the same name on another product is fine
+    await fails(db.query("insert into public.product_variations (product_id, name) values ($1, ' padded ')", [prod]), "product_variations_name_check");
+    await fails(db.query("insert into public.product_variations (product_id, name, price) values ($1, 'Free', 0)", [prod]), "product_variations_price_check");
+    await db.query("delete from public.product_variations where product_id = $1", [other]);
+  });
+  it("an order for a product with versions must name one of them, and is priced from it", async () => {
+    await asUser("carol");
+    await fails(place("carol", [{ product_id: prod, quantity: 1 }], "VAR-1"), "VARIATION_REQUIRED");                                        // no version chosen
+    await fails(place("carol", [{ product_id: prod, variation_id: vOld, quantity: 1 }], "VAR-2"), "VARIATION_REQUIRED");                    // a retired one
+    await asUser("admin");
+    const stranger = (await db.query("insert into public.product_variations (product_id, name) values ($1, 'Elsewhere') returning id", [other])).rows[0].id;
+    await fails(place("carol", [{ product_id: prod, variation_id: stranger, quantity: 1 }], "VAR-3"), "VARIATION_REQUIRED");                // a version of another product
+    await asUser("admin");                                                                                                                   // (place() signed in as the shopper)
+    await db.query("delete from public.product_variations where id = $1", [stranger]);                                                       // Plain has no versions again
+    const r = await place("carol", [{ product_id: prod, variation_id: vB, quantity: 2 }, { product_id: prod, variation_id: vA, quantity: 1 }, { product_id: other, quantity: 1 }], "VAR-4");
+    expect(Number(r.total_php)).toBe(2 * 650.5 + 500 + 200);                                                                                // B has its own price, A uses the product's, Plain has no versions
+    await asUser("admin");
+    const lines = (await db.query("select title, variation_name, unit_price_php, quantity from public.order_items where order_id = $1 order by variation_name nulls last", [r.id])).rows;
+    expect(lines.map((l) => [l.title, l.variation_name, Number(l.unit_price_php), l.quantity])).toEqual([["Versioned", "Version A", 500, 1], ["Versioned", "Version B", 650.5, 2], ["Plain", null, 200, 1]]);
+  });
+  it("a product without versions still orders as before, and a stray version id is ignored", async () => {
+    await asUser("dave");
+    const r = await place("dave", [{ product_id: other, variation_id: vA, quantity: 1 }], "VAR-5");
+    expect(Number(r.total_php)).toBe(200);
+  });
+  it("an old order keeps the name and price it was bought at, even when the version changes or goes", async () => {
+    await asUser("admin");
+    const r = (await db.query("select id from public.orders where reference_number = 'VAR-4'")).rows[0];
+    await db.query("update public.product_variations set name = 'Renamed', price = 9999 where id = $1", [vB]);
+    let line = (await db.query("select variation_name, unit_price_php from public.order_items where order_id = $1 and variation_name = 'Version B'", [r.id])).rows[0];
+    expect(Number(line.unit_price_php)).toBe(650.5);
+    await db.query("delete from public.product_variations where id = $1", [vB]);
+    line = (await db.query("select variation_id, variation_name, unit_price_php from public.order_items where order_id = $1 and variation_name = 'Version B'", [r.id])).rows[0];
+    expect(line.variation_id).toBeNull();                                                      // the link is gone, the record stays
+    expect(Number(line.unit_price_php)).toBe(650.5);
+  });
+  it("deleting a product removes its versions, and the Change log records the changes", async () => {
+    await asUser("admin");
+    const log = (await db.query("select action, label from public.change_log where table_name = 'product_variations' order by id")).rows;
+    expect(log.some((x) => x.action === "insert" && x.label === "variation Version A of Versioned")).toBe(true);
+    expect(log.some((x) => x.action === "delete")).toBe(true);
+    const tmp = (await db.query("insert into public.products (artist, title, price) values ('T', 'Temp', 5) returning id")).rows[0].id;
+    await db.query("insert into public.product_variations (product_id, name) values ($1, 'Gone soon')", [tmp]);
+    await db.query("delete from public.products where id = $1", [tmp]);
+    expect((await db.query("select count(*)::int as n from public.product_variations where product_id = $1", [tmp])).rows[0].n).toBe(0);
   });
 });
 

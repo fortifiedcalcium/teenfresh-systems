@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import ExcelJS from "exceljs";
-import { buildWorkbook, toXlsxBuffer } from "../src/lib/excel.js";
+import { buildMultiWorkbook, buildWorkbook, toXlsxBuffer } from "../src/lib/excel.js";
 
 const read = async (head, rows, opts) => {
   const wb = new ExcelJS.Workbook();
@@ -50,5 +50,15 @@ describe("Excel export", () => {
   it("handles an empty report", async () => {
     const ws = await read(head, []);
     expect(ws.rowCount).toBe(1);
+  });
+
+  it("writes several sheets in one workbook, each with its own styled header", async () => {
+    const wb = await buildMultiWorkbook([{ name: "Orders", head: ["No", "Total"], rows: [["TF-1", 100]] }, { name: "Items", head: ["No", "Qty"], rows: [["TF-1", 2], ["TF-1", 1]] }], { colors: { fill: "FF17303F", text: "FFFCF7E3" } });
+    const back = new ExcelJS.Workbook();
+    await back.xlsx.load(await wb.xlsx.writeBuffer());
+    expect(back.worksheets.map((w) => w.name)).toEqual(["Orders", "Items"]);
+    expect(back.getWorksheet("Items").rowCount).toBe(3);
+    expect(back.getWorksheet("Orders").getCell("B2").value).toBe(100);
+    for (const w of back.worksheets) { expect(w.views[0]).toMatchObject({ state: "frozen", ySplit: 1 }); expect(w.getCell("A1").font.bold).toBe(true); }
   });
 });

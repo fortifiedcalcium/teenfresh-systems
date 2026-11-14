@@ -22,9 +22,9 @@ const LABELS = { name: "Full name", email: "Email", phone: "Mobile number", addr
 export default function Checkout() {
   const { user, profile } = useAuth();
   const { items, clear } = useCart();
-  const { products, error: loadError } = useCartProducts();
+  const { products, variations, error: loadError } = useCartProducts();
   const settings = useShopSettings();
-  const { lines } = useCartLines(products);
+  const { lines } = useCartLines(products, variations);
   const navigate = useNavigate();
   const [f, setF] = useState({ name: profile?.full_name || "", email: user?.email || "", phone: "", address: "", province: "", city: "", postal_code: "", notes: "", sender_name: "", reference_number: "" });
   const [file, setFile] = useState(null);
@@ -135,7 +135,7 @@ export default function Checkout() {
           <h2 className="text-lg font-black">Your order</h2>
           <ul className="space-y-2">
             {lines.map((l) => (
-              <li key={l.id} className="flex items-center gap-3 text-sm"><LineThumb p={l} /><span className="min-w-0 flex-1"><span className="block break-words font-bold">{l.title}</span><span className="text-ink-muted">{peso(l.price)} × {l.quantity}</span></span></li>
+              <li key={l.key} className="flex items-center gap-3 text-sm"><LineThumb p={l} /><span className="min-w-0 flex-1"><span className="block break-words font-bold">{l.title}</span>{l.variation && <span className="block font-semibold">Version: {l.variation.name}</span>}<span className="text-ink-muted">{peso(l.price)} × {l.quantity}</span></span></li>
             ))}
           </ul>
           <Totals totals={totals} />

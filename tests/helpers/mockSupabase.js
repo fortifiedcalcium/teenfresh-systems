@@ -3,17 +3,18 @@
 export const fixtures = { current: {} };
 
 function builder(table) {
-  const st = { single: false };
+  const st = { single: false, op: null };
   const p = new Proxy(function () {}, {
     get(_t, prop) {
       if (prop === "then") {
         const rows = fixtures.current[table] ?? [];
         const data = st.single ? rows[0] ?? null : rows;
-        return (res, rej) => Promise.resolve({ data, error: null, count: rows.length }).then(res, rej);
+        const answer = st.op === "delete" && fixtures.current.deleteResult ? fixtures.current.deleteResult : { data, error: null, count: rows.length };      // a test can make a delete fail or remove nothing
+        return (res, rej) => Promise.resolve(answer).then(res, rej);
       }
       if (prop === "maybeSingle" || prop === "single") return () => { st.single = true; return p; };
       if (prop === "eq") return (col, val) => { (fixtures.current.eqs ||= []).push({ table, col, val }); return p; };   // so tests can see which rows were asked for
-      if (["insert", "update", "delete", "upsert"].includes(prop)) return (...args) => { (fixtures.current.writes ||= []).push({ table, op: prop, args }); return p; };   // so tests can see what was saved
+      if (["insert", "update", "delete", "upsert"].includes(prop)) return (...args) => { st.op = prop; (fixtures.current.writes ||= []).push({ table, op: prop, args }); return p; };   // so tests can see what was saved
       return () => p;
     },
     apply: () => p,

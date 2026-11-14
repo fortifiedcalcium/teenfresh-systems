@@ -31,6 +31,23 @@ export function productImageUrl(p) {
   try { return supabase.storage.from(BUCKET).getPublicUrl(p.image_path).data.publicUrl; } catch { return null; }
 }
 
+export const VARIATIONS_MAX = 20;
+/** A problem with a product's versions (variations), in plain words, or "" when they are fine. Each is { name, price } with an optional price. */
+export function validateVariations(list) {
+  const seen = new Set();
+  if (list.length > VARIATIONS_MAX) return `A product can have up to ${VARIATIONS_MAX} variations.`;
+  for (const v of list) {
+    const name = String(v.name ?? "").trim();
+    if (!name) return "Every variation needs a name, or remove the empty one.";
+    if (name.length > 60) return `The name "${name.slice(0, 20)}…" is too long: 60 characters at most.`;
+    if (seen.has(name.toLowerCase())) return `"${name}" is used twice. Give each variation its own name.`;
+    seen.add(name.toLowerCase());
+    const price = String(v.price ?? "").trim();
+    if (price !== "" && (!/^\d+(\.\d{1,2})?$/.test(price) || Number(price) <= 0)) return `The price of "${name}" must be above 0, with at most 2 decimals, or empty to use the product's price.`;
+  }
+  return "";
+}
+
 /** One problem per field, in plain words. The database checks the same limits. */
 export function validateProduct(f) {
   const e = {};
@@ -41,6 +58,8 @@ export function validateProduct(f) {
   if (!/^\d+(\.\d{1,2})?$/.test(String(f.price).trim()) || Number(f.price) <= 0) e.price = "Enter a price in pesos above 0, with at most 2 decimals";
   const d = String(f.discount_percent).trim();
   if (d !== "" && (!/^\d+$/.test(d) || Number(d) > 90)) e.discount_percent = "Enter a whole number from 0 to 90";
+  const vmsg = validateVariations(f.variations || []);
+  if (vmsg) e.variations = vmsg;
   for (const [k, label] of INFO_SECTIONS) if ((f[k] || "").length > INFO_MAX) e[k] = `${label} can be ${INFO_MAX} characters at most`;
   return e;
 }

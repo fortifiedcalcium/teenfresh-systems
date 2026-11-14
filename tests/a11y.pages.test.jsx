@@ -28,6 +28,7 @@ import Products from "../src/pages/admin/Products.jsx";
 import Orders from "../src/pages/admin/Orders.jsx";
 import OrderEmails from "../src/pages/admin/OrderEmails.jsx";
 import Cart from "../src/pages/attendee/Cart.jsx";
+import ProductDetail from "../src/pages/attendee/ProductDetail.jsx";
 import Checkout from "../src/pages/attendee/Checkout.jsx";
 import MyOrders from "../src/pages/attendee/MyOrders.jsx";
 import OrderDetail from "../src/pages/attendee/OrderDetail.jsx";
@@ -457,6 +458,165 @@ describe("attendee pages", () => {
       expect(within(dialog).getByText("Everything is paid, so the receipts are no longer kept. Only the reference numbers are stored:")).toBeInTheDocument();
       const lines = within(within(dialog).getByText(/Only the reference numbers are stored/).parentElement).getAllByRole("listitem").map((li) => li.textContent.replace(/\s+/g, " ").trim());
       expect(lines).toEqual(["Item Fee: 154545", "Underpayment: idfuwe", "Shipping Fee: efseeergr", "Underpayment: 6767676"]);
+    });
+    it("Admin orders: every order has a Delete button that asks first, then removes the order and its receipt files", async () => {
+      const { storageLog } = await import("./helpers/mockSupabase.js");
+      storageLog.removed.length = 0;
+      const user = userEvent.setup();
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "pending_review", shipping_fee_php: 150, shipping_receipt_path: "u1/ship.png" }, { ...order, id: "o8", order_number: "TF-000008", receipt_path: null }];
+      const { container } = admin(<Orders />); await settled("Shop orders");
+      await screen.findByRole("button", { name: /Review order TF-000001/ });
+      expect(screen.getByRole("button", { name: "Delete order TF-000001" })).toBeInTheDocument();       // one on every order
+      expect(screen.getByRole("button", { name: "Delete order TF-000008" })).toBeInTheDocument();
+      expect(await check(container)).toHaveNoViolations();
+      // it asks first, and says what is lost; cancelling changes nothing
+      await user.click(screen.getByRole("button", { name: "Delete order TF-000001" }));
+      const dialog = screen.getByRole("dialog", { name: "Delete order TF-000001?" });
+      expect(within(dialog).getByText(/its items, its email log and any receipt files, for good/)).toBeInTheDocument();
+      expect(within(dialog).getByText(/confirmed as paid/)).toBeInTheDocument();                         // a paid order gets an extra warning
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.op === "delete")).toBeFalsy();
+      expect(storageLog.removed).toHaveLength(0);
+      // confirming deletes the order, then its receipt files
+      await user.click(screen.getByRole("button", { name: "Delete order TF-000001" }));
+      await user.click(within(screen.getByRole("dialog", { name: "Delete order TF-000001?" })).getByRole("button", { name: "Yes, delete this order" }));
+      await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.op === "delete")).toBe(true));
+      expect(fixtures.current.eqs).toContainEqual({ table: "orders", col: "id", val: "o1" });
+      await waitFor(() => expect(storageLog.removed).toEqual(expect.arrayContaining(["u1/a.png", "u1/ship.png"])));
+      await waitFor(() => expect(screen.queryByRole("button", { name: /Review order TF-000001/ })).toBeNull());     // gone from the list
+      expect(screen.getByRole("button", { name: /Review order TF-000008/ })).toBeInTheDocument();                   // the other is untouched
+      expect(await screen.findByText("Order TF-000001 deleted")).toBeInTheDocument();
+    });
+    it("Admin orders: if nothing was deleted, the order and its receipts stay and the admin is told", async () => {
+      const { storageLog } = await import("./helpers/mockSupabase.js");
+      storageLog.removed.length = 0;
+      const user = userEvent.setup();
+      fixtures.current.deleteResult = { data: [], error: null };                                       // the database refused: no row was removed
+      fixtures.current.orders = [{ ...order }];
+      admin(<Orders />); await settled("Shop orders");
+      await user.click(await screen.findByRole("button", { name: "Delete order TF-000001" }));
+      await user.click(within(screen.getByRole("dialog", { name: "Delete order TF-000001?" })).getByRole("button", { name: "Yes, delete this order" }));
+      expect(await screen.findByText(/The order was not deleted/)).toBeInTheDocument();
+      expect(storageLog.removed).toHaveLength(0);                                                      // the receipt files were not touched
+      expect(screen.getByRole("button", { name: /Review order TF-000001/ })).toBeInTheDocument();
+    });
+    it("Admin orders: Export all orders to Excel downloads a workbook with the orders, the items and a summary", async () => {
+      const user = userEvent.setup();
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "paid", shipping_fee_php: 150, reference_number: "154545", shipping_reference_number: "efseeergr", balance_references: [{ for: "items", reference: "idfuwe" }], courier: "LBC", tracking_number: "LBC1" }];
+      fixtures.current.order_items = [{ id: "i1", order_id: "o1", artist: "Marv", title: "ÖRBITAL", unit_price_php: 741.24, quantity: 2 }];
+      let blob = null; let name = null;
+      const make = vi.spyOn(URL, "createObjectURL").mockImplementation((b) => { blob = b; return "blob:test"; });
+      const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () { name = this.download; });
+      admin(<Orders />); await settled("Shop orders");
+      const button = await screen.findByRole("button", { name: "Export all orders to Excel" });
+      await user.click(button);
+      await waitFor(() => expect(blob).not.toBeNull(), { timeout: 5000 });
+      expect(name).toMatch(/^shop-orders-\d{4}-\d{2}-\d{2}\.xlsx$/);
+      const { default: ExcelJS } = await import("exceljs");
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsArrayBuffer(blob); }));
+      expect(wb.worksheets.map((w) => w.name)).toEqual(["Orders", "Items", "Summary"]);
+      const row = wb.getWorksheet("Orders").getRow(2);
+      expect(row.getCell(1).value).toBe("TF-000001");
+      expect(row.getCell(3).value).toBe("Paid");
+      expect(row.getCell(16).value).toBe("Item Fee: 154545\nUnderpayment: idfuwe\nShipping Fee: efseeergr");
+      expect(wb.getWorksheet("Items").getRow(2).getCell(5).value).toBe("ÖRBITAL");
+      make.mockRestore(); click.mockRestore();
+    });
+    it("Admin orders: the export button is off when there are no orders", async () => {
+      fixtures.current.orders = [];
+      admin(<Orders />); await settled("Shop orders");
+      expect(await screen.findByRole("button", { name: "Export all orders to Excel" })).toBeDisabled();
+    });
+    it("Product page: a product with versions makes the shopper choose one, and the cart remembers which", async () => {
+      asUser();
+      localStorage.clear();
+      const user = userEvent.setup();
+      fixtures.current.products = [{ ...prod }];
+      fixtures.current.product_variations = [
+        { id: "vA", product_id: "p1", name: "Version A", price: null, position: 0, active: true },
+        { id: "vB", product_id: "p1", name: "Version B", price: 900, position: 1, active: true },
+      ];
+      const { container } = page("/shop/:id", <CartProvider><ProductDetail /></CartProvider>, "/shop/p1");
+      const group = await screen.findByRole("group", { name: /Choose a version/ });
+      expect(within(group).getAllByRole("radio").map((r) => r.closest("label").textContent.trim())).toEqual(["Version A", "Version B₱900.00"]);        // a version with its own price shows it
+      expect(screen.getByText("From")).toBeInTheDocument();                                          // the prices differ, so the page says "From" the lowest
+      expect(await check(container)).toHaveNoViolations();
+      // nothing chosen: it asks, and nothing goes in the cart
+      await user.click(screen.getByRole("button", { name: /Add to cart/ }));
+      expect(await screen.findByText("Choose a version first.")).toBeInTheDocument();
+      expect(JSON.parse(localStorage.getItem("teenfresh-cart") || "[]")).toEqual([]);
+      // choosing B shows its price, and the cart gets the product with that version
+      await user.click(within(group).getByRole("radio", { name: /Version B/ }));
+      expect(screen.queryByText("Choose a version first.")).toBeNull();
+      expect(screen.queryByText("From")).toBeNull();
+      expect(screen.getAllByText("₱900.00").length).toBeGreaterThan(0);
+      await user.click(screen.getByRole("button", { name: /Add to cart/ }));
+      await waitFor(() => expect(JSON.parse(localStorage.getItem("teenfresh-cart"))).toEqual([{ id: "p1", vid: "vB", qty: 1 }]));
+    });
+    it("Product page: a single version is picked for the shopper, and a product without versions has no chooser", async () => {
+      asUser();
+      localStorage.clear();
+      const user = userEvent.setup();
+      fixtures.current.products = [{ ...prod }];
+      fixtures.current.product_variations = [{ id: "vOnly", product_id: "p1", name: "Standard", price: null, position: 0, active: true }];
+      const a = page("/shop/:id", <CartProvider><ProductDetail /></CartProvider>, "/shop/p1");
+      const group = await screen.findByRole("group", { name: /Choose a version/ });
+      expect(within(group).getByRole("radio", { name: "Standard" })).toBeChecked();
+      a.unmount();
+      fixtures.current.product_variations = [];
+      page("/shop/:id", <CartProvider><ProductDetail /></CartProvider>, "/shop/p1");
+      await screen.findByRole("button", { name: /Add to cart/ });
+      expect(screen.queryByRole("group", { name: /Choose a version/ })).toBeNull();
+      await user.click(screen.getByRole("button", { name: /Add to cart/ }));
+      await waitFor(() => expect(JSON.parse(localStorage.getItem("teenfresh-cart"))).toEqual([{ id: "p1", qty: 1 }]));
+    });
+    it("Cart: each version is its own line with its own price, and a line that lost its version is removed", async () => {
+      fixtures.current.products = [{ ...prod, price: 741.24 }];
+      fixtures.current.product_variations = [
+        { id: "vA", product_id: "p1", name: "Version A", price: null, position: 0, active: true },
+        { id: "vB", product_id: "p1", name: "Version B", price: 900, position: 1, active: true },
+      ];
+      localStorage.setItem("teenfresh-cart", JSON.stringify([{ id: "p1", vid: "vA", qty: 1 }, { id: "p1", vid: "vB", qty: 2 }, { id: "p1", vid: "vGone", qty: 1 }]));
+      const { container } = page("/cart", <CartProvider><Cart /></CartProvider>);
+      await screen.findByRole("heading", { level: 1, name: "Your cart" });
+      expect(await screen.findAllByText(/^Version: /)).toHaveLength(2);
+      expect(screen.getByText("Version: Version A")).toBeInTheDocument();
+      expect(screen.getByText("Version: Version B")).toBeInTheDocument();
+      expect(screen.getByLabelText("Quantity of ÖRBITAL, Version B")).toHaveValue("2");
+      expect(screen.getAllByText("₱900.00").length).toBeGreaterThan(0);                              // B is priced from its own price
+      expect(screen.getAllByText("₱741.24").length).toBeGreaterThan(0);                              // A uses the product's
+      expect(screen.getAllByText("₱2,541.24").length).toBeGreaterThanOrEqual(2);               // 741.24 + 2 x 900: the items and the total
+      await waitFor(() => expect(JSON.parse(localStorage.getItem("teenfresh-cart")).map((i) => i.vid)).toEqual(["vA", "vB"]));       // the deleted version's line is gone
+      expect(await check(container)).toHaveNoViolations();
+    });
+    it("Products (admin): adds, renames and removes variations along with the product", async () => {
+      const user = userEvent.setup();
+      fixtures.current.products = [{ id: "p1", artist: "Marv", title: "ÖRBITAL", price: 741.24, discount_percent: 0, pre_order: false, is_new: false, categories: [], image_path: null, image_alt: null, active: true }];
+      fixtures.current.product_variations = [{ id: "vA", product_id: "p1", name: "Version A", price: null, position: 0, active: true }, { id: "vB", product_id: "p1", name: "Version B", price: 900, position: 1, active: true }];
+      admin(<Products />); await settled("Shop products");
+      expect(await screen.findByText("2 variations")).toBeInTheDocument();                           // the list says so
+      await user.click(await screen.findByRole("button", { name: /Edit ÖRBITAL/ }));
+      const dialog = screen.getByRole("dialog", { name: "Edit product" });
+      const names = within(dialog).getAllByPlaceholderText("For example Version A");
+      expect(names.map((n) => n.value)).toEqual(["Version A", "Version B"]);
+      // a blank name is refused, and says why
+      await user.click(within(dialog).getByRole("button", { name: "Add a variation" }));
+      await user.click(within(dialog).getByRole("button", { name: "Save product" }));
+      expect((await within(dialog).findAllByText(/Every variation needs a name/)).length).toBeGreaterThan(0);
+      expect(fixtures.current.writes?.some((w) => w.table === "product_variations")).toBeFalsy();     // nothing was saved
+      // fill it, drop B, rename A, and save
+      const rows = within(dialog).getAllByPlaceholderText("For example Version A");
+      await user.type(rows[2], "Version C");
+      await user.click(within(dialog).getByRole("button", { name: /Remove variation Version B/ }));
+      await user.clear(within(dialog).getAllByPlaceholderText("For example Version A")[0]);
+      await user.type(within(dialog).getAllByPlaceholderText("For example Version A")[0], "Version A2");
+      await user.click(within(dialog).getByRole("button", { name: "Save product" }));
+      await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "product_variations" && w.op === "insert")).toBe(true));
+      const w = fixtures.current.writes.filter((x) => x.table === "product_variations");
+      expect(w.find((x) => x.op === "delete")).toBeTruthy();                                          // B was removed
+      expect(w.find((x) => x.op === "update").args[0]).toMatchObject({ name: "Version A2", price: null, position: 0 });
+      expect(w.find((x) => x.op === "insert").args[0]).toMatchObject({ product_id: "p1", name: "Version C", price: null, position: 1 });
     });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();

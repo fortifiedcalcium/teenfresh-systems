@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
   if (kind === "order_shipping_due" && order.shipping_status !== "awaiting_payment") return json({ error: "No shipping fee is waiting for payment" }, 400);
 
   const { data: custom } = await db.from("order_email_templates").select("subject,heading,body").eq("kind", kind).maybeSingle();   // none = the built-in wording
-  const { data: items } = await db.from("order_items").select("artist,title,unit_price_php,quantity").eq("order_id", order.id).order("title");
+  const { data: items } = await db.from("order_items").select("artist,title,variation_name,unit_price_php,quantity").eq("order_id", order.id).order("title");
   let status: "sent" | "failed" = "sent";
   let error: string | null = null;
   try {

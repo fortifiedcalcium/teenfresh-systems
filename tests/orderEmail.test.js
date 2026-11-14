@@ -84,6 +84,13 @@ describe("editable wording", () => {
     expect(m.html).not.toContain("741.24");
     expect(renderOrderEmail("order_paid", o, items, "").text).toContain("Total paid (GCash)");   // the other emails keep their totals
   });
+  it("names the chosen version of a product in the email", () => {
+    const withVersion = [{ artist: "Marv", title: "ÖRBITAL", variation_name: "Version B & more", unit_price_php: "900", quantity: 2 }];
+    const m = renderOrderEmail("order_paid", order, withVersion, "");
+    expect(m.text).toContain("Marv: ÖRBITAL (Version B & more)");
+    expect(m.html).toContain("Version: Version B &amp; more");
+    expect(renderOrderEmail("order_paid", order, items, "").html).not.toContain("Version:");          // a product without one is unchanged
+  });
   it("falls back to the built-in wording for an empty or missing part", () => {
     const m = renderOrderEmail("order_shipped", order, items, "", { subject: "  ", heading: undefined, body: "" });
     expect(m.subject).toBe("Your order TF-000007 has shipped");

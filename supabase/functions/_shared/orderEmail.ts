@@ -7,7 +7,7 @@ export type OrderKind = (typeof ORDER_KINDS)[number];
 export const KIND_STATUS: Record<OrderKind, string> = { order_paid: "paid", order_balance_due: "pending or paid", order_shipping_due: "paid", order_shipped: "shipped", order_cancelled: "cancelled" };
 
 export interface OrderRow { id: string; order_number: string; name: string; email: string; phone: string; address: string; city: string; postal_code: string; subtotal_php: number | string; shipping_php: number | string; total_php: number | string; balance_due_php?: number | string | null; balance_status?: string; shipping_fee_php?: number | string | null; shipping_status?: string; courier?: string | null; tracking_number?: string | null }
-export interface ItemRow { artist: string; title: string; unit_price_php: number | string; quantity: number }
+export interface ItemRow { artist: string; title: string; variation_name?: string | null; unit_price_php: number | string; quantity: number }
 
 const php = (n: unknown) => "PHP " + Number(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -49,7 +49,7 @@ export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[],
   const link = site ? `${site.replace(/\/$/, "")}/orders/${o.id}` : "";
   const feeOnly = kind === "order_shipping_due";           // the email that asks for the shipping fee shows that fee only: the order itself is already paid
   const cell = (i: ItemRow) => (feeOnly ? `× ${i.quantity}` : `${php(i.unit_price_php)} × ${i.quantity}`);
-  const rows = items.map((i) => `<tr><td style="padding:6px 0;">${e(i.artist)}<br><strong>${e(i.title)}</strong></td><td style="padding:6px 0;text-align:right;white-space:nowrap;">${cell(i)}</td></tr>`).join("");
+  const rows = items.map((i) => `<tr><td style="padding:6px 0;">${e(i.artist)}<br><strong>${e(i.title)}</strong>${i.variation_name ? `<br>Version: ${e(i.variation_name)}` : ""}</td><td style="padding:6px 0;text-align:right;white-space:nowrap;">${cell(i)}</td></tr>`).join("");
   // Orders from before the separate shipping payment carry their fee in shipping_php; newer ones get shipping_fee_php once an admin sets it.
   const hasFee = o.shipping_fee_php != null;
   const shippingLabel = hasFee ? "Shipping fee (paid separately)" : "Shipping";
@@ -85,7 +85,7 @@ ${link ? `<p style="margin:0 0 8px 0;"><a href="${e(link)}" style="color:#1c5a85
 </td></tr></table></td></tr></table></body></html>`;
   const text = [
     c.heading, "", c.body, "", ...(showDue ? [`Amount to pay now: ${php(o.balance_due_php)}`, ""] : []), ...(showTrack ? [`Courier: ${o.courier}`, ...(o.tracking_number ? [`Tracking number: ${o.tracking_number}`] : []), ""] : []), `Order ${o.order_number}`,
-    ...items.map((i) => (feeOnly ? `- ${i.artist}: ${i.title}  x ${i.quantity}` : `- ${i.artist}: ${i.title}  ${php(i.unit_price_php)} x ${i.quantity}`)), "",
+    ...items.map((i) => (feeOnly ? `- ${i.artist}: ${i.title}${i.variation_name ? ` (${i.variation_name})` : ""}  x ${i.quantity}` : `- ${i.artist}: ${i.title}${i.variation_name ? ` (${i.variation_name})` : ""}  ${php(i.unit_price_php)} x ${i.quantity}`)), "",
     ...(feeOnly ? [`Shipping fee to pay: ${shipping}`] : [`Items: ${php(o.subtotal_php)}`, `${shippingLabel}: ${shipping}`, `Total paid (GCash): ${php(o.total_php)}`]), "",
     "Deliver to:", o.name, o.address, `${o.city} ${o.postal_code}`, o.phone,
     ...(link ? ["", `View your order: ${link}`] : []),
