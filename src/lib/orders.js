@@ -15,6 +15,17 @@ export const STATUS = {
 /** The shipping payment that comes after the order is confirmed. */
 /** Everything is paid: the order is confirmed and its shipping fee is paid (or there is none). Orders from before the shipping step count as paid. */
 export const isFullyPaid = (o) => (o.status === "paid" || o.status === "shipped") && (o.shipping_status ?? "paid") === "paid" && (o.balance_status ?? "none") === "none";
+/** Every payment reference of an order, one line each, in the order the payments happened: the items, its extra payments, the shipping fee,
+ *  its extra payments. Used once everything is paid, when only the reference numbers are kept (the receipts are deleted). */
+export function paymentReferences(o) {
+  const extra = (o.balance_references || []).filter((r) => r && r.reference);
+  const rows = [];
+  if (o.reference_number) rows.push({ label: "Item Fee", reference: o.reference_number });
+  extra.filter((r) => r.for === "items").forEach((r) => rows.push({ label: "Underpayment", reference: r.reference }));
+  if (o.shipping_reference_number) rows.push({ label: "Shipping Fee", reference: o.shipping_reference_number });
+  extra.filter((r) => r.for === "shipping").forEach((r) => rows.push({ label: "Underpayment", reference: r.reference }));
+  return rows;
+}
 /** The status a person sees. "Paid" only once EVERYTHING is paid (the items and the shipping fee); until then an order whose
  *  items are confirmed still reads "Awaiting payment", because the shipping fee is still to come. A payment that came up short says so. */
 export const displayStatus = (o) => {

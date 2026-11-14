@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayStatus, orderArgs, priceOrder, validateCheckout } from "../src/lib/orders.js";
+import { displayStatus, orderArgs, paymentReferences, priceOrder, validateCheckout } from "../src/lib/orders.js";
 
 const good = { name: "Juan Dela Cruz", email: "juan@example.com", phone: "0917 123 4567", address: "12 Rizal St., Brgy. Poblacion", province: "Metro Manila (NCR)", city: "Makati City", postal_code: "1210", notes: "", sender_name: "Juan D.", reference_number: "1234 567 890" };
 
@@ -48,5 +48,26 @@ describe("displayStatus", () => {
     expect(displayStatus(o({ status: "shipped" }))).toBe("shipped");
     expect(displayStatus(o({ status: "cancelled", shipping_status: "none" }))).toBe("cancelled");
     expect(displayStatus({ status: "paid" })).toBe("paid");                              // an older order has no shipping step
+  });
+});
+
+describe("paymentReferences", () => {
+  it("lists every reference in the order the payments happened, with what each paid for", () => {
+    const o = { reference_number: "154545", shipping_reference_number: "efseeergr", balance_references: [{ for: "shipping", reference: "6767676" }, { for: "items", reference: "idfuwe" }] };
+    expect(paymentReferences(o)).toEqual([
+      { label: "Item Fee", reference: "154545" },
+      { label: "Underpayment", reference: "idfuwe" },          // the items' extra payment comes right after the items
+      { label: "Shipping Fee", reference: "efseeergr" },
+      { label: "Underpayment", reference: "6767676" },         // and the shipping fee's after the shipping fee
+    ]);
+  });
+  it("leaves out what does not exist: free shipping, no underpayment, an older order", () => {
+    expect(paymentReferences({ reference_number: "111" })).toEqual([{ label: "Item Fee", reference: "111" }]);
+    expect(paymentReferences({ reference_number: "111", shipping_reference_number: "222", balance_references: [] }).map((r) => r.label)).toEqual(["Item Fee", "Shipping Fee"]);
+    expect(paymentReferences({})).toEqual([]);
+  });
+  it("lists several extra payments for the same payment", () => {
+    const rows = paymentReferences({ reference_number: "1", balance_references: [{ for: "items", reference: "a" }, { for: "items", reference: "b" }] });
+    expect(rows.map((r) => r.reference)).toEqual(["1", "a", "b"]);
   });
 });

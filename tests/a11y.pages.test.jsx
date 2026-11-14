@@ -447,6 +447,17 @@ describe("attendee pages", () => {
       expect(screen.getByText("Payment is short")).toBeInTheDocument();                           // each order still shows its status
       expect(await check(container)).toHaveNoViolations();
     });
+    it("Admin orders: a paid order lists each reference number on its own line, after the sentence about the receipts", async () => {
+      const user = userEvent.setup();
+      fixtures.current.orders = [{ ...order, status: "shipped", shipping_status: "paid", shipping_fee_php: 150, courier: "LBC", reference_number: "154545", shipping_reference_number: "efseeergr", receipt_path: null, shipping_receipt_path: null,
+        balance_references: [{ for: "items", reference: "idfuwe" }, { for: "shipping", reference: "6767676" }] }];
+      admin(<Orders />); await settled("Shop orders");
+      await user.click(await screen.findByRole("button", { name: /Review order TF-000001/ }));
+      const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
+      expect(within(dialog).getByText("Everything is paid, so the receipts are no longer kept. Only the reference numbers are stored:")).toBeInTheDocument();
+      const lines = within(within(dialog).getByText(/Only the reference numbers are stored/).parentElement).getAllByRole("listitem").map((li) => li.textContent.replace(/\s+/g, " ").trim());
+      expect(lines).toEqual(["Item Fee: 154545", "Underpayment: idfuwe", "Shipping Fee: efseeergr", "Underpayment: 6767676"]);
+    });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();
       fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150, preferred_courier: "LBC" }];

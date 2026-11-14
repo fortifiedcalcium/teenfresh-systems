@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, displayStatus, isFullyPaid, sendOrderEmail, splitCourier } from "../../lib/orders.js";
+import { MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, displayStatus, isFullyPaid, paymentReferences, sendOrderEmail, splitCourier } from "../../lib/orders.js";
 import { productImageUrl, removeProductImage, uploadProductImage } from "../../lib/products.js";
 import { IMAGE_TYPES, validateImageFile } from "../../lib/eventImages.js";
 import { peso, parseAmount } from "../../lib/payment.js";
@@ -206,7 +206,10 @@ function OrderDialog({ order, onClose, onChanged }) {
         </ul>
         {fullyPaid ? (
           <div className="space-y-2 rounded-lg bg-brand-ivory p-3">
-            <p>Everything is paid, so the receipts are no longer kept. Only the reference numbers are stored: <span className="font-mono">{order.reference_number}</span>{order.shipping_reference_number ? <> (shipping: <span className="font-mono">{order.shipping_reference_number}</span>)</> : null}.</p>
+            <p>Everything is paid, so the receipts are no longer kept. Only the reference numbers are stored:</p>
+            <ul className="space-y-0.5">
+              {paymentReferences(order).map((r, i) => <li key={`${r.label}-${i}`}><span className="font-semibold">{r.label}:</span> <span className="font-mono">{r.reference}</span></li>)}
+            </ul>
             {leftoverReceipts && <div className="flex flex-wrap items-center gap-2"><p className="text-ink-muted">Receipt files from before are still in storage, but they are not shown.</p><button type="button" className="btn-secondary" disabled={busy} onClick={deleteLeftover}><IconTrash />Delete receipt files</button></div>}
           </div>
         ) : order.receipt_path ? <Receipt path={order.receipt_path} /> : <p className="text-ink-muted">No receipt file is stored for this order.</p>}

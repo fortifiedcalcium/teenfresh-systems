@@ -97,6 +97,8 @@ beforeAll(async () => {
   await db.exec(read("023_couriers.sql"));
   await db.exec(read("024_underpaid_balance.sql"));
   await db.exec(read("025_universal_change_log.sql"));
+  await db.exec(read("026_notifications_realtime.sql"));
+  await db.exec(read("027_payment_references.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -977,6 +979,13 @@ describe("011 orders", () => {
     expect((await sql("select shipping_status, balance_status from public.orders where id = $1", [r.id])).rows[0]).toEqual({ shipping_status: "paid", balance_status: "none" });
     await asUser("carol");
     await fails(place("carol", items([p1, 1]), { ref: "BAL-2" }), "DUPLICATE_REFERENCE");                                  // an extra payment's reference cannot pay another order
+    await fails(place("carol", items([p1, 1]), { ref: "BAL-1" }), "DUPLICATE_REFERENCE");                                  // not even an earlier one, though it is no longer in a column
+    await asUser("admin");
+    const kept = await sql("select balance_references from public.orders where id = $1", [r.id]);
+    expect(kept.rows[0].balance_references).toEqual([{ for: "items", reference: "BAL-1" }, { for: "shipping", reference: "BAL-2" }]);   // each one is kept, with what it paid for, in order
+    const logged = JSON.stringify((await sql("select changes from public.change_log where table_name = 'orders' and row_id = $1", [r.id])).rows);
+    expect(logged).not.toContain("BAL-1");                                                                                  // the change log never copies a reference
+    expect(logged).not.toContain("BAL-2");
     await asUser("admin");
     await sql("update public.orders set status = 'shipped', courier = 'LBC' where id = $1", [r.id]);
   });
