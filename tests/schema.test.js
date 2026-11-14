@@ -94,6 +94,7 @@ beforeAll(async () => {
   await db.exec(read("020_preferred_courier.sql"));
   await db.exec(read("021_product_categories.sql"));
   await db.exec(read("022_courier_locked_after_fee.sql"));
+  await db.exec(read("023_couriers.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1001,3 +1002,32 @@ describe("013 order email templates", () => {
     await fails(ins("order_paid"), "duplicate key");
   });
 });
+describe("023 couriers", () => {
+  it("starts with the usual couriers, in order, and everyone can read them", async () => {
+    for (const who of [null, "alice"]) {
+      await asUser(who);
+      expect((await db.query("select name from public.couriers order by id")).rows.map((r) => r.name))
+        .toEqual(["J&T Express", "LBC", "JRS Express", "Ninja Van", "Flash Express", "2GO", "Lalamove", "Grab Express", "Pick-up by the shopper"]);
+    }
+  });
+  it("only admins add or delete couriers; names are unique ignoring case and \"Other\" is reserved", async () => {
+    await asUser("alice");
+    await fails(db.query("insert into public.couriers (name) values ('Entrego')"), "row-level security");
+    await db.query("delete from public.couriers where name = 'LBC'");                                           // RLS: nothing is deleted
+    expect((await row("select count(*)::int as n from public.couriers where name = 'LBC'")).n).toBe(1);
+    await asUser("admin");
+    await db.query("insert into public.couriers (name) values ('Entrego')");
+    await fails(db.query("insert into public.couriers (name) values ('ENTREGO')"), "couriers_name_key");
+    await fails(db.query("insert into public.couriers (name) values ('other')"), "couriers_name_check");
+    await fails(db.query("insert into public.couriers (name) values (' padded ')"), "couriers_name_check");
+    await fails(db.query("insert into public.couriers (name) values (repeat('x', 61))"), "couriers_name_check");
+  });
+  it("deleting a courier leaves orders that already use it untouched", async () => {
+    await asUser("admin");
+    const o = (await db.query("select id from public.orders where courier = 'LBC' limit 1")).rows[0];
+    await db.query("delete from public.couriers where name = 'LBC'");
+    expect((await row("select count(*)::int as n from public.couriers where name = 'LBC'")).n).toBe(0);
+    if (o) expect((await row("select courier from public.orders where id = $1", [o.id])).courier).toBe("LBC");
+  });
+});
+

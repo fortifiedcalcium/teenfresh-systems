@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient.js";
 import { friendlyError } from "../lib/api.js";
-import { COURIERS, OTHER_COURIER, courierValue, splitCourier } from "../lib/orders.js";
+import { OTHER_COURIER, courierValue, splitCourier } from "../lib/orders.js";
+import { useCouriers } from "../lib/useShop.js";
 import { useToast } from "./Toast.jsx";
 import Alert from "./Alert.jsx";
 import Field from "./Field.jsx";
@@ -10,9 +11,11 @@ import { IconSave } from "./NavIcons.jsx";
 /** The shopper picks the courier they would like for delivery. It can be changed until the order ships. */
 export default function CourierChoice({ order, onSaved }) {
   const toast = useToast();
-  const start = splitCourier(order.preferred_courier);
-  const [choice, setChoice] = useState(start.choice);
-  const [other, setOther] = useState(start.other);
+  const couriers = useCouriers();
+  const [choice, setChoice] = useState("");
+  const [other, setOther] = useState("");
+  // start from the courier already on the order, once the list has loaded (a name that is no longer in the list shows as "Other")
+  useEffect(() => { if (!couriers) return; const s = splitCourier(order.preferred_courier, couriers); setChoice(s.choice); setOther(s.other); }, [couriers, order.preferred_courier]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -37,7 +40,7 @@ export default function CourierChoice({ order, onSaved }) {
       <Field id="pref_courier" label="Courier" required>
         <select className="input" value={choice} onChange={(e) => setChoice(e.target.value)}>
           <option value="">Choose a courier…</option>
-          {COURIERS.map((c) => <option key={c} value={c}>{c}</option>)}
+          {(couriers || []).map((c) => <option key={c} value={c}>{c}</option>)}
           <option value={OTHER_COURIER}>{OTHER_COURIER}…</option>
         </select>
       </Field>

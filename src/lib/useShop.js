@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient.js";
 import { useCart } from "./cart.jsx";
+import { DEFAULT_COURIERS } from "./orders.js";
 
 /** The live rows (price, name, image) for what is in the cart. null while loading. A hidden or deleted product is missing from the result. */
 export function useCartProducts() {
@@ -17,6 +18,17 @@ export function useCartProducts() {
     return () => { alive = false; };
   }, [key]);
   return state;
+}
+
+/** The couriers an admin keeps in the list (names, in the order they were added). null while loading; the starting list if it cannot be read. */
+export function useCouriers() {
+  const [names, setNames] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    supabase.from("couriers").select("name").order("id").then(({ data, error }) => { if (alive) setNames(error ? DEFAULT_COURIERS : (data || []).map((r) => r.name)); });
+    return () => { alive = false; };
+  }, []);
+  return names;
 }
 
 /** The product categories (names, in the order an admin made them). null while loading. */

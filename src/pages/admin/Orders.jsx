@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { COURIERS, MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, isFullyPaid, sendOrderEmail, splitCourier } from "../../lib/orders.js";
+import { MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, isFullyPaid, sendOrderEmail, splitCourier } from "../../lib/orders.js";
 import { productImageUrl, removeProductImage, uploadProductImage } from "../../lib/products.js";
 import { IMAGE_TYPES, validateImageFile } from "../../lib/eventImages.js";
 import { peso, parseAmount } from "../../lib/payment.js";
@@ -11,6 +11,8 @@ import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
 import OrderStatusBadge from "../../components/OrderStatusBadge.jsx";
 import CourierEditor from "../../components/admin/CourierEditor.jsx";
+import CourierManager from "../../components/admin/CourierManager.jsx";
+import { useCouriers } from "../../lib/useShop.js";
 import Field from "../../components/Field.jsx";
 import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
@@ -116,9 +118,11 @@ function OrderDialog({ order, onClose, onChanged }) {
   const [feeError, setFeeError] = useState("");
   useEffect(() => { supabase.from("order_emails").select("*").eq("order_id", order.id).order("sent_at", { ascending: false }).then(({ data }) => setMails(data || [])); }, [order.id]);
   useEffect(() => { supabase.from("order_items").select("*").eq("order_id", order.id).order("title").then(({ data }) => setItems(data || [])); }, [order.id]);
-  const startCourier = splitCourier(order.courier || order.preferred_courier);       // the courier already used, else what the shopper asked for
-  const [courierChoice, setCourierChoice] = useState(startCourier.choice);
-  const [courierOther, setCourierOther] = useState(startCourier.other);
+  const couriers = useCouriers();
+  const [courierChoice, setCourierChoice] = useState("");
+  const [courierOther, setCourierOther] = useState("");
+  // start from the courier already used, else what the shopper asked for, once the list has loaded
+  useEffect(() => { if (!couriers) return; const s = splitCourier(order.courier || order.preferred_courier, couriers); setCourierChoice(s.choice); setCourierOther(s.other); }, [couriers, order.courier, order.preferred_courier]);
   const [tracking, setTracking] = useState(order.tracking_number || "");
   const [shipError, setShipError] = useState("");
   /** The courier and tracking number to save, or null (and a message on screen) when they are not valid. */
@@ -252,7 +256,7 @@ function OrderDialog({ order, onClose, onChanged }) {
               <Field id="courier" label="Courier" required={order.status === "paid"}>
                 <select className="input" value={courierChoice} onChange={(e) => setCourierChoice(e.target.value)}>
                   <option value="">Choose a courier…</option>
-                  {COURIERS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {(couriers || []).map((c) => <option key={c} value={c}>{c}</option>)}
                   <option value={OTHER_COURIER}>{OTHER_COURIER}…</option>
                 </select>
               </Field>
@@ -297,6 +301,7 @@ export default function Orders() {
     <div className="space-y-4">
       <h1 className="flex items-center gap-2 text-2xl"><IconBag />Shop orders</h1>
       <SettingsCard />
+      <CourierManager />
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter orders">
         {FILTERS.map(([k, l]) => <button key={k} type="button" className="shop-chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>{l}</button>)}
       </div>

@@ -17,14 +17,24 @@ export const SHIPPING = {
   pending_review:   { tone: "warn",    label: "Checking shipping payment" },
   paid:             { tone: "ok",      label: "Shipping paid" },
 };
-/** The couriers an admin can pick when shipping an order. "Other" lets the admin type any name. */
-export const COURIERS = ["J&T Express", "LBC", "JRS Express", "Ninja Van", "Flash Express", "2GO", "Lalamove", "Grab Express", "Pick-up by the shopper"];
+/** The couriers a new shop starts with (migration 023 stores them in the database, where an admin edits the list). "Other" lets anyone type any name. */
+export const DEFAULT_COURIERS = ["J&T Express", "LBC", "JRS Express", "Ninja Van", "Flash Express", "2GO", "Lalamove", "Grab Express", "Pick-up by the shopper"];
 export const OTHER_COURIER = "Other";
 export const MAX_TRACKING = 60;
+export const COURIER_MAX = 60;
+/** A problem with a new courier name, or "" when it is fine. `existing` are the names already in the list. */
+export function validateCourierName(name, existing = []) {
+  const n = String(name).trim();
+  if (!n) return "Type a courier name.";
+  if (n.length > COURIER_MAX) return `A courier name can be ${COURIER_MAX} characters at most.`;
+  if (n.toLowerCase() === OTHER_COURIER.toLowerCase()) return `"${OTHER_COURIER}" is always offered, so it cannot be added.`;
+  if (existing.some((e) => e.trim().toLowerCase() === n.toLowerCase())) return "That courier already exists.";
+  return "";
+}
 /** A saved courier name as the dropdown shows it: a listed courier, or "Other" with the typed name. */
-export function splitCourier(name) {
+export function splitCourier(name, couriers = []) {
   if (!name) return { choice: "", other: "" };
-  return COURIERS.includes(name) ? { choice: name, other: "" } : { choice: OTHER_COURIER, other: name };
+  return couriers.includes(name) ? { choice: name, other: "" } : { choice: OTHER_COURIER, other: name };
 }
 /** The courier name to save, or an error message. `other` is the typed name when "Other" is chosen. */
 export function courierValue(choice, other) {

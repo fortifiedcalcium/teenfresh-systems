@@ -61,6 +61,7 @@ beforeEach(() => {
   sessionStorage.clear();   // the registration form saves unsent progress there
   asGuest();
   fixtures.current = {
+    couriers: COURIER_ROWS,
     events: [ev, { ...ev, id: "e2", title: "Sold out event" }],
     event_availability: [{ event_id: "e1", registered: 95 }, { event_id: "e2", registered: 100 }],
     registrations: [reg, { ...reg, id: "r2", name: "Maria Santos", ticket_number: "IVEMON-000002", checked_in_at: future, checker: { full_name: "Admin", email: "a@x.io" } }],
@@ -111,6 +112,7 @@ describe("public and auth pages", () => {
   });
 });
 
+const COURIER_ROWS = ["J&T Express", "LBC", "JRS Express", "Ninja Van", "Flash Express", "2GO", "Lalamove", "Grab Express", "Pick-up by the shopper"].map((name, i) => ({ id: i + 1, name }));
 const CATEGORY_ROWS = ["BEST", "ALBUM", "Drama/Movie", "DVD", "PHOTOBOOK", "MD", "2027 Season's Greetings"].map((name) => ({ name }));
 
 describe("attendee pages", () => {
@@ -337,6 +339,27 @@ describe("attendee pages", () => {
     await user.click(await screen.findByRole("button", { name: "Restore default wording" }));
     await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "order_email_templates" && w.op === "delete")).toBe(true));
     expect(screen.getByLabelText(/^Subject/)).toHaveValue("Payment confirmed for order {{Order Number}}");
+  });
+  it("Couriers (admin): adds and deletes couriers in the list", async () => {
+    const user = userEvent.setup();
+    const { container } = admin(<Orders />); await settled("Shop orders");
+    const card = (await screen.findByRole("heading", { level: 2, name: "Couriers" })).closest("section");
+    expect(within(card).getByText("Ninja Van")).toBeInTheDocument();                              // the list comes from the database
+    expect(await check(container)).toHaveNoViolations();
+    await user.click(within(card).getByRole("button", { name: "Add courier" }));
+    expect(await within(card).findByText("Type a courier name.")).toBeInTheDocument();
+    await user.type(within(card).getByLabelText(/^New courier/), "lbc");
+    await user.click(within(card).getByRole("button", { name: "Add courier" }));
+    expect(await within(card).findByText("That courier already exists.")).toBeInTheDocument();   // not case sensitive
+    await user.clear(within(card).getByLabelText(/^New courier/));
+    await user.type(within(card).getByLabelText(/^New courier/), "Entrego");
+    await user.click(within(card).getByRole("button", { name: "Add courier" }));
+    await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "couriers" && w.op === "insert" && w.args[0].name === "Entrego")).toBe(true));
+    await user.click(within(card).getByRole("button", { name: "Delete courier 2GO" }));
+    expect(within(card).getByText("Delete it from the list?")).toBeInTheDocument();               // asks first
+    expect(fixtures.current.writes?.some((w) => w.table === "couriers" && w.op === "delete")).toBeFalsy();
+    await user.click(within(card).getByRole("button", { name: "Yes, delete 2GO" }));
+    await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "couriers" && w.op === "delete")).toBe(true));
   });
   it("Products (admin): adds and deletes categories inside the product form", async () => {
     const user = userEvent.setup();
