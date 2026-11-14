@@ -73,7 +73,7 @@ export default function ShippingPayment({ order, onSent }) {
       <form onSubmit={submit} className="space-y-4" noValidate>
         <div className="grid gap-4 md:grid-cols-2">
           <Field id="ship_sender" label="GCash sender name" required error={errors.sender} hint="The name on the account you paid from"><input className="input" value={sender} onChange={(e) => setSender(e.target.value)} /></Field>
-          <Field id="ship_reference" label="Reference number" required error={errors.reference} hint="Exactly as GCash shows it"><input className="input" autoComplete="off" value={reference} onChange={(e) => setReference(e.target.value)} /></Field>
+          <Field id="ship_reference" label="Reference number" required error={errors.reference}><input className="input" autoComplete="off" value={reference} onChange={(e) => setReference(e.target.value)} /></Field>
         </div>
         <FileUpload id="ship_receipt" file={file} onChange={setFile} error={errors.receipt} />
         <div className="flex justify-end"><button className="btn-primary" disabled={busy}><IconSend />{busy ? "Sending…" : "Send shipping receipt"}</button></div>

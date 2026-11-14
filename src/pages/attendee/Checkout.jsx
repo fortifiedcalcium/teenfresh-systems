@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { friendlyError } from "../../lib/api.js";
@@ -17,7 +17,7 @@ import { Empty, Loading } from "../../components/Spinner.jsx";
 import { LineThumb, Totals } from "./Cart.jsx";
 import { IconCart, IconSend } from "../../components/NavIcons.jsx";
 
-const LABELS = { name: "Full name", email: "Email", phone: "Mobile number", address: "Street address", city: "City", postal_code: "Postal code", sender_name: "GCash sender name", reference_number: "Reference number", receipt: "Payment receipt" };
+const LABELS = { name: "Full name", email: "Email", phone: "Mobile number", address: "Street address", province: "Province", city: "City or municipality", postal_code: "Postal code", sender_name: "GCash sender name", reference_number: "Reference number", receipt: "Payment receipt" };
 
 export default function Checkout() {
   const { user, profile } = useAuth();
@@ -26,7 +26,7 @@ export default function Checkout() {
   const settings = useShopSettings();
   const { lines } = useCartLines(products);
   const navigate = useNavigate();
-  const [f, setF] = useState({ name: profile?.full_name || "", email: user?.email || "", phone: "", address: "", city: "", postal_code: "", notes: "", sender_name: "", reference_number: "" });
+  const [f, setF] = useState({ name: profile?.full_name || "", email: user?.email || "", phone: "", address: "", province: "", city: "", postal_code: "", notes: "", sender_name: "", reference_number: "" });
   const [file, setFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitCount, setSubmitCount] = useState(0);
@@ -34,6 +34,9 @@ export default function Checkout() {
   const [serverError, setServerError] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const [places, setPlaces] = useState(null);                 // { province: [cities and municipalities] }, loaded when checkout opens
+  useEffect(() => { let alive = true; import("../../data/ph-locations.json").then((m) => { if (alive) setPlaces(m.default); }); return () => { alive = false; }; }, []);
+  const setProvince = (e) => setF((x) => ({ ...x, province: e.target.value, city: "" }));   // a new province starts with no city chosen
 
   if (products === null || !settings) return <Loading label="Loading checkout…" className="p-12" />;
   if (items.length === 0 || lines.length === 0) return <Empty>Your cart is empty. <Link to="/shop">Browse the shop</Link></Empty>;
@@ -80,9 +83,20 @@ export default function Checkout() {
               {text("email", "Email", { type: "email", autoComplete: "email" })}
               {text("phone", "Mobile number", { type: "tel", autoComplete: "tel", inputMode: "tel" }, "For example 09171234567")}
             </div>
-            {text("address", "Street address", { autoComplete: "street-address" }, "House number, street, barangay")}
+            {text("address", "Street address", { autoComplete: "street-address" }, "Unit/Blk No, Street, Barangay/District")}
             <div className="grid gap-4 md:grid-cols-2">
-              {text("city", "City", { autoComplete: "address-level2" })}
+              <Field id="province" label="Province" required error={errors.province}>
+                <select className="input" autoComplete="address-level1" value={f.province} onChange={setProvince} disabled={!places}>
+                  <option value="">{places ? "Choose your province…" : "Loading provinces…"}</option>
+                  {places && Object.keys(places).map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </Field>
+              <Field id="city" label="City or municipality" required error={errors.city}>
+                <select className="input" autoComplete="address-level2" value={f.city} onChange={set("city")} disabled={!places || !f.province}>
+                  <option value="">{f.province ? "Choose your city or municipality…" : "Choose a province first"}</option>
+                  {places && f.province && (places[f.province] || []).map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </Field>
               {text("postal_code", "Postal code", { autoComplete: "postal-code", inputMode: "numeric", maxLength: 4 })}
             </div>
             <Field id="notes" label="Notes for the seller" hint="Optional"><textarea className="input" rows={2} maxLength={500} value={f.notes} onChange={set("notes")} /></Field>
@@ -105,7 +119,7 @@ export default function Checkout() {
             )}
             <div className="grid gap-4 md:grid-cols-2">
               {text("sender_name", "GCash sender name", {}, "The name on the account you paid from")}
-              {text("reference_number", "Reference number", { autoComplete: "off" }, "Exactly as GCash shows it")}
+              {text("reference_number", "Reference number", { autoComplete: "off" })}
             </div>
             <FileUpload id="receipt" file={file} onChange={setFile} error={errors.receipt} />
           </fieldset>

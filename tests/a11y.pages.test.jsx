@@ -168,7 +168,9 @@ describe("attendee pages", () => {
       expect(await check(container)).toHaveNoViolations();
       await user.type(screen.getByLabelText(/^Mobile number/), "09171234567");
       await user.type(screen.getByLabelText(/^Street address/), "12 Rizal St.");
-      await user.type(screen.getByLabelText(/^City/), "Makati");
+      await user.selectOptions(await screen.findByRole("combobox", { name: /^Province/ }), "Metro Manila (NCR)");
+      expect(screen.getByRole("combobox", { name: /^City or municipality/ })).toBeEnabled();
+      await user.selectOptions(screen.getByRole("combobox", { name: /^City or municipality/ }), "Makati City");
       await user.type(screen.getByLabelText(/^Postal code/), "1210");
       await user.type(screen.getByLabelText(/^GCash sender name/), "Juan D.");
       await user.type(screen.getByLabelText(/^Reference number/), "123456");
@@ -177,6 +179,7 @@ describe("attendee pages", () => {
       await waitFor(() => expect(fixtures.current.rpcCalls?.some((c) => c.name === "place_order")).toBe(true));
       const call = fixtures.current.rpcCalls.find((c) => c.name === "place_order");
       expect(call.args.p_items).toEqual([{ product_id: "p1", quantity: 2 }]);
+      expect(call.args.p_city).toBe("Makati City, Metro Manila (NCR)");
       expect(call.args.p_receipt_path).toMatch(/^u1\/[0-9a-f-]{36}\.png$/);
       expect(fixtures.current.fnCalls?.some((c) => c.name === "send-order-email")).toBeFalsy();   // placing an order sends no email: the first one is "payment confirmed", sent by an admin
     });

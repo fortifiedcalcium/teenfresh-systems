@@ -48,7 +48,8 @@ export function validateCheckout(f) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email.trim())) e.email = "Enter a valid email address";
   if (!normalizePhone(f.phone)) e.phone = "Enter a Philippine mobile number, like 09171234567";
   if (!f.address.trim()) e.address = "Enter your street address";
-  if (!f.city.trim()) e.city = "Enter your city";
+  if (!f.province) e.province = "Choose your province";
+  if (!f.city) e.city = "Choose your city or municipality";
   if (!/^\d{4}$/.test(f.postal_code.trim())) e.postal_code = "Enter your 4-digit postal code";
   if (!f.sender_name.trim()) e.sender_name = "Enter the name on the GCash account you paid from";
   if (!isValidReference(f.reference_number)) e.reference_number = "Enter the reference number exactly as GCash shows it";
@@ -57,7 +58,8 @@ export function validateCheckout(f) {
 
 export const orderArgs = (f, items, receiptPathValue) => ({
   p_items: items.map((i) => ({ product_id: i.id, quantity: i.qty })),
-  p_name: f.name.trim(), p_email: f.email.trim(), p_phone: f.phone, p_address: f.address.trim(), p_city: f.city.trim(), p_postal: f.postal_code.trim(),
+  p_name: f.name.trim(), p_email: f.email.trim(), p_phone: f.phone, p_address: f.address.trim(), p_city: `${f.city}, ${f.province}`,                       // the city column keeps both, for example "Makati City, Metro Manila (NCR)"
+   p_postal: f.postal_code.trim(),
   p_notes: f.notes.trim() || null, p_sender: f.sender_name.trim(), p_reference: normalizeReference(f.reference_number), p_receipt_path: receiptPathValue,
 });
 

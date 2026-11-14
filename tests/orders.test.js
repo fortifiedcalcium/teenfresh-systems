@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { orderArgs, priceOrder, validateCheckout } from "../src/lib/orders.js";
 
-const good = { name: "Juan Dela Cruz", email: "juan@example.com", phone: "0917 123 4567", address: "12 Rizal St., Brgy. Poblacion", city: "Makati", postal_code: "1210", notes: "", sender_name: "Juan D.", reference_number: "1234 567 890" };
+const good = { name: "Juan Dela Cruz", email: "juan@example.com", phone: "0917 123 4567", address: "12 Rizal St., Brgy. Poblacion", province: "Metro Manila (NCR)", city: "Makati City", postal_code: "1210", notes: "", sender_name: "Juan D.", reference_number: "1234 567 890" };
 
 describe("priceOrder", () => {
   it("charges for the items only: shipping is set and paid later", () => {
@@ -17,8 +17,8 @@ describe("priceOrder", () => {
 describe("validateCheckout", () => {
   it("accepts a complete form", () => expect(validateCheckout(good)).toEqual({}));
   it("names every missing or wrong field", () => {
-    const e = validateCheckout({ ...good, name: " ", email: "nope", phone: "12345", address: "", city: "", postal_code: "12", sender_name: "", reference_number: "" });
-    expect(Object.keys(e).sort()).toEqual(["address", "city", "email", "name", "phone", "postal_code", "reference_number", "sender_name"]);
+    const e = validateCheckout({ ...good, name: " ", email: "nope", phone: "12345", address: "", province: "", city: "", postal_code: "12", sender_name: "", reference_number: "" });
+    expect(Object.keys(e).sort()).toEqual(["address", "city", "email", "name", "phone", "postal_code", "province", "reference_number", "sender_name"]);
   });
 });
 
@@ -28,5 +28,6 @@ describe("orderArgs", () => {
     expect(a.p_items).toEqual([{ product_id: "p1", quantity: 2 }]);
     expect(a.p_reference).toBe("1234567890");
     expect(JSON.stringify(a)).not.toMatch(/price/i);
+    expect(a.p_city).toBe("Makati City, Metro Manila (NCR)");     // the city column keeps the province too
   });
 });
