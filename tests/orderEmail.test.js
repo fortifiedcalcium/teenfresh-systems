@@ -10,7 +10,8 @@ describe("renderOrderEmail", () => {
       const m = renderOrderEmail(k, order, items, "https://shop.example");
       expect(m.subject).toContain("TF-000007");
       expect(m.html).toContain("Order TF-000007");
-      expect(m.text).toContain("Total paid (GCash): PHP 1,632.48");
+      if (k === "order_shipping_due") expect(m.text).toContain("Shipping fee to pay");     // this one shows only the fee
+      else expect(m.text).toContain("Total paid (GCash): PHP 1,632.48");
     }
     expect(Object.keys(KIND_STATUS).sort()).toEqual([...ORDER_KINDS].sort());
   });
@@ -70,6 +71,18 @@ describe("editable wording", () => {
     expect(m.html).toContain("Amount to pay now:");
     expect(m.html).toContain('href="https://shop.example/orders/o1"');                // the shopper opens their order to upload the receipt
     expect(renderOrderEmail("order_paid", o, items, "").text).not.toContain("Amount to pay now");
+  });
+  it("the shipping-fee email shows only the fee: no order prices, no order total", () => {
+    const o = { ...order, shipping_fee_php: "150.00", shipping_status: "awaiting_payment" };
+    const m = renderOrderEmail("order_shipping_due", o, items, "https://shop.example/");
+    expect(m.text).toContain("Shipping fee to pay: PHP 150.00");
+    expect(m.text).toContain("x 2");                                   // what was ordered, without prices
+    expect(m.text).not.toContain("741.24");
+    expect(m.text).not.toContain("1,482.48");
+    expect(m.html).toContain("Shipping fee to pay");
+    expect(m.html).not.toContain("Total paid");
+    expect(m.html).not.toContain("741.24");
+    expect(renderOrderEmail("order_paid", o, items, "").text).toContain("Total paid (GCash)");   // the other emails keep their totals
   });
   it("falls back to the built-in wording for an empty or missing part", () => {
     const m = renderOrderEmail("order_shipped", order, items, "", { subject: "  ", heading: undefined, body: "" });

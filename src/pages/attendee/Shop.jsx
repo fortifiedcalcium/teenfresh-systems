@@ -20,14 +20,14 @@ function ProductCard({ p }) {
             : <div className="flex h-full w-full items-center justify-center text-link" aria-hidden="true"><IconImage /></div>}
         </div>
         </Link>
-        <div className="flex flex-col gap-1 px-1 pb-2 pt-3">
+        <div className="flex flex-1 flex-col gap-1 px-1 pb-2 pt-3">
           {p.pre_order && <p className="shop-pre">Pre-order</p>}
           <p className="text-sm text-ink-muted">{p.artist}</p>
           <div className="flex items-start gap-2">
             <h2 className="shop-title min-w-0 flex-1"><Link to={`/shop/${p.id}`} className="shop-card-link no-underline text-ink">{p.title}</Link></h2>
             {p.is_new && <span className="shop-new">NEW</span>}
           </div>
-          <p className="flex items-baseline gap-2 text-lg font-bold tabular-nums">
+          <p className="mt-auto flex items-baseline gap-2 pt-1 text-lg font-bold tabular-nums">
             {p.discount_percent > 0 && <span className="text-danger"><span className="sr-only">Discount </span>{p.discount_percent}%</span>}
             <span className="text-ink">{peso(p.price)}</span>
           </p>
@@ -64,7 +64,7 @@ export default function Shop() {
   };
   return (
     <section className="rounded-2xl border border-link bg-white p-4 sm:p-6" aria-labelledby="shop-title">
-      <h1 id="shop-title" className="mb-4 flex items-center gap-2 text-3xl"><IconBag />Teenfresh's products <span aria-hidden="true">⭐</span></h1>
+      <h1 id="shop-title" className="mb-4 flex items-center gap-2 text-3xl"><IconBag /><span>Teenfresh's products <span aria-hidden="true">⭐</span></span></h1>
       <div className="shop-chips" role="group" aria-label="Filter products">
         {chips.map((c) => <button key={c} type="button" className="shop-chip" aria-pressed={chip === c} onClick={() => pick(c)}>{c}</button>)}
       </div>

@@ -37,7 +37,7 @@ export const supabase = {
   storage: { from: (name) => bucket(name) },
   channel: () => chan,
   removeChannel() {},
-  functions: { invoke: async (name, opts) => { (fixtures.current.fnCalls ||= []).push({ name, body: opts?.body }); return { data: { results: [{ id: "r1", status: "sent" }] }, error: null }; } },
+  functions: { invoke: async (name, opts) => { (fixtures.current.fnCalls ||= []).push({ name, body: opts?.body }); if (fixtures.current.fnWait) await fixtures.current.fnWait; return { data: { results: [{ id: "r1", status: "sent" }] }, error: null }; } },
   auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) },
 };
 export const isConfigured = true;

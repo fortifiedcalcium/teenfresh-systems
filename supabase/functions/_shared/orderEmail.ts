@@ -47,7 +47,9 @@ export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[],
   const vals = { "Name": o.name, "Order Number": o.order_number, "Total": php(o.total_php), "Amount Due": o.balance_due_php == null ? "" : php(o.balance_due_php), "Shipping Fee": o.shipping_fee_php == null ? "" : Number(o.shipping_fee_php) > 0 ? php(o.shipping_fee_php) : "free" };
   const c = { subject: fillOrderFields(pick(custom?.subject, d.subject), vals), heading: fillOrderFields(pick(custom?.heading, d.heading), vals), body: fillOrderFields(pick(custom?.body, d.body), vals) };
   const link = site ? `${site.replace(/\/$/, "")}/orders/${o.id}` : "";
-  const rows = items.map((i) => `<tr><td style="padding:6px 0;">${e(i.artist)}<br><strong>${e(i.title)}</strong></td><td style="padding:6px 0;text-align:right;white-space:nowrap;">${php(i.unit_price_php)} × ${i.quantity}</td></tr>`).join("");
+  const feeOnly = kind === "order_shipping_due";           // the email that asks for the shipping fee shows that fee only: the order itself is already paid
+  const cell = (i: ItemRow) => (feeOnly ? `× ${i.quantity}` : `${php(i.unit_price_php)} × ${i.quantity}`);
+  const rows = items.map((i) => `<tr><td style="padding:6px 0;">${e(i.artist)}<br><strong>${e(i.title)}</strong></td><td style="padding:6px 0;text-align:right;white-space:nowrap;">${cell(i)}</td></tr>`).join("");
   // Orders from before the separate shipping payment carry their fee in shipping_php; newer ones get shipping_fee_php once an admin sets it.
   const hasFee = o.shipping_fee_php != null;
   const shippingLabel = hasFee ? "Shipping fee (paid separately)" : "Shipping";
@@ -71,9 +73,11 @@ ${dueHtml}
 <p style="margin:0 0 8px 0;"><strong>Order ${e(o.order_number)}</strong></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #c4d6ea;border-bottom:1px solid #c4d6ea;font-size:14px;">${rows}</table>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin-top:8px;">
-<tr><td>Items</td><td style="text-align:right;">${php(o.subtotal_php)}</td></tr>
-<tr><td>${shippingLabel}</td><td style="text-align:right;">${e(shipping)}</td></tr>
-<tr><td style="padding-top:6px;"><strong>Total paid (GCash)</strong></td><td style="padding-top:6px;text-align:right;"><strong>${php(o.total_php)}</strong></td></tr></table>
+${feeOnly ? "" : `<tr><td>Items</td><td style="text-align:right;">${php(o.subtotal_php)}</td></tr>`}
+${feeOnly
+  ? `<tr><td style="padding-top:6px;"><strong>Shipping fee to pay</strong></td><td style="padding-top:6px;text-align:right;"><strong>${e(shipping)}</strong></td></tr>`
+  : `<tr><td>${shippingLabel}</td><td style="text-align:right;">${e(shipping)}</td></tr>`}
+${feeOnly ? "" : `<tr><td style="padding-top:6px;"><strong>Total paid (GCash)</strong></td><td style="padding-top:6px;text-align:right;"><strong>${php(o.total_php)}</strong></td></tr>`}</table>
 <p style="margin:16px 0 4px 0;"><strong>Deliver to</strong></p>
 <p style="margin:0 0 16px 0;font-size:14px;">${e(o.name)}<br>${e(o.address)}<br>${e(o.city)} ${e(o.postal_code)}<br>${e(o.phone)}</p>
 ${link ? `<p style="margin:0 0 8px 0;"><a href="${e(link)}" style="color:#1c5a85;">View your order</a></p>` : ""}
@@ -81,8 +85,8 @@ ${link ? `<p style="margin:0 0 8px 0;"><a href="${e(link)}" style="color:#1c5a85
 </td></tr></table></td></tr></table></body></html>`;
   const text = [
     c.heading, "", c.body, "", ...(showDue ? [`Amount to pay now: ${php(o.balance_due_php)}`, ""] : []), ...(showTrack ? [`Courier: ${o.courier}`, ...(o.tracking_number ? [`Tracking number: ${o.tracking_number}`] : []), ""] : []), `Order ${o.order_number}`,
-    ...items.map((i) => `- ${i.artist}: ${i.title}  ${php(i.unit_price_php)} x ${i.quantity}`), "",
-    `Items: ${php(o.subtotal_php)}`, `${shippingLabel}: ${shipping}`, `Total paid (GCash): ${php(o.total_php)}`, "",
+    ...items.map((i) => (feeOnly ? `- ${i.artist}: ${i.title}  x ${i.quantity}` : `- ${i.artist}: ${i.title}  ${php(i.unit_price_php)} x ${i.quantity}`)), "",
+    ...(feeOnly ? [`Shipping fee to pay: ${shipping}`] : [`Items: ${php(o.subtotal_php)}`, `${shippingLabel}: ${shipping}`, `Total paid (GCash): ${php(o.total_php)}`]), "",
     "Deliver to:", o.name, o.address, `${o.city} ${o.postal_code}`, o.phone,
     ...(link ? ["", `View your order: ${link}`] : []),
   ].join("\n");

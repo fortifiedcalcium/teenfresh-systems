@@ -9,7 +9,7 @@
   .shop-card-link::after { content: ""; position: absolute; inset: 0; border-radius: 1rem; }
   .shop-card:has(.shop-card-link) { cursor: pointer; }
   .shop-card:focus-within { outline: 3px solid var(--link); outline-offset: 2px; }
-  .shop-card { @apply relative h-full rounded-2xl border border-link bg-brand-ivory p-3 transition-shadow duration-200; }   /* a tinted, outlined card, so it stands out from the white page */
+  .shop-card { @apply flex flex-col relative h-full rounded-2xl border border-link bg-brand-ivory p-3 transition-shadow duration-200; }   /* a tinted, outlined card, so it stands out from the white page */
   .shop-thumb { @apply aspect-square overflow-hidden rounded-xl border border-link bg-white; }
   .shop-art { transition: transform 0.4s ease; }
   .shop-pre { @apply m-0 text-sm font-bold uppercase tracking-wide; color: var(--social-pink); }

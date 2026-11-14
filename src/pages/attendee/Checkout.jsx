@@ -17,7 +17,7 @@ import { Empty, Loading } from "../../components/Spinner.jsx";
 import { LineThumb, Totals } from "./Cart.jsx";
 import { IconCart, IconSend } from "../../components/NavIcons.jsx";
 
-const LABELS = { name: "Full name", email: "Email", phone: "Mobile number", address: "Street address", province: "Province", city: "City or municipality", postal_code: "Postal code", sender_name: "GCash sender name", reference_number: "Reference number", receipt: "Payment receipt" };
+const LABELS = { name: "Full name", email: "Email", phone: "Mobile number", address: "Street address", province: "Province", city: "City/Municipality", postal_code: "Postal code", sender_name: "GCash sender name", reference_number: "Reference number", receipt: "Payment receipt" };
 
 export default function Checkout() {
   const { user, profile } = useAuth();
@@ -84,20 +84,20 @@ export default function Checkout() {
       <form onSubmit={submit} noValidate className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
         <div className="space-y-6">
           <fieldset className="card space-y-4 p-4"><legend className="px-1 text-lg font-black">Contact and delivery{flag(DELIVERY)}</legend>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               {text("name", "Full name", { autoComplete: "name" })}
               {text("email", "Email", { type: "email", autoComplete: "email" })}
               {text("phone", "Mobile number", { type: "tel", autoComplete: "tel", inputMode: "tel" }, "For example 09171234567")}
             </div>
             {text("address", "Street address", { autoComplete: "street-address" }, "Unit/Blk No, Street, Barangay/District")}
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <Field id="province" label="Province" required error={errors.province}>
                 <select className="input" autoComplete="address-level1" value={f.province} onChange={setProvince} disabled={!places}>
                   <option value="">{places ? "Choose your province…" : "Loading provinces…"}</option>
                   {places && Object.keys(places).map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
               </Field>
-              <Field id="city" label="City or municipality" required error={errors.city}>
+              <Field id="city" label="City/Municipality" required error={errors.city}>
                 <select className="input" autoComplete="address-level2" value={f.city} onChange={set("city")} disabled={!places || !f.province}>
                   <option value="">{f.province ? "Choose your city or municipality…" : "Choose a province first"}</option>
                   {places && f.province && (places[f.province] || []).map((c) => <option key={c} value={c}>{c}</option>)}

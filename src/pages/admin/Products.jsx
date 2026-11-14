@@ -257,7 +257,7 @@ export default function Products() {
                   {shownImage ? <img src={shownImage} alt="Preview of the product" className="h-full w-full object-cover" />
                     : <div className="flex h-full w-full items-center justify-center text-link" aria-hidden="true"><IconImage /></div>}
                 </div>
-                <div className="min-w-0 flex-1 space-y-2">
+                <div className="min-w-[12rem] flex-1 space-y-2">
                   <input ref={inputRef} id="p-image" type="file" accept={ACCEPT} className="file-input sr-only" aria-describedby="p-image-hint" onChange={(e) => { if (e.target.files?.[0]) take(e.target.files[0]); e.target.value = ""; }} />
                   <label htmlFor="p-image" className="btn-secondary cursor-pointer"><IconUpload />{shownImage ? "Replace image" : "Choose image"}</label>
                   {file && <button type="button" className="btn-secondary ml-2" onClick={() => { setFile(null); setFileError(""); }}><IconClose />Undo choice</button>}

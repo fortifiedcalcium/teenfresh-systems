@@ -13,6 +13,7 @@ import OrderStatusBadge from "../../components/OrderStatusBadge.jsx";
 import CourierEditor from "../../components/admin/CourierEditor.jsx";
 import Receipt from "../../components/admin/Receipt.jsx";
 import BalanceSection from "../../components/admin/BalanceSection.jsx";
+import BusyOverlay from "../../components/BusyOverlay.jsx";
 import CourierManager from "../../components/admin/CourierManager.jsx";
 import { useCouriers } from "../../lib/useShop.js";
 import Field from "../../components/Field.jsx";
@@ -21,7 +22,7 @@ import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconBag, IconCheck, IconClose, IconImage, IconPackage, IconSave, IconSend, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
 const MAIL_LABEL = { order_received: "Order received (old, no longer sent)", order_paid: "Payment confirmed", order_balance_due: "Payment short: remaining amount", order_shipping_due: "Shipping fee to pay", order_shipped: "Shipped", order_cancelled: "Cancelled" };
-const FILTERS = [["all", "All"], ["pending", "Awaiting payment check"], ["set_fee", "Set shipping fee"], ["underpaid", "Underpaid"], ["ship_review", "Shipping payment to check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
+const FILTERS = [["all", "All"], ["pending", "Awaiting payment"], ["set_fee", "Set shipping fee"], ["underpaid", "Underpaid"], ["ship_review", "Shipping payment to check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
 
 /** Rate, shipping fee and GCash details. */
 function SettingsCard() {
@@ -75,7 +76,7 @@ function SettingsCard() {
             {shownQr ? <img src={shownQr} alt="GCash QR code preview" className="w-full" />
               : <div className="flex aspect-square w-full items-center justify-center text-link" aria-hidden="true"><IconImage /></div>}
           </div>
-          <div className="min-w-0 flex-1 space-y-2">
+          <div className="min-w-[12rem] flex-1 space-y-2">
             <input ref={inputRef} id="gcash_qr" type="file" accept={Object.keys(IMAGE_TYPES).join(",")} className="file-input sr-only" aria-describedby="gcash_qr-hint"
               onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (!f) return; const bad = validateImageFile(f); if (bad) setError(bad); else { setError(""); setFile(f); setRemoveQr(false); } }} />
             <label htmlFor="gcash_qr" className="btn-secondary cursor-pointer"><IconUpload />{shownQr ? "Replace QR code" : "Choose QR code"}</label>
@@ -98,6 +99,7 @@ function OrderDialog({ order, onClose, onChanged }) {
   const [fee, setFee] = useState(order.shipping_fee_php == null ? "" : String(order.shipping_fee_php));
   const [reason, setReason] = useState("");
   const [feeError, setFeeError] = useState("");
+  const [sending, setSending] = useState(false);          // an email is on its way: show the loading screen
   useEffect(() => { supabase.from("order_emails").select("*").eq("order_id", order.id).order("sent_at", { ascending: false }).then(({ data }) => setMails(data || [])); }, [order.id]);
   useEffect(() => { supabase.from("order_items").select("*").eq("order_id", order.id).order("title").then(({ data }) => setItems(data || [])); }, [order.id]);
   const couriers = useCouriers();
@@ -152,7 +154,9 @@ function OrderDialog({ order, onClose, onChanged }) {
     setBusy(false);
     if (error) { toast(error.message, "error"); return; }
     if (status === "paid" && isFullyPaid({ ...order, status })) warnPurge(await purgeReceipts());      // nothing left to pay (free shipping, or an older order)
+    setSending(true);
     const mail = await sendOrderEmail(`order_${status}`, order.id);
+    setSending(false);
     toast(`Order ${order.order_number}: ${STATUS[status].label}. ${mail.ok ? "The shopper was emailed." : "The email could not be sent: " + mail.error}`, mail.ok ? "success" : "error");
     onChanged();
   };
@@ -164,7 +168,9 @@ function OrderDialog({ order, onClose, onChanged }) {
     const { error } = await supabase.rpc("set_order_shipping", { p_order: order.id, p_fee: amount });
     if (error) { setBusy(false); toast(friendlyError(error), "error"); return; }
     if (amount === 0 && order.status === "paid") warnPurge(await purgeReceipts());                  // free shipping: everything is paid now
+    setSending(amount > 0);
     const mail = amount > 0 ? await sendOrderEmail("order_shipping_due", order.id) : { ok: true };
+    setSending(false);
     setBusy(false);
     toast(amount > 0 ? `Shipping fee ${peso(amount)} set. ${mail.ok ? "The shopper was emailed." : "The email could not be sent: " + mail.error}` : "Free shipping set for this order", mail.ok ? "success" : "error");
     onChanged();
@@ -186,7 +192,8 @@ function OrderDialog({ order, onClose, onChanged }) {
   const balanceOpen = Boolean(order.balance_status) && order.balance_status !== "none";
   const next = { pending: [["paid", "Mark as paid", IconCheck], ["cancelled", "Cancel order", IconClose]], paid: [["shipped", "Mark as shipped", IconPackage], ["cancelled", "Cancel order", IconClose]], shipped: [], cancelled: [] }[order.status] || [];
   return (
-    <Modal title={`Order ${order.order_number}`} onClose={onClose} wide>
+    <Modal title={`Order ${order.order_number}`} onClose={sending ? () => {} : onClose} wide>
+      <BusyOverlay show={sending} label="Sending the email to the shopper…" />
       <div className="space-y-4 text-sm">
         <div className="grid gap-4 md:grid-cols-2">
           <section aria-labelledby="o-ship"><h3 id="o-ship" className="font-black">Deliver to</h3><p>{order.name}<br />{order.address}<br />{order.city} {order.postal_code}<br />{order.phone}<br />{order.email}</p>{order.notes && <p className="mt-1"><span className="font-semibold">Buyer's note:</span> {order.notes}</p>}<p className="mt-1"><span className="font-semibold">Preferred courier:</span> {order.preferred_courier || <span className="text-ink-muted">not chosen yet</span>}</p></section>
@@ -296,7 +303,7 @@ export default function Orders() {
             return (
               <li key={o.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
                 <div><h2 className="font-black">{o.order_number} · {o.name}</h2><p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)} · ref {o.reference_number}{o.preferred_courier ? ` · wants ${o.preferred_courier}` : ""}</p></div>
-                <div className="flex items-center gap-3"><OrderStatusBadge status={o.status} />{o.balance_status && o.balance_status !== "none" && <Badge tone="warn">{o.balance_status === "awaiting_payment" ? "Underpaid" : "Extra payment to check"}</Badge>}{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
+                <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={o.status} />{o.balance_status && o.balance_status !== "none" && <Badge tone="warn">{o.balance_status === "awaiting_payment" ? "Underpaid" : "Extra payment to check"}</Badge>}{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
               </li>
             );
           })}

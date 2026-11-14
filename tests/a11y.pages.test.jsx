@@ -150,7 +150,7 @@ describe("attendee pages", () => {
       await screen.findByRole("heading", { level: 2, name: "ÖRBITAL" });
       expect(screen.getByLabelText("Quantity of ÖRBITAL")).toHaveValue("2");
       expect(screen.getAllByText("₱1,482.48").length).toBeGreaterThan(0);   // 741.24 x 2: items and total are the same, shipping comes later
-      expect(screen.getByText(/Set after we confirm your order/)).toBeInTheDocument();
+      expect(screen.getByText(/Set after confirmation/)).toBeInTheDocument();
       expect(await check(container)).toHaveNoViolations();
     });
     it("Cart: says so when it is empty", async () => {
@@ -171,8 +171,8 @@ describe("attendee pages", () => {
       await user.type(screen.getByLabelText(/^Mobile number/), "09171234567");
       await user.type(screen.getByLabelText(/^Street address/), "12 Rizal St.");
       await user.selectOptions(await screen.findByRole("combobox", { name: /^Province/ }), "Metro Manila (NCR)");
-      expect(screen.getByRole("combobox", { name: /^City or municipality/ })).toBeEnabled();
-      await user.selectOptions(screen.getByRole("combobox", { name: /^City or municipality/ }), "Makati City");
+      expect(screen.getByRole("combobox", { name: /^City\/Municipality/ })).toBeEnabled();
+      await user.selectOptions(screen.getByRole("combobox", { name: /^City\/Municipality/ }), "Makati City");
       await user.type(screen.getByLabelText(/^Postal code/), "1210");
       await user.type(screen.getByLabelText(/^GCash sender name/), "Juan D.");
       await user.type(screen.getByLabelText(/^Reference number/), "123456");
@@ -196,7 +196,7 @@ describe("attendee pages", () => {
       asUser();
       const a = page("/my-orders", <MyOrders />);
       expect(await screen.findByRole("heading", { level: 2, name: "Order TF-000001" })).toBeInTheDocument();
-      expect(screen.getByText("Awaiting payment check")).toBeInTheDocument();
+      expect(screen.getByText("Awaiting payment")).toBeInTheDocument();
       expect(await check(a.container)).toHaveNoViolations();
       a.unmount();
       const b = render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>));
@@ -315,6 +315,22 @@ describe("attendee pages", () => {
       const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
       expect(within(dialog).getByRole("button", { name: "Mark as paid" })).toBeDisabled();
       expect(within(dialog).getByRole("button", { name: "Cancel the request" })).toBeInTheDocument();
+    });
+    it("Admin orders: a loading screen covers the page while the email is being sent", async () => {
+      const user = userEvent.setup();
+      let release; fixtures.current.fnWait = new Promise((r) => { release = r; });                  // hold the email back
+      admin(<Orders />); await settled("Shop orders");
+      await user.click(await screen.findByRole("button", { name: /Review order TF-000001/ }));
+      const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
+      expect(screen.queryByText("Sending the email to the shopper…")).toBeNull();
+      await user.click(within(dialog).getByRole("button", { name: "Mark as paid" }));
+      expect(await screen.findByText("Sending the email to the shopper…")).toBeInTheDocument();     // the loading screen
+      expect(screen.getByText(/Do not close or leave this page/)).toBeInTheDocument();
+      await user.keyboard("{Escape}");                                                              // the order window stays open meanwhile
+      expect(screen.getByRole("dialog", { name: "Order TF-000001" })).toBeInTheDocument();
+      release();
+      await waitFor(() => expect(screen.queryByText("Sending the email to the shopper…")).toBeNull());
+      fixtures.current.fnWait = null;
     });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();

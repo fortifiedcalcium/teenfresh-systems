@@ -16,7 +16,7 @@ const unitPrice = (p) => Number(p.price);
 function Related({ items }) {
   if (!items.length) return null;
   return (
-    <section className="mt-10 border-t border-link pt-6" aria-labelledby="related-title">
+    <section className="mt-8" aria-labelledby="related-title">
       <h2 id="related-title" className="mb-4 text-lg font-bold">Related products</h2>
       <ul className="shop-grid">
         {items.map((r) => {

@@ -21,7 +21,7 @@ export function Totals({ totals, shippingNote = true }) {
   return (
     <dl className="space-y-1 text-sm">
       <div className="flex justify-between gap-4"><dt>Items</dt><dd className="tabular-nums">{peso(totals.subtotalPhp)}</dd></div>
-      <div className="flex justify-between gap-4"><dt>Shipping</dt><dd className="text-right">{shippingNote ? "Set after we confirm your order" : "Paid separately"}</dd></div>
+      <div className="flex justify-between gap-4"><dt>Shipping</dt><dd className="text-right">{shippingNote ? "Set after confirmation" : "Paid separately"}</dd></div>
       <div className="flex justify-between gap-4 border-t border-brand-sky pt-2 text-base font-black"><dt>Total to pay now (GCash)</dt><dd className="tabular-nums">{peso(totals.totalPhp)}</dd></div>
     </dl>
   );

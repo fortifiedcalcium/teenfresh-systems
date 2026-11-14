@@ -54,6 +54,7 @@ export default function OrderDetail() {
   if (order === undefined) return <Loading label="Loading your order…" className="p-12" />;
   if (order === null) return <Alert tone="bad">We could not find that order. <Link to="/my-orders">Go to My orders</Link></Alert>;
   const hasFee = order.shipping_fee_php != null;
+  const shippingStage = order.status === "paid" && (order.shipping_status === "awaiting_payment" || order.shipping_status === "pending_review");   // the shipping fee is the only thing left to pay
   return (
     <div className="space-y-4">
       {placed && <Alert tone="ok"><span><strong>Thank you! Your order was placed.</strong> Keep your order number: {order.order_number}.</span></Alert>}
@@ -67,20 +68,32 @@ export default function OrderDetail() {
           <h2 id="items-h" className="mb-2 text-lg font-black">Items</h2>
           <ul className="divide-y divide-brand-sky">
             {items.map((i) => (
-              <li key={i.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2"><span className="min-w-0"><span className="block text-sm text-ink-muted">{i.artist}</span><span className="break-words font-bold">{i.title}</span></span><span className="tabular-nums">{peso(i.unit_price_php)} × {i.quantity}</span></li>
+              <li key={i.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2"><span className="min-w-0"><span className="block text-sm text-ink-muted">{i.artist}</span><span className="break-words font-bold">{i.title}</span></span><span className="tabular-nums">{shippingStage ? `× ${i.quantity}` : `${peso(i.unit_price_php)} × ${i.quantity}`}</span></li>
             ))}
           </ul>
+          {shippingStage ? (
+            // Paying the shipping fee: show only that fee. The order itself is already paid, so its amount is left out.
+            <dl className="mt-3 space-y-1 border-t border-brand-sky pt-3 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-base font-black">
+                <dt>{order.shipping_status === "awaiting_payment" ? "Shipping fee to pay" : "Shipping fee"}</dt>
+                <dd className="ml-auto flex flex-wrap items-center justify-end gap-2 text-right"><span className="tabular-nums">{peso(order.shipping_fee_php)}</span>{order.shipping_status === "pending_review" && <Badge tone={SHIPPING.pending_review.tone}>{SHIPPING.pending_review.label}</Badge>}</dd>
+              </div>
+              {order.balance_status && order.balance_status !== "none" && order.balance_due_php != null && (<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-base font-black "><dt>{order.balance_status === "awaiting_payment" ? "Still to pay (underpaid)" : "Extra payment being checked"}</dt><dd className="tabular-nums">{peso(order.balance_due_php)}</dd></div>)}
+            </dl>
+          ) : (
           <dl className="mt-3 space-y-1 border-t border-brand-sky pt-3 text-sm">
             <div className="flex justify-between"><dt>Items</dt><dd className="tabular-nums">{peso(order.subtotal_php)}</dd></div>
             {hasFee ? (
-              <div className="flex flex-wrap justify-between gap-x-4"><dt>Shipping fee (paid separately)</dt><dd className="text-right"><span className="tabular-nums">{Number(order.shipping_fee_php) > 0 ? peso(order.shipping_fee_php) : "Free"}</span> <Badge tone={SHIPPING[order.shipping_status].tone}>{SHIPPING[order.shipping_status].label}</Badge></dd></div>
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1"><dt>Shipping fee (paid separately)</dt><dd className="ml-auto text-right"><span className="tabular-nums">{Number(order.shipping_fee_php) > 0 ? peso(order.shipping_fee_php) : "Free"}</span> <Badge tone={SHIPPING[order.shipping_status].tone}>{SHIPPING[order.shipping_status].label}</Badge></dd></div>
             ) : order.shipping_status === "none" ? (
               <div className="flex justify-between gap-4"><dt>Shipping fee</dt><dd className="text-right">Set after your payment is confirmed</dd></div>
             ) : (
               <div className="flex justify-between"><dt>Shipping</dt><dd className="tabular-nums">{Number(order.shipping_php) > 0 ? peso(order.shipping_php) : "Free"}</dd></div>
             )}
-            <div className="flex justify-between text-base font-black"><dt>Total paid (GCash)</dt><dd className="tabular-nums">{peso(order.total_php)}</dd></div>
+            <div className="flex justify-between text-base font-black"><dt>{order.status === "pending" ? "Total to pay (GCash)" : "Total paid (GCash)"}</dt><dd className="tabular-nums">{peso(order.total_php)}</dd></div>
+            {order.balance_status && order.balance_status !== "none" && order.balance_due_php != null && (<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-base font-black "><dt>{order.balance_status === "awaiting_payment" ? "Still to pay (underpaid)" : "Extra payment being checked"}</dt><dd className="tabular-nums">{peso(order.balance_due_php)}</dd></div>)}
           </dl>
+          )}
         </section>
         <section className="card space-y-3 p-4 text-sm" aria-labelledby="ship-h">
           <h2 id="ship-h" className="text-lg font-black">Delivery</h2>
@@ -104,7 +117,7 @@ export default function OrderDetail() {
       </div>
       {(order.status === "pending" || order.status === "paid") && order.balance_status === "awaiting_payment" && <BalancePayment order={order} onSent={() => setReload((n) => n + 1)} />}
       {order.status === "paid" && order.shipping_status === "awaiting_payment" && order.balance_status !== "awaiting_payment" && <ShippingPayment order={order} onSent={() => setReload((n) => n + 1)} />}
-      <p className="flex flex-wrap gap-2"><Link to="/shop" className="btn-secondary no-underline"><IconArrowLeft />Back to the shop</Link><Link to="/my-orders" className="btn-secondary no-underline"><IconPackage />All my orders</Link></p>
+      <p className="flex flex-col gap-2 sm:flex-row"><Link to="/shop" className="btn-secondary no-underline"><IconArrowLeft />Back to the shop</Link><Link to="/my-orders" className="btn-secondary no-underline"><IconPackage />All my orders</Link></p>
     </div>
   );
 }

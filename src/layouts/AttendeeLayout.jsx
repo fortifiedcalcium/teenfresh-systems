@@ -25,7 +25,7 @@ export default function AttendeeLayout() {
       <SkipLink />
       <header className="sticky top-0 z-30 border-b-2 border-ink bg-brand-cream">
         <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2" aria-label="Main">
-          <Link to="/" className="nav-link" aria-label="Teenfresh Events, home"><img src={logo} alt="" width="188" height="40" className="h-10 w-auto" /></Link>
+          <Link to="/" className="nav-link -ml-3" aria-label="Teenfresh Events, home"><img src={logo} alt="" width="188" height="40" className="h-10 w-auto" /></Link>
           <div className="flex flex-wrap items-center gap-1">
             <NavLink to="/" end className="nav-link" title="Events"><IconCalendar /><span className="sr-only">Events</span></NavLink>
             {SHOP_ENABLED && <NavLink to="/shop" className="nav-link" title="Shop"><IconBag /><span className="sr-only">Shop</span></NavLink>}
@@ -45,8 +45,8 @@ export default function AttendeeLayout() {
         </nav>
       </header>
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-6"><Outlet /></main>
-      <footer className="border-t-2 border-ink bg-brand-cream px-4 py-4">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-start">
+      <footer className="border-t-2 border-ink bg-brand-cream py-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap px-4 items-center justify-center gap-x-6 gap-y-2 sm:justify-start">
           <nav aria-label="Social media" className="social-row">
             <ul className="social-icons">
               {SOCIALS.map(({ name, href, Icon }) => (

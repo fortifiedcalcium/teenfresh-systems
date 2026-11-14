@@ -8,6 +8,7 @@ import Alert from "../Alert.jsx";
 import Badge from "../Badge.jsx";
 import Field from "../Field.jsx";
 import Receipt from "./Receipt.jsx";
+import BusyOverlay from "../BusyOverlay.jsx";
 import { IconCheck, IconClose, IconSend } from "../NavIcons.jsx";
 
 /** Admin: the shopper paid less than they should have. Ask for the remaining amount, then check what they send.
@@ -21,6 +22,7 @@ export default function BalanceSection({ order, onChanged }) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState(false);
   if (!stage) return null;
 
   const expected = stage === "items" ? order.total_php : order.shipping_fee_php;
@@ -34,7 +36,9 @@ export default function BalanceSection({ order, onChanged }) {
     setBusy(true);
     const { error: err } = await supabase.rpc("request_balance", { p_order: order.id, p_for: stage, p_amount: value, p_note: note });
     if (err) { setBusy(false); setError(friendlyError(err)); return; }
+    setSending(!clear);
     const mail = clear ? { ok: true } : await sendOrderEmail("order_balance_due", order.id);
+    setSending(false);
     setBusy(false);
     toast(clear ? "The request was cancelled" : `Asked the shopper for ${peso(value)}. ${mail.ok ? "They were emailed." : "The email could not be sent: " + mail.error}`, clear || mail.ok ? "success" : "error");
     onChanged();
@@ -52,6 +56,7 @@ export default function BalanceSection({ order, onChanged }) {
 
   return (
     <section aria-labelledby="o-balance" className="space-y-2 rounded-lg border border-brand-sky p-3">
+      <BusyOverlay show={sending} label="Sending the email to the shopper…" />
       <h3 id="o-balance" className="flex flex-wrap items-center gap-2 font-black">Underpaid?
         {order.balance_status === "awaiting_payment" && <Badge tone="warn">Waiting for {peso(order.balance_due_php)}</Badge>}
         {order.balance_status === "pending_review" && <Badge tone="warn">Checking the extra payment</Badge>}

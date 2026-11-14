@@ -3,7 +3,7 @@ import { isValidReference, normalizePhone, normalizeReference } from "./payment.
 
 export const MAX_QTY = 10;
 export const STATUS = {
-  pending:   { tone: "warn", label: "Awaiting payment check" },
+  pending:   { tone: "warn", label: "Awaiting payment" },     // the payment is not confirmed yet
   paid:      { tone: "ok",   label: "Paid" },
   shipped:   { tone: "info", label: "Shipped" },
   cancelled: { tone: "bad",  label: "Cancelled" },
