@@ -96,6 +96,7 @@ beforeAll(async () => {
   await db.exec(read("022_courier_locked_after_fee.sql"));
   await db.exec(read("023_couriers.sql"));
   await db.exec(read("024_underpaid_balance.sql"));
+  await db.exec(read("025_universal_change_log.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1049,6 +1050,51 @@ describe("023 couriers", () => {
     await db.query("delete from public.couriers where name = 'LBC'");
     expect((await row("select count(*)::int as n from public.couriers where name = 'LBC'")).n).toBe(0);
     if (o) expect((await row("select courier from public.orders where id = $1", [o.id])).courier).toBe("LBC");
+  });
+});
+
+describe("025 universal change log", () => {
+  const logged = async (table, label) => (await db.query("select * from public.change_log where table_name = $1 and label = $2 order by id", [table, label])).rows;
+  it("records the shop too: products, categories, couriers, checkout settings and email wording", async () => {
+    await asUser("admin");
+    await db.query("insert into public.products (artist, title, price, info_description) values ('Log', 'Logged product', 50, 'a long description')");
+    await db.query("update public.products set price = 60 where title = 'Logged product'");
+    await db.query("insert into public.product_categories (name) values ('Logged category')");
+    await db.query("insert into public.couriers (name) values ('Logged courier')");
+    await db.query("update public.shop_settings set gcash_account_name = 'LO**ED' where id");
+    await db.query("insert into public.order_email_templates (kind, subject, heading, body) values ('order_cancelled', 'S', 'H', 'a private-ish body') on conflict (kind) do update set body = excluded.body");
+    const p = await logged("products", "Log: Logged product");
+    expect(p.map((r) => r.action)).toEqual(["insert", "update"]);
+    expect(p[1].changes).toEqual({ price: { old: "50.00", new: "60.00" } });                   // only what changed, with the old and new values
+    expect(p[0].changes.info_description).toBe("[changed]");                                   // long texts are not copied
+    expect((await logged("product_categories", "Logged category"))[0].actor_email).toContain("admin");
+    expect((await logged("couriers", "Logged courier")).length).toBe(1);
+    expect((await logged("shop_settings", "checkout settings")).length).toBeGreaterThan(0);
+    expect((await logged("order_email_templates", "order_cancelled")).length).toBeGreaterThan(0);
+    await db.query("delete from public.order_email_templates where kind = 'order_cancelled'");          // leave no wording behind for the tests that follow
+    await db.query("delete from public.couriers where name = 'Logged courier'");
+    expect((await logged("couriers", "Logged courier")).map((r) => r.action)).toEqual(["insert", "delete"]);
+  });
+  it("records orders without copying the shopper's details", async () => {
+    const pid = (await row("select id from public.products where title = 'Logged product'")).id;        // (row() runs as the super user, so look it up first)
+    await asUser("alice");
+    const r = (await db.query("select public.place_order($1::jsonb,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r",
+      [JSON.stringify([{ product_id: pid, quantity: 1 }]), "Alice Real Name", "alice@example.com", "09171234567", "99 Secret St.", "Makati City, Metro Manila (NCR)", "1210", null, "Alice A.", "LOGREF-1", `${ids.alice}/${randomUUID()}.jpg`])).rows[0].r;
+    await asUser("admin");
+    await db.query("update public.orders set status = 'paid' where id = $1", [r.id]);
+    const rows = await logged("orders", `order ${r.order_number}`);
+    expect(rows.map((x) => x.action)).toEqual(["insert", "update"]);
+    expect(rows[0].actor_email).toBe("alice@example.com");                                       // who placed it
+    const all = JSON.stringify(rows.map((x) => x.changes));
+    for (const secret of ["Alice Real Name", "99 Secret St.", "09171234567", "LOGREF-1", "Alice A.", "alice@example.com"]) expect(all).not.toContain(secret);
+    expect(rows[0].changes.address).toBe("[changed]");
+    expect(rows[1].changes).toEqual({ status: { old: "pending", new: "paid" } });
+  });
+  it("is still read-only and only admins can read it", async () => {
+    await asUser("alice");
+    expect((await db.query("select * from public.change_log")).rows).toHaveLength(0);
+    await asUser("admin");
+    await fails(db.query("insert into public.change_log (table_name, action) values ('x','insert')"), "row-level security");
   });
 });
 

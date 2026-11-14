@@ -7,7 +7,11 @@ import Alert from "../../components/Alert.jsx";
 import { fmtDateTime } from "../../lib/availability.js";
 import { IconHistory } from "../../components/NavIcons.jsx";
 
-const AREAS = { events: "Event", event_kits: "Kit", email_templates: "Email template", registrations: "Registration", payments: "Payment", profiles: "User role" };
+// Every kind of change the log records: the events side first, then the shop.
+const AREAS = {
+  events: "Event", event_kits: "Kit", email_templates: "Email template", registrations: "Registration", payments: "Payment", profiles: "User role",
+  products: "Product", product_categories: "Product category", couriers: "Courier", shop_settings: "Checkout settings", orders: "Shop order", order_email_templates: "Order email wording",
+};
 const VERBS = { insert: "Created", update: "Updated", delete: "Deleted" };
 
 /** One readable line per change: "status: pending → verified". */
@@ -49,8 +53,8 @@ export default function ChangeLog() {
   return (
     <div className="space-y-4">
       <h1 className="flex items-center gap-2 text-2xl font-black"><IconHistory />Change log</h1>
-      <p className="text-sm text-ink-muted">Who changed what, newest first (the latest 1,000 changes). Contact details and payment references are recorded as “changed” without their values. Entries cannot be edited or deleted.</p>
-      {failed && <Alert tone="bad"><strong>The change log is not set up yet.</strong> Run <code>004_change_log.sql</code> in the Supabase SQL Editor for this project, then reload.</Alert>}
+      <p className="text-sm text-ink-muted">Who changed what across the whole system, events and shop, newest first (the latest 1,000 changes). Names, addresses, contact details and payment references are recorded as “changed” without their values. Entries cannot be edited or deleted.</p>
+      {failed && <Alert tone="bad"><strong>The change log is not set up yet.</strong> Run <code>004_change_log.sql</code> and then <code>025_universal_change_log.sql</code> in the Supabase SQL Editor for this project, then reload.</Alert>}
       <FilterBar activeCount={area ? 1 : 0}
         search={<input className="input w-full md:w-72" placeholder="Search item, person or change" aria-label="Search the change log" value={q} onChange={(e) => setQ(e.target.value)} />}>
         <select className="input max-w-[12rem]" aria-label="Area filter" value={area} onChange={(e) => setArea(e.target.value)}>

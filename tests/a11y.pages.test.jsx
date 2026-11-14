@@ -1194,5 +1194,24 @@ describe("admin pages", () => {
     expect(screen.getByText(/status: pending → verified/)).toBeInTheDocument();
     expect(await check(container)).toHaveNoViolations();
   });
+  it("ChangeLog: one log for everything, shop changes included, with an area filter for each", async () => {
+    const user = userEvent.setup();
+    fixtures.current.change_log = [
+      { id: 10, at: future, actor_id: "u2", actor_email: "admin@example.com", table_name: "products", row_id: "p1", event_id: null, action: "update", label: "Marv: ÖRBITAL", changes: { price: { old: "700.00", new: "741.24" } } },
+      { id: 11, at: future, actor_id: "u2", actor_email: "admin@example.com", table_name: "couriers", row_id: "9", event_id: null, action: "insert", label: "Entrego", changes: { name: "[changed]" } },
+      { id: 12, at: future, actor_id: "u2", actor_email: "admin@example.com", table_name: "orders", row_id: "o1", event_id: null, action: "update", label: "order TF-000001", changes: { status: { old: "pending", new: "paid" } } },
+      { id: 13, at: future, actor_id: "u2", actor_email: "admin@example.com", table_name: "events", row_id: "e1", event_id: "e1", action: "update", label: "IVEMON", changes: { capacity: { old: "90", new: "100" } } },
+    ];
+    admin(<ChangeLog />); await settled("Change log");
+    const table = await screen.findByRole("table", { name: /Change log/ });
+    expect(within(table).getByText("Product")).toBeInTheDocument();                              // shop areas get their own names
+    expect(within(table).getByText("Courier")).toBeInTheDocument();
+    expect(within(table).getByText("Shop order")).toBeInTheDocument();
+    expect(within(table).getByText(/price: 700.00 → 741.24/)).toBeInTheDocument();
+    expect(within(table).getByText("IVEMON")).toBeInTheDocument();                               // and events are still there, in the same list
+    await user.selectOptions(screen.getByLabelText("Area filter"), "orders");
+    expect(within(screen.getByRole("table", { name: /Change log/ })).queryByText("Entrego")).toBeNull();
+    expect(within(screen.getByRole("table", { name: /Change log/ })).getByText("order TF-000001")).toBeInTheDocument();
+  });
   it("Users", async () => { asUser(true); const { container } = admin(<Users />); await settled("Admin users"); await screen.findByRole("table", { name: /Admin users/ }); expect(await check(container)).toHaveNoViolations(); });
 });
