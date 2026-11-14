@@ -21,7 +21,12 @@ function builder(table) {
   return p;
 }
 
-const chan = { on() { return chan; }, subscribe() { return chan; } };
+// Realtime stand-in: every channel keeps its listeners, and a test can fire a change for a table by hand.
+export const realtime = {
+  channels: new Set(),
+  fire(table) { for (const ch of [...realtime.channels]) for (const h of ch.handlers) if (!table || h.filter?.table === table) h.cb({}); },
+};
+const makeChannel = () => { const ch = { handlers: [], on(_type, filter, cb) { ch.handlers.push({ filter, cb }); return ch; }, subscribe() { return ch; } }; realtime.channels.add(ch); return ch; };
 
 export const storageLog = { uploads: [], removed: [] };
 const bucket = (name) => ({
@@ -35,8 +40,8 @@ export const supabase = {
   from: (t) => builder(t),
   rpc: async (name, args) => { (fixtures.current.rpcCalls ||= []).push({ name, args }); const r = fixtures.current.rpc?.[name]; return r?.error ? { data: null, error: r.error } : { data: r ?? null, error: null }; },
   storage: { from: (name) => bucket(name) },
-  channel: () => chan,
-  removeChannel() {},
+  channel: () => makeChannel(),
+  removeChannel(ch) { realtime.channels.delete(ch); },
   functions: { invoke: async (name, opts) => { (fixtures.current.fnCalls ||= []).push({ name, body: opts?.body }); if (fixtures.current.fnWait) await fixtures.current.fnWait; return { data: { results: [{ id: "r1", status: "sent" }] }, error: null }; } },
   auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) },
 };

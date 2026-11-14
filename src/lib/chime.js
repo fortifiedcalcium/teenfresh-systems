@@ -1,11 +1,12 @@
 // A short, soft two-note chime for a new notification, made in the browser (no audio file). Under a second, so it needs no stop button,
 // and the admin can switch it off in the bell's list. Browsers only allow sound after the person has clicked or pressed a key once,
 // so we unlock it on the first interaction; before that it stays silent instead of failing.
-const KEY = "admin_notify_sound";
+// Each audience has its own switch: an admin and a shopper may be the same person on one browser but want different things.
+const KEYS = { admin: "admin_notify_sound", shopper: "shopper_notify_sound" };
 let ctx = null;
 
-export const soundEnabled = () => { try { return localStorage.getItem(KEY) !== "off"; } catch { return true; } };
-export const setSoundEnabled = (on) => { try { localStorage.setItem(KEY, on ? "on" : "off"); } catch { /* private mode: it lasts until the page closes */ } };
+export const soundEnabled = (who = "admin") => { try { return localStorage.getItem(KEYS[who]) !== "off"; } catch { return true; } };
+export const setSoundEnabled = (on, who = "admin") => { try { localStorage.setItem(KEYS[who], on ? "on" : "off"); } catch { /* private mode: it lasts until the page closes */ } };
 
 const audio = () => {
   if (ctx) return ctx;
@@ -25,9 +26,9 @@ export function unlockChime() {
   return () => { window.removeEventListener("pointerdown", go); window.removeEventListener("keydown", go); };
 }
 
-/** Plays the chime if sound is on and the browser allows it. Never throws. */
-export function playChime() {
-  if (!soundEnabled()) return false;
+/** Plays the chime if sound is on (for `who`) and the browser allows it. Never throws. */
+export function playChime(who = "admin") {
+  if (!soundEnabled(who)) return false;
   const c = audio();
   if (!c || c.state === "suspended") return false;
   try {

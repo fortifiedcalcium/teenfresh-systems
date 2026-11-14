@@ -15,6 +15,7 @@ import Receipt from "../../components/admin/Receipt.jsx";
 import BalanceSection from "../../components/admin/BalanceSection.jsx";
 import BusyOverlay from "../../components/BusyOverlay.jsx";
 import InputWithAction from "../../components/InputWithAction.jsx";
+import { useLiveReload } from "../../hooks/useLiveReload.js";
 import CourierManager from "../../components/admin/CourierManager.jsx";
 import { useCouriers } from "../../lib/useShop.js";
 import Field from "../../components/Field.jsx";
@@ -275,13 +276,15 @@ export default function Orders() {
   const toast = useToast();
   const [orders, setOrders] = useState(null);
   const [filter, setFilter] = useState("all");
-  const [open, setOpen] = useState(null);
-  const load = useCallback(async () => {
+  const [openId, setOpenId] = useState(null);
+  const load = useCallback(async (quiet = false) => {
     const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-    if (error) toast("Could not load the orders: " + error.message, "error");
+    if (error) { if (!quiet) toast("Could not load the orders: " + error.message, "error"); if (quiet) return; }       // a background refresh that fails keeps what is on screen
     setOrders(data || []);
   }, [toast]);
   useEffect(() => { load(); }, [load]);
+  useLiveReload("orders", () => load(true));                                  // new orders and changes show up by themselves, no browser refresh
+  const open = (orders || []).find((o) => o.id === openId) || null;           // the open order is always the freshest copy
   const matches = {
     set_fee: (o) => o.status === "paid" && o.shipping_status === "none",
     ship_review: (o) => o.shipping_status === "pending_review",
@@ -302,13 +305,13 @@ export default function Orders() {
             return (
               <li key={o.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
                 <div><h2 className="font-black">{o.order_number} · {o.name}</h2><p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)} · ref {o.reference_number}{o.preferred_courier ? ` · wants ${o.preferred_courier}` : ""}</p></div>
-                <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge order={o} />{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
+                <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge order={o} />{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpenId(o.id)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
               </li>
             );
           })}
         </ul>
       )}
-      {open && <OrderDialog order={open} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
+      {open && <OrderDialog order={open} onClose={() => setOpenId(null)} onChanged={() => { setOpenId(null); load(); }} />}
     </div>
   );
 }

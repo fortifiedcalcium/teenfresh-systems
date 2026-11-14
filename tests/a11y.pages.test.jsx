@@ -11,7 +11,7 @@ vi.mock("../src/context/AuthContext.jsx", async () => { const m = await import("
 
 import { LiveRegionProvider } from "../src/a11y.jsx";
 import { ToastProvider } from "../src/components/Toast.jsx";
-import { asGuest, asUser, authState, fixtures } from "./helpers/mockSupabase.js";
+import { asGuest, asUser, authState, fixtures, realtime } from "./helpers/mockSupabase.js";
 import Login from "../src/pages/auth/Login.jsx";
 import Register from "../src/pages/auth/Register.jsx";
 import ForgotPassword from "../src/pages/auth/ForgotPassword.jsx";
@@ -387,6 +387,96 @@ describe("attendee pages", () => {
         expect(fixtures.current.eqs).toEqual(expect.arrayContaining([{ table: "orders", col: "user_id", val: me }, { table: "orders", col: "id", val: "o1" }]));
         b.unmount();
       }
+    });
+    it("Shop orders update by themselves: a new order appears, and an open order follows the database, with no refresh", async () => {
+      const user = userEvent.setup();
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }];
+      admin(<Orders />); await settled("Shop orders");
+      await screen.findByRole("button", { name: /Review order TF-000001/ });
+      expect(screen.queryByRole("button", { name: /Review order TF-000007/ })).toBeNull();
+      // a customer places another order: the list gets it without anyone pressing refresh
+      fixtures.current.orders = [{ ...fixtures.current.orders[0] }, { ...order, id: "o7", order_number: "TF-000007" }];
+      realtime.fire("orders");
+      expect(await screen.findByRole("button", { name: /Review order TF-000007/ }, { timeout: 4000 })).toBeInTheDocument();
+      // the admin has an order open; the customer sends their shipping receipt meanwhile: the open window changes by itself
+      await user.click(screen.getByRole("button", { name: /Review order TF-000001/ }));
+      const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
+      expect(within(dialog).getByRole("button", { name: "Update fee" })).toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Confirm shipping payment" })).toBeNull();
+      fixtures.current.orders = [{ ...fixtures.current.orders[0], shipping_status: "pending_review", shipping_sender_name: "Juan D.", shipping_reference_number: "SHIP1", shipping_receipt_path: "u1/s.png" }, fixtures.current.orders[1]];
+      realtime.fire("orders");
+      expect(await within(dialog).findByRole("button", { name: "Confirm shipping payment" }, { timeout: 4000 })).toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Update fee" })).toBeNull();
+    });
+    it("a refresh that fails in the background keeps what is on screen", async () => {
+      fixtures.current.orders = [{ ...order }];
+      admin(<Orders />); await settled("Shop orders");
+      await screen.findByRole("button", { name: /Review order TF-000001/ });
+      fixtures.current.orders = [];                                                                      // the next reload brings nothing back
+      realtime.fire("orders");
+      await new Promise((r) => setTimeout(r, 1300));
+      expect(screen.queryByRole("button", { name: /Review order TF-000001/ })).toBeNull();               // an empty answer is still an answer
+    });
+    it("the shopper's My orders and order page update by themselves too", async () => {
+      asUser();
+      fixtures.current.orders = [{ ...order, status: "pending" }];
+      const a = page("/my-orders", <MyOrders />);
+      await screen.findByRole("heading", { level: 2, name: "Order TF-000001" });
+      expect(screen.getByText("Awaiting payment")).toBeInTheDocument();
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "paid", shipping_fee_php: 0 }];
+      realtime.fire("orders");
+      expect(await screen.findByText("Paid", {}, { timeout: 4000 })).toBeInTheDocument();                // the payment was confirmed: no refresh
+      a.unmount();
+      fixtures.current.orders = [{ ...order, status: "pending" }];
+      const b = render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>));
+      await screen.findByRole("heading", { level: 1, name: "Order TF-000001" });
+      expect(screen.getAllByText("Awaiting payment").length).toBeGreaterThan(0);
+      fixtures.current.orders = [{ ...order, status: "shipped", shipping_status: "paid", shipping_fee_php: 150, courier: "LBC", tracking_number: "LBC777" }];
+      realtime.fire("orders");
+      expect(await screen.findByText("LBC777", {}, { timeout: 4000 })).toBeInTheDocument();             // the tracking number shows up by itself
+      b.unmount();
+    });
+    it("My orders: a list of what the shopper has to do, with a link to each", async () => {
+      asUser();
+      fixtures.current.orders = [
+        { ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150, shipping_note: "Blurry receipt" },
+        { ...order, id: "o5", order_number: "TF-000005", balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250, balance_note: "Short by 250" },
+        { ...order, id: "o6", order_number: "TF-000006", preferred_courier: null },
+      ];
+      const { container } = page("/my-orders", <MyOrders />);
+      const box = (await screen.findByRole("heading", { level: 2, name: "What you need to do" })).closest("section");
+      const rows = within(box).getAllByRole("listitem").map((li) => li.textContent.replace(/\s+/g, " ").trim());
+      expect(rows[0]).toContain("Pay your shipping fee of ₱150.00.");                             // the payments first, in the order of the orders
+      expect(rows[0]).toContain("Your last receipt was sent back: Blurry receipt");
+      expect(rows[1]).toContain("Send the remaining ₱250.00 of your payment.");
+      expect(rows[1]).toContain("Short by 250");
+      expect(rows[2]).toContain("Choose the courier you would like (optional).");                  // the optional one last
+      expect(within(box).getByRole("link", { name: "Go to order TF-000005" })).toHaveAttribute("href", "/orders/o5");
+      expect(await check(container)).toHaveNoViolations();
+    });
+    it("My orders: the shopper can switch the sound off, and it is remembered separately from the admin's", async () => {
+      asUser();
+      localStorage.clear();
+      const user = userEvent.setup();
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }];
+      page("/my-orders", <MyOrders />);
+      const sw = await screen.findByRole("switch", { name: "Play a sound when something new needs me" });
+      expect(sw).toBeChecked();                                                                    // on by default
+      await user.click(sw);
+      expect(sw).not.toBeChecked();
+      expect(localStorage.getItem("shopper_notify_sound")).toBe("off");
+      expect(localStorage.getItem("admin_notify_sound")).toBeNull();                              // the admin's own switch is untouched
+    });
+    it("My orders: says so when nothing is waiting on the shopper, and the list follows live changes", async () => {
+      asUser();
+      fixtures.current.orders = [{ ...order, status: "pending", preferred_courier: "LBC" }];
+      page("/my-orders", <MyOrders />);
+      await screen.findByRole("heading", { level: 2, name: "What you need to do" });
+      expect(screen.getByText("You are all set. Nothing is waiting on you right now.")).toBeInTheDocument();
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }];
+      realtime.fire("orders");
+      expect(await screen.findByText("Pay your shipping fee of ₱150.00.", {}, { timeout: 4000 })).toBeInTheDocument();
+      expect(screen.queryByText("You are all set. Nothing is waiting on you right now.")).toBeNull();
     });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();

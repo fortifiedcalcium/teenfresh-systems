@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useLiveReload } from "../../hooks/useLiveReload.js";
 import { SHIPPING } from "../../lib/orders.js";
 import ShippingPayment from "../../components/ShippingPayment.jsx";
 import CopyButton from "../../components/CopyButton.jsx";
@@ -50,10 +51,12 @@ export default function OrderDetail() {
       const o = await supabase.from("orders").select("*").eq("id", id).eq("user_id", user.id).maybeSingle();
       const it = o.data ? await supabase.from("order_items").select("*").eq("order_id", id).order("title") : { data: [] };
       if (!alive) return;
-      setOrder(o.data || null); setItems(it.data || []);
+      // a background refresh that fails keeps what is on screen; only the first load may say "not found"
+      setOrder((cur) => (o.error && cur ? cur : o.data || null)); setItems((cur) => (it.error ? cur : it.data || []));
     })();
     return () => { alive = false; };
   }, [id, reload, user.id]);
+  useLiveReload("orders", () => setReload((n) => n + 1), { filter: `user_id=eq.${user.id}` });       // the status, the shipping fee, the tracking number: no browser refresh needed
 
   if (order === undefined) return <Loading label="Loading your order…" className="p-12" />;
   if (order === null) return <Alert tone="bad">We could not find that order. <Link to="/my-orders">Go to My orders</Link></Alert>;

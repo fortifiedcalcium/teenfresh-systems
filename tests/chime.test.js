@@ -46,4 +46,23 @@ describe("notification chime", () => {
     expect(() => none.playChime()).not.toThrow();
     expect(none.playChime()).toBe(false);
   });
+  it("shoppers and admins have their own sound switch", () => {
+    setSoundEnabled(false, "shopper");
+    expect(soundEnabled("shopper")).toBe(false);
+    expect(soundEnabled("admin")).toBe(true);                    // switching one off leaves the other on
+    setSoundEnabled(false);
+    expect(soundEnabled("admin")).toBe(false);
+    setSoundEnabled(true, "shopper");
+    expect(soundEnabled("shopper")).toBe(true);
+    expect(soundEnabled("admin")).toBe(false);
+  });
+  it("plays for the audience whose switch is on", async () => {
+    const mod = await import("../src/lib/chime.js");
+    mod.unlockChime(); window.dispatchEvent(new Event("pointerdown")); await Promise.resolve();
+    mod.setSoundEnabled(false, "admin");
+    expect(mod.playChime("admin")).toBe(false);
+    expect(mod.playChime("shopper")).toBe(true);
+    mod.setSoundEnabled(false, "shopper");
+    expect(mod.playChime("shopper")).toBe(false);
+  });
 });
