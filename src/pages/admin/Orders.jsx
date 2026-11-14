@@ -10,6 +10,7 @@ import { useToast } from "../../components/Toast.jsx";
 import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
 import OrderStatusBadge from "../../components/OrderStatusBadge.jsx";
+import CourierEditor from "../../components/admin/CourierEditor.jsx";
 import Field from "../../components/Field.jsx";
 import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
@@ -185,6 +186,7 @@ function OrderDialog({ order, onClose, onChanged }) {
           {items.map((i) => <li key={i.id} className="flex justify-between gap-3 py-2"><span className="break-words">{i.artist}: <strong>{i.title}</strong></span><span className="tabular-nums">{peso(i.unit_price_php)} × {i.quantity}</span></li>)}
         </ul>
         {order.receipt_path ? <Receipt path={order.receipt_path} /> : <p className="text-ink-muted">No receipt file is stored for this order.</p>}
+        {(order.status === "pending" || order.status === "paid") && order.shipping_status && order.shipping_status !== "paid" && <CourierEditor key={order.preferred_courier || "none"} order={order} onSaved={onChanged} />}
         {order.status === "paid" && order.shipping_status && (
           <section aria-labelledby="o-shipfee" className="space-y-2 rounded-lg border border-brand-sky p-3">
             <h3 id="o-shipfee" className="flex flex-wrap items-center gap-2 font-black">Shipping fee <Badge tone={SHIPPING[order.shipping_status].tone}>{SHIPPING[order.shipping_status].label}</Badge></h3>

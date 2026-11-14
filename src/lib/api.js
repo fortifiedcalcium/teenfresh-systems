@@ -78,6 +78,7 @@ const ERRORS = {
   NOT_PENDING: "There is no shipping receipt waiting to be checked.",
   NOT_FOUND: "We could not find that order.",
   ORDER_LOCKED: "This order can no longer be changed.",
+  COURIER_LOCKED: "The courier can no longer be changed because your shipping fee is already set.",
   INVALID_COURIER: "Choose a courier (up to 60 characters).",
   PAYMENT_NOT_SET_UP: "Checkout is not open yet because payment details are not set up. Please try again later.",
 };

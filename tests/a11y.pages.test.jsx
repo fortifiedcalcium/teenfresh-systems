@@ -234,7 +234,26 @@ describe("attendee pages", () => {
       expect(await screen.findByText(/wants Ninja Van/)).toBeInTheDocument();                       // in the list
       await user.click(screen.getByRole("button", { name: /Review order TF-000001/ }));
       const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
-      expect(within(dialog).getByText("Ninja Van")).toBeInTheDocument();                           // in the order
+      expect(within(dialog).getAllByText("Ninja Van").length).toBeGreaterThan(0);                  // in the order
+    });
+    it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
+      asUser();
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150, preferred_courier: "LBC" }];
+      const user = userEvent.setup();
+      const b = render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>));
+      await screen.findByRole("heading", { level: 2, name: "Pay your shipping fee" });
+      expect(screen.queryByRole("heading", { level: 3, name: "Preferred courier" })).toBeNull();      // no form any more
+      expect(screen.queryByRole("button", { name: /courier/i })).toBeNull();
+      expect(screen.getByText(/can no longer be changed because your shipping fee is set/)).toBeInTheDocument();
+      expect(screen.getByText("LBC")).toBeInTheDocument();                                           // the choice is still shown
+      b.unmount();
+      admin(<Orders />); await settled("Shop orders");
+      await user.click(await screen.findByRole("button", { name: /Review order TF-000001/ }));
+      const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
+      expect(within(dialog).getByText(/can no longer change it. You still can/)).toBeInTheDocument();
+      await user.selectOptions(within(dialog).getByRole("combobox", { name: "Courier" }), "Flash Express");
+      await user.click(within(dialog).getByRole("button", { name: "Save courier" }));
+      await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.op === "update" && w.args[0]?.preferred_courier === "Flash Express")).toBe(true));
     });
     it("Order page: a confirmed order asks for the shipping fee and sends the receipt", async () => {
       asUser();

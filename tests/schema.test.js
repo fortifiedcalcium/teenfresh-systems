@@ -93,6 +93,7 @@ beforeAll(async () => {
   await db.exec(read("019_order_tracking.sql"));
   await db.exec(read("020_preferred_courier.sql"));
   await db.exec(read("021_product_categories.sql"));
+  await db.exec(read("022_courier_locked_after_fee.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -909,7 +910,17 @@ describe("011 orders", () => {
     await asUser("carol");
     await sql("select public.set_preferred_courier($1, 'J&T Express')", [r.id]);             // still allowed once paid
     await asUser("admin");
-    await sql("select public.set_order_shipping($1, 0)", [r.id]);
+    await sql("select public.set_order_shipping($1, 120)", [r.id]);                           // the fee is set: the shopper's choice is locked
+    await asUser("carol");
+    await fails(sql("select public.set_preferred_courier($1, 'LBC')", [r.id]), "COURIER_LOCKED");
+    await asUser("admin");
+    await sql("update public.orders set preferred_courier = 'Lalamove' where id = $1", [r.id]);   // an admin can still change it
+    expect((await row("select preferred_courier from public.orders where id = $1", [r.id])).preferred_courier).toBe("Lalamove");
+    await asUser("carol");
+    await sql("update public.orders set preferred_courier = 'LBC' where id = $1", [r.id]);       // the shopper cannot write the order directly
+    expect((await row("select preferred_courier from public.orders where id = $1", [r.id])).preferred_courier).toBe("Lalamove");
+    await asUser("admin");
+    await sql("update public.orders set shipping_status = 'paid' where id = $1", [r.id]);
     await sql("update public.orders set status = 'shipped', courier = 'J&T Express' where id = $1", [r.id]);
     await asUser("carol");
     await fails(sql("select public.set_preferred_courier($1, 'LBC')", [r.id]), "ORDER_LOCKED");   // shipped: too late

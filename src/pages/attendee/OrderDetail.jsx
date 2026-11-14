@@ -83,8 +83,11 @@ export default function OrderDetail() {
           <h2 id="ship-h" className="text-lg font-black">Delivery</h2>
           <p><strong>{order.name}</strong><br />{order.address}<br />{order.city} {order.postal_code}<br />{order.phone}<br />{order.email}</p>
           {order.notes && <p><span className="font-semibold">Your note:</span> {order.notes}</p>}
-          {(order.status === "pending" || order.status === "paid") && <CourierChoice key={order.preferred_courier || "none"} order={order} onSaved={() => setReload((n) => n + 1)} />}
-          {(order.status === "shipped" || order.status === "cancelled") && order.preferred_courier && <p><span className="font-semibold">Preferred courier:</span> {order.preferred_courier}</p>}
+          {(order.status === "pending" || order.status === "paid") && order.shipping_status === "none" && <CourierChoice key={order.preferred_courier || "none"} order={order} onSaved={() => setReload((n) => n + 1)} />}
+          {!((order.status === "pending" || order.status === "paid") && order.shipping_status === "none") && order.preferred_courier && (
+            <p><span className="font-semibold">Courier:</span> {order.preferred_courier}
+              {(order.status === "pending" || order.status === "paid") && <span className="block text-ink-muted">It can no longer be changed because your shipping fee is set.</span>}</p>
+          )}
           {order.status === "shipped" && order.courier && (
             <div className="rounded-lg bg-brand-sky p-3">
               <p><span className="font-semibold">Courier:</span> {order.courier}</p>
