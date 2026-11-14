@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { SIDEBAR } from "./adminNav.js";
+import NotificationBell from "./NotificationBell.jsx";
 import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconLogOut } from "../NavIcons.jsx";
 import logo from "../../logo/teenfresh-logo.png";
 
@@ -9,7 +10,7 @@ const read = () => { try { return localStorage.getItem(KEY) === "1"; } catch { r
 
 /** Desktop navigation (1024px and up): 240px (260px at 1536+), collapsible to an icon rail. Hidden below 1024px
  *  with display:none, so it is not in the accessibility tree while the bottom bar is. */
-export default function AdminSidebar({ email, onSignOut, pending = 0 }) {
+export default function AdminSidebar({ email, onSignOut, pending = 0, notes }) {
   const [collapsed, setCollapsed] = useState(read);
   const toggle = () => setCollapsed((c) => { try { localStorage.setItem(KEY, c ? "0" : "1"); } catch { /* ignore */ } return !c; });
   const label = (t) => <span className={collapsed ? "sr-only" : ""}>{t}</span>;
@@ -23,6 +24,7 @@ export default function AdminSidebar({ email, onSignOut, pending = 0 }) {
             {collapsed ? <IconChevronRight /> : <IconChevronLeft />}<span className="sr-only">{collapsed ? "Expand sidebar" : "Collapse sidebar"}</span>
           </button>
         </div>
+        <div className={`mb-3 flex ${collapsed ? "justify-center" : "px-1"}`}><NotificationBell counts={notes} align="left" iconOnly={collapsed} /></div>
         <nav aria-label="Admin">
           <ul id="admin-nav-list" className="space-y-1">
             {SIDEBAR.map(([to, text, Icon, end, badge]) => (

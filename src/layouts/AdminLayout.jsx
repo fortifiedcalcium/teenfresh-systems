@@ -8,6 +8,8 @@ import AdminSidebar from "../components/admin/AdminSidebar.jsx";
 import AdminBottomNav from "../components/admin/AdminBottomNav.jsx";
 import AdminTopBar from "../components/admin/AdminTopBar.jsx";
 import { usePendingPayments } from "../hooks/usePendingPayments.js";
+import { useAdminNotifications } from "../hooks/useAdminNotifications.js";
+import { useToast } from "../components/Toast.jsx";
 import { useKeyboardOpen } from "../hooks/useKeyboardOpen.js";
 
 /** Admin frame. Below 1024px: sticky top bar + bottom navigation (raised scan button). From 1024px: the sidebar.
@@ -24,6 +26,9 @@ export default function AdminLayout() {
   const [events, setEvents] = useState(null);
   const [eventId, setEventId] = useState(() => { try { return localStorage.getItem("admin_event") || ""; } catch { return ""; } });
   const pending = usePendingPayments(true);
+  const toast = useToast();
+  // something new is waiting for an admin: say so, wherever they are in the admin area
+  const { counts } = useAdminNotifications(true, (types) => types.forEach((t) => toast(t.toast, "info")));
   const keyboardOpen = useKeyboardOpen();
 
   const reload = useCallback(async () => {
@@ -48,9 +53,9 @@ export default function AdminLayout() {
   return (
     <div className="min-h-[100vh] min-h-dvh lg:flex">
       <SkipLink />
-      <AdminSidebar email={profile?.email} onSignOut={signOut} pending={pending} />
+      <AdminSidebar email={profile?.email} onSignOut={signOut} pending={pending} notes={counts} />
       <div className="min-w-0 flex-1">
-        <AdminTopBar />
+        <AdminTopBar notes={counts} />
         {!onShopPage && <section aria-label="Event selection" className="flex flex-wrap items-center gap-2 border-b border-link bg-brand-cream px-4 py-3">
           <label htmlFor="event-select" className="text-sm font-semibold">Event</label>
           <select id="event-select" className="input max-w-md" value={event?.id || ""} onChange={(e) => select(e.target.value)} disabled={!events?.length}>
