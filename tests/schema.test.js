@@ -102,6 +102,7 @@ beforeAll(async () => {
   await db.exec(read("028_admin_delete_orders.sql"));
   await db.exec(read("029_product_variations.sql"));
   await db.exec(read("030_variation_layers.sql"));
+  await db.exec(read("031_variation_stock.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1253,6 +1254,51 @@ describe("030 layers of variations", () => {
     const p = (await db.query("select id from public.products where title = 'Phone X'")).rows[0].id;
     await fails(db.query("insert into public.product_variations (product_id, name, options) values ($1, 'Odd', '[1]'::jsonb)", [p]), "product_variations_options_check");
     expect((await db.query("select count(*)::int as n from public.products where variation_layers = '[]'::jsonb")).rows[0].n).toBeGreaterThan(0);                                   // the default is none
+  });
+});
+
+describe("031 variation stock", () => {
+  const place = (lines, ref) => db.query("select public.place_order($1::jsonb,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r",
+    [JSON.stringify(lines), "S Person", "alice@example.com", "09171234567", "1 Stock St.", "Makati City, Metro Manila (NCR)", "1210", null, "S P.", ref, `${ids.alice}/${randomUUID()}.jpg`]).then((r) => r.rows[0].r);
+  const stockOf = async (id) => { await asUser("admin"); return (await db.query("select stock from public.product_variations where id = $1", [id])).rows[0].stock; };
+  async function setup() {
+    await asUser("admin");
+    const prod = (await db.query("insert into public.products (artist, title, price) values ('Maker', 'Stocked', 100) returning id")).rows[0].id;
+    const mk = async (name, stock) => (await db.query("insert into public.product_variations (product_id, name, stock) values ($1, $2, $3) returning id", [prod, name, stock])).rows[0].id;
+    return { prod, counted: await mk("Counted", 5), free: await mk("Not counted", null), none: await mk("Gone", 0) };
+  }
+  it("takes what was bought off the stock, leaves uncounted versions alone, and refuses to oversell", async () => {
+    const { prod, counted, free, none } = await setup();
+    await asUser("alice");
+    const r = await place([{ product_id: prod, variation_id: counted, quantity: 2 }, { product_id: prod, variation_id: free, quantity: 9 }], "ST-1");
+    expect(await stockOf(counted)).toBe(3);
+    expect(await stockOf(free)).toBeNull();
+    await asUser("alice");
+    await fails(place([{ product_id: prod, variation_id: counted, quantity: 4 }], "ST-2"), "OUT_OF_STOCK");      // only 3 left
+    await fails(place([{ product_id: prod, variation_id: none, quantity: 1 }], "ST-3"), "OUT_OF_STOCK");         // sold out
+    await fails(place([{ product_id: prod, variation_id: free, quantity: 1 }, { product_id: prod, variation_id: counted, quantity: 9 }], "ST-4"), "OUT_OF_STOCK");
+    expect(await stockOf(counted)).toBe(3);                                                                       // a refused order changes nothing
+    expect(r.id).toBeTruthy();
+  });
+  it("gives the stock back when an order is cancelled (once) or deleted", async () => {
+    const { prod, counted } = await setup();
+    await asUser("alice");
+    const a = await place([{ product_id: prod, variation_id: counted, quantity: 2 }], "ST-5");
+    const b = await place([{ product_id: prod, variation_id: counted, quantity: 3 }], "ST-6");
+    expect(await stockOf(counted)).toBe(0);
+    await asUser("admin");
+    await db.query("update public.orders set status = 'cancelled' where id = $1", [a.id]);
+    expect(await stockOf(counted)).toBe(2);
+    await db.query("update public.orders set status = 'cancelled' where id = $1", [a.id]);                       // again: nothing more is returned
+    expect(await stockOf(counted)).toBe(2);
+    await db.query("delete from public.orders where id = $1", [a.id]);                                            // already cancelled: not returned twice
+    expect(await stockOf(counted)).toBe(2);
+    await db.query("delete from public.orders where id = $1", [b.id]);                                            // an active order that is deleted gives it back
+    expect(await stockOf(counted)).toBe(5);
+  });
+  it("stock cannot be negative", async () => {
+    const { prod } = await setup();
+    await fails(db.query("insert into public.product_variations (product_id, name, stock) values ($1, 'Bad', -1)", [prod]), "stock");
   });
 });
 

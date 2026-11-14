@@ -43,6 +43,7 @@ export default function Checkout() {
   if (items.length === 0 || lines.length === 0) return <Empty>Your cart is empty. <Link to="/shop">Browse the shop</Link></Empty>;
 
   const totals = priceOrder(lines);
+  const soldOut = lines.filter((l) => l.stock === 0 || (l.stock != null && l.quantity > l.stock));   // not enough left: the order would be refused
   const paymentReady = Boolean(settings.gcash_account_number);
 
   const submit = async (ev) => {
@@ -80,6 +81,7 @@ export default function Checkout() {
     <div className="space-y-4">
       <h1 className="flex items-center gap-2 text-3xl"><IconCart />Checkout</h1>
       {loadError && <Alert tone="bad">{loadError}</Alert>}
+      {soldOut.length > 0 && <Alert tone="warn">{soldOut.map((l) => l.title).join(", ")} {soldOut.length === 1 ? "is" : "are"} sold out or has fewer left than your cart asks for. <Link to="/cart">Go back to your cart</Link> to fix it.</Alert>}
       {!paymentReady && <Alert tone="warn">Checkout is not open yet because the payment details are not set up. Please try again later.</Alert>}
       <ErrorSummary errors={{ ...Object.fromEntries(Object.entries(errors).map(([k, message]) => [k, { message }])) }} labels={LABELS} fieldIds={{ receipt: "receipt" }} extra={serverError} submitCount={submitCount} focusSignal={focusSignal} />
       <form onSubmit={submit} noValidate className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
@@ -140,7 +142,7 @@ export default function Checkout() {
             ))}
           </ul>
           <Totals totals={totals} />
-          <button className="btn-primary w-full" disabled={busy || !paymentReady}><IconSend />{busy ? "Placing order…" : "Place order"}</button>
+          <button className="btn-primary w-full" disabled={busy || !paymentReady || soldOut.length > 0}><IconSend />{busy ? "Placing order…" : "Place order"}</button>
           <Link to="/cart" className="btn-secondary w-full no-underline">Back to cart</Link>
         </aside>
       </form>

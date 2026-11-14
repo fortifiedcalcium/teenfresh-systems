@@ -31,7 +31,7 @@ export function productImageUrl(p) {
   try { return supabase.storage.from(BUCKET).getPublicUrl(p.image_path).data.publicUrl; } catch { return null; }
 }
 
-import { COMBOS_MAX, finalVariations, normalizeLayers, validateLayers } from "./variations.js";
+import { COMBOS_MAX, finalVariations, normalizeLayers, validateLayers, validateStock } from "./variations.js";
 export const VARIATIONS_MAX = 20;
 /** A problem with a product's versions (variations), in plain words, or "" when they are fine. Each is { name, price } with an optional price. */
 export function validateVariations(list, max = VARIATIONS_MAX) {
@@ -45,6 +45,8 @@ export function validateVariations(list, max = VARIATIONS_MAX) {
     seen.add(name.toLowerCase());
     const price = String(v.price ?? "").trim();
     if (price !== "" && (!/^\d+(\.\d{1,2})?$/.test(price) || Number(price) <= 0)) return `The price of "${name}" must be above 0, with at most 2 decimals, or empty to use the product's price.`;
+    const stock = validateStock(v.stock, name);
+    if (stock) return stock;
   }
   return "";
 }

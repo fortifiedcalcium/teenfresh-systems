@@ -4,7 +4,7 @@ import { supabase } from "../../lib/supabaseClient.js";
 import { INFO_SECTIONS, productImageUrl } from "../../lib/products.js";
 import { peso } from "../../lib/payment.js";
 import { lineKey, useCart } from "../../lib/cart.jsx";
-import { normalizeLayers, variationLabel } from "../../lib/variations.js";
+import { allSoldOut, inStock, normalizeLayers, stockNote, variationLabel } from "../../lib/variations.js";
 import { useToast } from "../../components/Toast.jsx";
 import Alert from "../../components/Alert.jsx";
 import FormattedText from "../../components/FormattedText.jsx";
@@ -94,20 +94,23 @@ export default function ProductDetail() {
   // layers (like Color, then Storage): the shopper picks a value in each, and the matching combination is what they buy
   const layers = normalizeLayers(p.variation_layers || []);
   const layered = layers.length > 0 && variations.some((v) => v.options);
+  const soldOutAll = allSoldOut(variations);                                  // nothing is left in any version
+  const sellable = variations.filter(inStock);                                // the versions with stock (or not counted): the only ones that can be bought
   const fits = (v) => layers.every((l) => picks[l.name] === undefined || v.options?.[l.name] === picks[l.name]);
-  const matching = layered ? variations.filter((v) => fits(v)) : variations;                          // the combinations still possible with what is picked so far
+  const matching = layered ? sellable.filter((v) => fits(v)) : sellable;                          // the combinations still possible with what is picked so far
   const selectedId = layered ? (layers.every((l) => picks[l.name]) ? matching.find((v) => layers.every((l) => v.options?.[l.name] === picks[l.name]))?.id || "" : "") : choice;
-  const chosen = variations.find((v) => v.id === selectedId) || null;
+  const chosen = sellable.find((v) => v.id === selectedId) || null;
   // A value that is in no combination for sale at all is greyed out. One that exists, but not together with what is picked in the other layers,
   // says so and can still be picked: that clears the pick it does not go with (the way phone shops work).
-  const exists = (layer, value) => variations.some((v) => v.options?.[layer.name] === value);
-  const goesWith = (layer, value) => variations.some((v) => v.options?.[layer.name] === value && layers.every((l) => l.name === layer.name || picks[l.name] === undefined || v.options?.[l.name] === picks[l.name]));
+  const exists = (layer, value) => sellable.some((v) => v.options?.[layer.name] === value);
+  const soldOutValue = (layer, value) => !exists(layer, value) && variations.some((v) => v.options?.[layer.name] === value);          // it exists, but every combination with it is sold out
+  const goesWith = (layer, value) => sellable.some((v) => v.options?.[layer.name] === value && layers.every((l) => l.name === layer.name || picks[l.name] === undefined || v.options?.[l.name] === picks[l.name]));
   const clash = (layer) => layers.filter((l) => l.name !== layer.name && picks[l.name] !== undefined).map((l) => picks[l.name]).join(" and ");
   const pick = (layer, value) => {
     setPickError(false);
     setPicks((cur) => {
       const next = { ...cur, [layer.name]: value };
-      for (const l of layers) if (l.name !== layer.name && next[l.name] !== undefined && !variations.some((v) => layers.every((m) => next[m.name] === undefined || v.options?.[m.name] === next[m.name]))) delete next[l.name];   // drop a pick the new one does not go with
+      for (const l of layers) if (l.name !== layer.name && next[l.name] !== undefined && !sellable.some((v) => layers.every((m) => next[m.name] === undefined || v.options?.[m.name] === next[m.name]))) delete next[l.name];   // drop a pick the new one does not go with
       return next;
     });
   };
@@ -115,10 +118,11 @@ export default function ProductDetail() {
   const unit = chosen?.price != null ? Number(chosen.price) : unitPrice(p);
   const prices = (layered ? matching : variations).map((v) => (v.price != null ? Number(v.price) : unitPrice(p)));
   const varies = prices.length > 0 && Math.min(...prices) !== Math.max(...prices);
-  const total = unit * qty;
+  const maxQty = chosen && chosen.stock != null ? Math.max(1, Math.min(MAX_QTY, chosen.stock)) : MAX_QTY;       // no more than what is left
+  const total = unit * Math.min(qty, maxQty);
   // a product with versions needs one picked before it can go in the cart
   const needPick = () => { if (variations.length && !selectedId) { setPickError(true); group.current?.querySelector("input:not(:disabled)")?.focus(); return true; } return false; };
-  const addToCart = () => { add(p.id, selectedId || null); if (qty > 1) setQty(lineKey({ id: p.id, vid: selectedId || null }), qty); };   // add() puts one in; setQty tops it up to the chosen amount
+  const addToCart = () => { add(p.id, selectedId || null); const n = Math.min(qty, maxQty); if (n > 1) setQty(lineKey({ id: p.id, vid: selectedId || null }), n); };   // add() puts one in; setQty tops it up to the chosen amount
   const onAdd = () => { if (needPick()) return; addToCart(); toast(`${p.title}${chosen ? ` (${variationLabel(chosen)})` : ""} added to your cart`, "success"); };
   const onBuy = () => { if (needPick()) return; addToCart(); navigate("/checkout"); };
 
@@ -163,7 +167,7 @@ export default function ProductDetail() {
                       return (
                         <label key={val} className={`flex min-h-target items-center gap-2 rounded-lg border border-link bg-white px-3 py-2 text-sm font-semibold has-[:checked]:border-2 has-[:checked]:border-ink has-[:checked]:bg-brand-ivory ${!ok ? "cursor-not-allowed opacity-60" : fits ? "cursor-pointer" : "cursor-pointer opacity-70"}`}>
                           <input type="radio" name={`layer-${l.name}`} className="check" value={val} checked={picks[l.name] === val} disabled={!ok} onChange={() => pick(l, val)} />
-                          <span>{val}{!ok && <span className="ml-1 font-normal text-ink-muted">(not available)</span>}{ok && !fits && <span className="ml-1 font-normal text-ink-muted">(not with {clash(l)})</span>}</span>
+                          <span>{val}{!ok && <span className="ml-1 font-normal text-ink-muted">{soldOutValue(l, val) ? "(sold out)" : "(not available)"}</span>}{ok && !fits && <span className="ml-1 font-normal text-ink-muted">(not with {clash(l)})</span>}</span>
                         </label>
                       );
                     })}
@@ -175,8 +179,8 @@ export default function ProductDetail() {
                   <div className="flex flex-wrap gap-2">
                     {variations.map((v) => (
                       <label key={v.id} className="flex min-h-target cursor-pointer items-center gap-2 rounded-lg border border-link bg-white px-3 py-2 text-sm font-semibold has-[:checked]:border-2 has-[:checked]:border-ink has-[:checked]:bg-brand-ivory">
-                        <input type="radio" name="variation" className="check" value={v.id} checked={choice === v.id} onChange={() => { setChoice(v.id); setPickError(false); }} />
-                        <span>{v.name}{v.price != null && Number(v.price) !== unitPrice(p) && <span className="ml-1 font-normal text-ink-muted">{peso(v.price)}</span>}</span>
+                        <input type="radio" name="variation" className="check" value={v.id} checked={choice === v.id} disabled={!inStock(v)} onChange={() => { setChoice(v.id); setPickError(false); }} />
+                        <span>{v.name}{!inStock(v) && <span className="ml-1 font-normal text-ink-muted">(sold out)</span>}{v.price != null && Number(v.price) !== unitPrice(p) && <span className="ml-1 font-normal text-ink-muted">{peso(v.price)}</span>}</span>
                       </label>
                     ))}
                   </div>
@@ -185,6 +189,8 @@ export default function ProductDetail() {
               {pickError && <p id="pick-err" role="alert" className="field-msg"><span className="error-icon error-icon--sm" aria-hidden="true">!</span>{layered && missing.length ? `Choose ${missing.join(" and ")} first.` : "Choose a version first."}</p>}
             </div>
           )}
+          {soldOutAll && <p role="status" className="rounded-lg border border-danger bg-brand-ivory px-3 py-2 font-bold text-danger">Sold out. Every version is sold out for now.</p>}
+          {chosen && stockNote(chosen) && <p role="status" className="text-sm font-bold">{stockNote(chosen)}</p>}
           <div className="pd-option">
             <p className="pd-label" id="opt-label">Select option</p>
             <div className="pd-option-row" role="group" aria-labelledby="opt-label">
@@ -192,7 +198,7 @@ export default function ProductDetail() {
               <div className="pd-qty">
                 <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setLocalQty((q) => Math.max(1, q - 1))}>−</button>
                 <output aria-live="polite" aria-label="Quantity">{qty}</output>
-                <button type="button" aria-label="Increase quantity" disabled={qty >= MAX_QTY} onClick={() => setLocalQty((q) => Math.min(MAX_QTY, q + 1))}>+</button>
+                <button type="button" aria-label="Increase quantity" disabled={qty >= maxQty} onClick={() => setLocalQty((q) => Math.min(maxQty, q + 1))}>+</button>
               </div>
             </div>
           </div>
@@ -200,8 +206,8 @@ export default function ProductDetail() {
           <p className="pd-total"><span>Total</span><strong className="tabular-nums">{peso(total)}</strong></p>
 
           <div className="pd-actions">
-            <button type="button" className="btn-secondary" onClick={onAdd}><IconCart />Add to cart</button>
-            <button type="button" className="btn-primary" onClick={onBuy}>Buy now</button>
+            <button type="button" className="btn-secondary" disabled={soldOutAll} onClick={onAdd}><IconCart />Add to cart</button>
+            <button type="button" className="btn-primary" disabled={soldOutAll} onClick={onBuy}>Buy now</button>
           </div>
         </div>
       </div>

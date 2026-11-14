@@ -53,12 +53,26 @@ export function validateLayers(layers) {
   return "";
 }
 
+/** Stock: empty = not counted (always available), else a whole number from 0 (sold out) up. */
+export const STOCK_MAX = 99999;
+export function validateStock(text, name = "this variation") {
+  const t = String(text ?? "").trim();
+  if (t === "") return "";
+  return /^\d+$/.test(t) && Number(t) <= STOCK_MAX ? "" : `The stock of "${name}" must be a whole number from 0 to ${STOCK_MAX.toLocaleString("en-US")}, or empty if you do not count it.`;
+}
+/** Can this version be bought? Not if its stock is 0. */
+export const inStock = (v) => v.stock == null || v.stock > 0;
+/** The note beside a version: "Sold out", "Only 3 left" (when it is running low), or nothing. */
+export const stockNote = (v) => (v.stock == null ? "" : v.stock === 0 ? "Sold out" : v.stock <= 5 ? `Only ${v.stock} left` : "");
+/** Every version is sold out. */
+export const allSoldOut = (list) => list.length > 0 && list.every((v) => v.stock === 0);
+
 /** What a product's form will save as variations: the combinations of its layers if it has layers, else the simple list.
  *  Each is { id, name, price, active, options }. */
 export function finalVariations(f) {
   const layers = normalizeLayers(f.layers);
-  if (layers.length === 0) return (f.variations || []).map((v) => ({ id: v.id || null, name: v.name, price: v.price, active: true, options: null }));
-  return buildCombos(layers).map((c) => { const x = (f.combos || {})[c.key] || {}; return { id: x.id || null, name: c.name, price: x.price ?? "", active: x.active !== false, options: c.options }; });
+  if (layers.length === 0) return (f.variations || []).map((v) => ({ id: v.id || null, name: v.name, price: v.price, stock: v.stock ?? "", active: true, options: null }));
+  return buildCombos(layers).map((c) => { const x = (f.combos || {})[c.key] || {}; return { id: x.id || null, name: c.name, price: x.price ?? "", stock: x.stock ?? "", active: x.active !== false, options: c.options }; });
 }
 
 /** How a chosen variation reads to a shopper: "Color: Black · Storage: 128GB" for layers, its name for a simple version. */

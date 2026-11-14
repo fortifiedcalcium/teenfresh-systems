@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { chipsFor, productImageUrl, productMatches } from "../../lib/products.js";
 import { peso } from "../../lib/payment.js";
+import { allSoldOut } from "../../lib/variations.js";
 import { groupVariations, useProductCategories } from "../../lib/useShop.js";
 import { useAnnounce } from "../../a11y.jsx";
 import Alert from "../../components/Alert.jsx";
@@ -24,6 +25,7 @@ function ProductCard({ p, options = [] }) {
         </div>
         </Link>
         <div className="flex flex-1 flex-col gap-1 px-1 pb-2 pt-3">
+          {allSoldOut(options) && <p className="text-sm font-black text-danger">Sold out</p>}
           {p.pre_order && <p className="shop-pre">Pre-order</p>}
           <p className="text-sm text-ink-muted">{p.artist}</p>
           <div className="flex items-start gap-2">

@@ -22,8 +22,8 @@ const toForm = (p, versions = []) => {
   const layers = (p.variation_layers || []).map((l, i) => ({ key: `l${i}`, name: l.name, values: (l.values || []).join(", ") }));
   const norm = normalizeLayers(layers);
   const combos = {};
-  if (norm.length) for (const v of versions) { const k = comboKeyOf(v.options, norm); if (k) combos[k] = { id: v.id, price: v.price == null ? "" : String(v.price), active: v.active !== false }; }
-  return { ...blank(), ...p, layers, combos, variations: norm.length ? [] : versions.map((v) => ({ key: v.id, id: v.id, name: v.name, price: v.price == null ? "" : String(v.price) })), info_images: p.info_images || [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, p[k] || ""])), price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] };
+  if (norm.length) for (const v of versions) { const k = comboKeyOf(v.options, norm); if (k) combos[k] = { id: v.id, price: v.price == null ? "" : String(v.price), stock: v.stock == null ? "" : String(v.stock), active: v.active !== false }; }
+  return { ...blank(), ...p, layers, combos, variations: norm.length ? [] : versions.map((v) => ({ key: v.id, id: v.id, name: v.name, price: v.price == null ? "" : String(v.price), stock: v.stock == null ? "" : String(v.stock) })), info_images: p.info_images || [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, p[k] || ""])), price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] };
 };
 const ACCEPT = Object.keys(IMAGE_TYPES).join(",");
 
@@ -155,7 +155,7 @@ export default function Products() {
       const failed = [];
       if (gone.length) { const r = await supabase.from("product_variations").delete().in("id", gone); if (r.error) failed.push(r.error.message); }
       for (const [i, v] of list.entries()) {
-        const body = { name: v.name.trim(), price: String(v.price).trim() === "" ? null : Number(v.price), position: i, active: v.active, options: v.options };
+        const body = { name: v.name.trim(), price: String(v.price).trim() === "" ? null : Number(v.price), stock: String(v.stock ?? "").trim() === "" ? null : Number(v.stock), position: i, active: v.active, options: v.options };
         const r = v.id ? await supabase.from("product_variations").update(body).eq("id", v.id) : await supabase.from("product_variations").insert({ ...body, product_id: productId });
         if (r.error) failed.push(r.error.message);
       }
@@ -204,6 +204,7 @@ export default function Products() {
                   <span className={`badge ${p.active ? "badge-ok" : "badge-neutral"}`}>{p.active ? "Visible" : "Hidden"}</span>
                   {p.pre_order && <span className="badge badge-info">Pre-order</span>}
                   {p.is_new && <span className="badge badge-info">New</span>}
+                  {(versions[p.id] || []).filter((v) => v.active !== false).length > 0 && (versions[p.id] || []).filter((v) => v.active !== false).every((v) => v.stock === 0) && <span className="badge badge-neutral">Sold out</span>}
                   {(versions[p.id] || []).length > 0 && <span className="badge badge-neutral">{(versions[p.id] || []).length} {(versions[p.id] || []).length === 1 ? "variation" : "variations"}</span>}
                 </p>
               </div>
@@ -270,7 +271,7 @@ export default function Products() {
 
             <fieldset className="space-y-3">
               <legend className="label">Variations <span className="font-normal text-ink-muted">(versions, sizes, colours: optional)</span></legend>
-              <p className="hint">If you add variations, shoppers must pick one before they can buy. Leave a price empty to use this product's price.</p>
+              <p className="hint">If you add variations, shoppers must pick one before they can buy. Leave a price empty to use this product's price. Leave stock empty if you do not count it; 0 means sold out.</p>
               {errors.variations && <p id="p-variations-err" role="alert" className="field-msg"><span className="error-icon error-icon--sm" aria-hidden="true">!</span>{errors.variations}</p>}
               {form.layers.length === 0 && (
                 <>
@@ -286,13 +287,17 @@ export default function Products() {
                         <label className="label" htmlFor={`p-var-price-${v.key}`}>Price (PHP) <span className="sr-only">of variation {i + 1}</span></label>
                         <input id={`p-var-price-${v.key}`} className="input" inputMode="decimal" value={v.price} placeholder="Same as product" onChange={(e) => setForm((f) => ({ ...f, variations: f.variations.map((x) => (x.key === v.key ? { ...x, price: e.target.value } : x)) }))} />
                       </div>
+                      <div className="w-28">
+                        <label className="label" htmlFor={`p-var-stock-${v.key}`}>Stock <span className="sr-only">of variation {i + 1}</span></label>
+                        <input id={`p-var-stock-${v.key}`} className="input" inputMode="numeric" value={v.stock ?? ""} placeholder="Not counted" onChange={(e) => setForm((f) => ({ ...f, variations: f.variations.map((x) => (x.key === v.key ? { ...x, stock: e.target.value } : x)) }))} />
+                      </div>
                       <button type="button" className="btn-secondary" onClick={() => setForm((f) => ({ ...f, variations: f.variations.filter((x) => x.key !== v.key) }))}><IconTrash />Remove{" "}<span className="sr-only">variation {v.name || i + 1}</span></button>
                     </li>
                   ))}
                 </ul>
               )}
               <button type="button" id={form.variations.length === 0 ? "p-variations" : undefined} className="btn-secondary" disabled={form.variations.length >= VARIATIONS_MAX}
-                onClick={() => setForm((f) => ({ ...f, variations: [...f.variations, { key: `n${newKey.current++}`, id: null, name: "", price: "" }] }))}><IconPlus />Add a variation</button>
+                onClick={() => setForm((f) => ({ ...f, variations: [...f.variations, { key: `n${newKey.current++}`, id: null, name: "", price: "", stock: "" }] }))}><IconPlus />Add a variation</button>
                 </>
               )}
               {(() => {
@@ -330,6 +335,9 @@ export default function Products() {
                                 <span className="min-w-[10rem] flex-1 font-semibold">{r.name}</span>
                                 <label className="flex items-center gap-2"><span className="sr-only">Price of {r.name}, PHP</span>
                                   <input className="input w-36" inputMode="decimal" aria-label={`Price of ${r.name}, PHP`} placeholder="Same as product" value={c.price ?? ""} onChange={(e) => setCombo(r.key, { price: e.target.value })} />
+                                </label>
+                                <label className="flex items-center gap-2"><span className="sr-only">Stock of {r.name}</span>
+                                  <input className="input w-28" inputMode="numeric" aria-label={`Stock of ${r.name}`} placeholder="Not counted" value={c.stock ?? ""} onChange={(e) => setCombo(r.key, { stock: e.target.value })} />
                                 </label>
                                 <label className="flex min-h-target items-center gap-2"><input type="checkbox" className="check" checked={on} onChange={(e) => setCombo(r.key, { active: e.target.checked })} />For sale<span className="sr-only">: {r.name}</span></label>
                               </li>

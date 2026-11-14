@@ -3,7 +3,7 @@ import { validateVariations, validateProduct } from "../src/lib/products.js";
 import { groupVariations } from "../src/lib/useShop.js";
 import { lineKey } from "../src/lib/cart.jsx";
 import { orderArgs } from "../src/lib/orders.js";
-import { buildCombos, comboKeyOf, finalVariations, normalizeLayers, parseValues, validateLayers, variationLabel } from "../src/lib/variations.js";
+import { buildCombos, comboKeyOf, finalVariations, normalizeLayers, parseValues, validateLayers, validateStock, inStock, stockNote, allSoldOut, variationLabel } from "../src/lib/variations.js";
 import { productRow } from "../src/lib/products.js";
 
 describe("validateVariations", () => {
@@ -93,9 +93,9 @@ describe("layers of variations (like buying a phone)", () => {
     const f = { layers: phone, combos: { [buildCombos(normalizeLayers(phone))[1].key]: { id: "v1", price: "35000", active: false } }, variations: [{ name: "ignored", price: "1" }] };
     const list = finalVariations(f);
     expect(list).toHaveLength(6);
-    expect(list[1]).toEqual({ id: "v1", name: "Black / 256GB", price: "35000", active: false, options: { Color: "Black", Storage: "256GB" } });
+    expect(list[1]).toEqual({ id: "v1", name: "Black / 256GB", price: "35000", stock: "", active: false, options: { Color: "Black", Storage: "256GB" } });
     expect(list[0]).toMatchObject({ id: null, price: "", active: true });                       // new ones default to the product's price and for sale
-    expect(finalVariations({ layers: [], variations: [{ id: "x", name: "Version A", price: "" }] })).toEqual([{ id: "x", name: "Version A", price: "", active: true, options: null }]);
+    expect(finalVariations({ layers: [], variations: [{ id: "x", name: "Version A", price: "" }] })).toEqual([{ id: "x", name: "Version A", price: "", stock: "", active: true, options: null }]);
   });
   it("is part of the product row, and checked with the product", () => {
     expect(productRow({ artist: "A", title: "T", price: "1", discount_percent: "0", categories: [], image_alt: "", layers: phone }).variation_layers)
@@ -110,5 +110,29 @@ describe("layers of variations (like buying a phone)", () => {
     expect(variationLabel({ name: "Black / 128GB", options: { Color: "Black", Storage: "128GB" } })).toBe("Color: Black · Storage: 128GB");
     expect(variationLabel({ name: "Version A", options: null })).toBe("Version A");
     expect(variationLabel(null)).toBe("");
+  });
+});
+
+describe("stock", () => {
+  it("accepts empty or a whole number from 0, and says what is wrong otherwise", () => {
+    expect(validateStock("")).toBe("");
+    expect(validateStock("0")).toBe("");
+    expect(validateStock(12)).toBe("");
+    expect(validateStock("-1")).not.toBe("");
+    expect(validateStock("2.5")).not.toBe("");
+    expect(validateStock("abc")).not.toBe("");
+    expect(validateStock("100000")).not.toBe("");
+    expect(validateVariations([{ name: "A", price: "", stock: "x" }])).not.toBe("");
+  });
+  it("tells what a shopper can buy", () => {
+    expect(inStock({ stock: null })).toBe(true);
+    expect(inStock({ stock: 0 })).toBe(false);
+    expect(stockNote({ stock: 0 })).toBe("Sold out");
+    expect(stockNote({ stock: 3 })).toBe("Only 3 left");
+    expect(stockNote({ stock: 30 })).toBe("");
+    expect(stockNote({ stock: null })).toBe("");
+    expect(allSoldOut([{ stock: 0 }, { stock: 0 }])).toBe(true);
+    expect(allSoldOut([{ stock: 0 }, { stock: null }])).toBe(false);
+    expect(allSoldOut([])).toBe(false);
   });
 });

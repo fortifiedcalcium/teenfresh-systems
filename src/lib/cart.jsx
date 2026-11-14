@@ -40,7 +40,8 @@ export function useCartLines(products, variations = {}) {
       const options = variations[i.id] || [];
       const v = i.vid ? options.find((o) => o.id === i.vid) : null;
       if (!p || (i.vid && !v) || (!i.vid && options.length > 0)) { gone.push(lineKey(i)); continue; }
-      lines.push({ ...p, key: lineKey(i), vid: i.vid || null, variation: v || null, price: v?.price ?? p.price, quantity: i.qty });
+      lines.push({ ...p, key: lineKey(i), vid: i.vid || null, variation: v || null, price: v?.price ?? p.price, stock: v?.stock ?? null, quantity: i.qty });
+      // (stock: how many are left, or null when they are not counted)
     }
     return { lines, gone };
   }, [items, products, variations]);
