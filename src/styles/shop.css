@@ -30,6 +30,13 @@
   .pd-total { @apply m-0 flex items-baseline justify-between border-t border-link pt-4 text-base font-bold; }
   .pd-total strong { @apply text-2xl; }
   .pd-actions { @apply grid grid-cols-2 gap-3; }
+  .pd-accordion { @apply mt-10 border-t border-link; }
+  .pd-accordion details { @apply border-b border-link; }
+  .pd-accordion summary { @apply flex min-h-target cursor-pointer list-none items-center justify-between py-4 text-base font-bold text-ink; }
+  .pd-accordion summary::-webkit-details-marker { display: none; }
+  .pd-accordion summary::after { content: ""; @apply h-2.5 w-2.5 shrink-0 rotate-45 border-b-2 border-r-2 border-ink-muted transition-transform; }
+  .pd-accordion details[open] summary::after { @apply -rotate-[135deg]; }
+  .pd-prose { @apply pb-5 text-sm leading-relaxed text-ink; white-space: pre-line; overflow-wrap: anywhere; }
 
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     .shop-card:hover { box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 18%, transparent); }

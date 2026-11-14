@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { CATEGORIES, productImageUrl, productRow, removeProductImage, uploadProductImage, usd, validateProduct } from "../../lib/products.js";
+import { CATEGORIES, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, usd, validateProduct } from "../../lib/products.js";
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "../../lib/eventImages.js";
 import { useToast } from "../../components/Toast.jsx";
 import { useAnnounce } from "../../a11y.jsx";
@@ -12,8 +12,8 @@ import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconBag, IconClose, IconImage, IconPencil, IconPlus, IconSave, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
-const blank = () => ({ id: null, artist: "", title: "", price: "", discount_percent: "0", pre_order: false, is_new: true, categories: [], image_path: null, image_alt: "", active: true });
-const toForm = (p) => ({ ...blank(), ...p, price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] });
+const blank = () => ({ id: null, artist: "", title: "", price: "", discount_percent: "0", pre_order: false, is_new: true, categories: [], image_path: null, image_alt: "", active: true, ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, ""])) });
+const toForm = (p) => ({ ...blank(), ...p, ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, p[k] || ""])), price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] });
 const ACCEPT = Object.keys(IMAGE_TYPES).join(",");
 
 function Thumb({ p, className = "" }) {
@@ -176,6 +176,15 @@ export default function Products() {
                   <Field id="p-image_alt" label="Image description" hint="Read aloud by screen readers, for example: Blue album cover with a glowing ring"><input className="input" value={form.image_alt} onChange={set("image_alt")} /></Field>
                 </div>
               </div>
+            </fieldset>
+
+            <fieldset className="space-y-3">
+              <legend className="label">Product info <span className="font-normal text-ink-muted">(shown as sections on the product page)</span></legend>
+              {INFO_SECTIONS.map(([k, label]) => (
+                <Field key={k} id={`p-${k}`} label={label} error={errors[k]} hint="Leave empty to hide this section. Line breaks are kept.">
+                  <textarea className="input" rows={4} maxLength={INFO_MAX} value={form[k]} onChange={set(k)} />
+                </Field>
+              ))}
             </fieldset>
 
             <div className="sheet-actions flex justify-end gap-2 border-t border-brand-sky">

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
-import { productImageUrl, usd } from "../../lib/products.js";
+import { INFO_SECTIONS, productImageUrl, usd } from "../../lib/products.js";
 import { useCart } from "../../lib/cart.jsx";
 import { useToast } from "../../components/Toast.jsx";
 import Alert from "../../components/Alert.jsx";
@@ -129,6 +129,16 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+      {INFO_SECTIONS.some(([k]) => p[k]) && (
+        <div className="pd-accordion">
+          {INFO_SECTIONS.filter(([k]) => p[k]).map(([k, label], i) => (
+            <details key={k} open={i === 0}>
+              <summary>{label}</summary>
+              <div className="pd-prose">{p[k]}</div>
+            </details>
+          ))}
+        </div>
+      )}
       <Related items={related} />
     </section>
   );
