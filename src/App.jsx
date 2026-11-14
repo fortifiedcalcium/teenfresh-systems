@@ -28,12 +28,10 @@ const Dashboard = lazy(() => import("./pages/admin/Dashboard.jsx"));
 const Events = lazy(() => import("./pages/admin/Events.jsx"));
 const Attendees = lazy(() => import("./pages/admin/Attendees.jsx"));
 const Products = lazy(() => import("./pages/admin/Products.jsx"));
-const OrderEmails = lazy(() => import("./pages/admin/OrderEmails.jsx"));
-const Orders = lazy(() => import("./pages/admin/Orders.jsx"));
-const Payments = lazy(() => import("./pages/admin/Payments.jsx"));
+const EmailsHub = lazy(() => import("./pages/admin/EmailsHub.jsx"));
+const PaymentsHub = lazy(() => import("./pages/admin/PaymentsHub.jsx"));
 const Scanner = lazy(() => import("./pages/admin/Scanner.jsx"));
 const Tracker = lazy(() => import("./pages/admin/Tracker.jsx"));
-const EmailTemplates = lazy(() => import("./pages/admin/EmailTemplates.jsx"));
 const Users = lazy(() => import("./pages/admin/Users.jsx"));
 const ChangeLog = lazy(() => import("./pages/admin/ChangeLog.jsx"));
 const Profile = lazy(() => import("./pages/admin/Profile.jsx"));
@@ -82,15 +80,15 @@ export default function App() {
         {SHOP_ENABLED && (
           <>
             <Route path="products" element={<Products />} />
-            <Route path="orders" element={<Orders />} />
-            <Route path="order-emails" element={<OrderEmails />} />
+            <Route path="orders" element={<Navigate to="/admin/payments?tab=shop" replace />} />
+            <Route path="order-emails" element={<Navigate to="/admin/emails?tab=shop" replace />} />
           </>
         )}
-        <Route path="payments" element={<Payments />} />
+        <Route path="payments" element={<PaymentsHub />} />
         <Route path="attendees" element={<Attendees />} />
         <Route path="scanner" element={<Scanner />} />
         <Route path="tracker" element={<Tracker />} />
-        <Route path="emails" element={<EmailTemplates />} />
+        <Route path="emails" element={<EmailsHub />} />
         <Route path="users" element={<Users />} />
         <Route path="changelog" element={<ChangeLog />} />
         <Route path="profile" element={<Profile />} />

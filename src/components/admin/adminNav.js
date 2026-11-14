@@ -1,4 +1,4 @@
-import { IconChecklist, IconDashboard, IconScanLine, IconSearch, IconUser, IconCalendar, IconWallet, IconMail, IconShield, IconHistory, IconUsers, IconScan, IconBag, IconPackage } from "../NavIcons.jsx";
+import { IconChecklist, IconDashboard, IconScanLine, IconSearch, IconUser, IconCalendar, IconWallet, IconMail, IconShield, IconHistory, IconUsers, IconScan, IconBag } from "../NavIcons.jsx";
 
 /** Which pathnames highlight which bottom-bar tab. Profile also covers the pages that have no tab of their own. */
 export const matchers = {
@@ -19,27 +19,25 @@ export const TABS = [
 
 /** Everything, for the desktop sidebar. */
 import { SHOP_ENABLED } from "../../lib/features.js";
-const SHOP_PATHS = ["/admin/products", "/admin/orders", "/admin/order-emails"];
+const SHOP_PATHS = ["/admin/products"];
 
 export const SIDEBAR = [
   ["/admin", "Dashboard", IconDashboard, true],
   ["/admin/events", "Events", IconCalendar],
   ["/admin/products", "Shop products", IconBag],
-  ["/admin/orders", "Shop orders", IconPackage],
   ["/admin/payments", "Payments", IconWallet, false, "pending"],
   ["/admin/attendees", "Attendees", IconUsers],
   ["/admin/scanner", "QR Scanner", IconScan],
   ["/admin/tracker", "Attendance", IconChecklist],
   ["/admin/emails", "Email", IconMail],
-  ["/admin/order-emails", "Order emails", IconMail],
   ["/admin/users", "Admin users", IconShield],
   ["/admin/changelog", "Change log", IconHistory],
 ].filter(([to]) => SHOP_ENABLED || !SHOP_PATHS.includes(to));
 
 /** Page titles for the mobile top bar, and where its back button goes. */
 export const TITLES = [
-  ["/admin/profile", "Profile"], ["/admin/events", "Events", "/admin/profile"], ["/admin/products", "Shop products", "/admin/profile"], ["/admin/orders", "Shop orders", "/admin/profile"], ["/admin/payments", "Payments", "/admin/profile"],
-  ["/admin/order-emails", "Order emails", "/admin/profile"], ["/admin/emails", "Email", "/admin/profile"], ["/admin/users", "Admin users", "/admin/profile"], ["/admin/changelog", "Change log", "/admin/profile"],
+  ["/admin/profile", "Profile"], ["/admin/events", "Events", "/admin/profile"], ["/admin/products", "Shop products", "/admin/profile"], ["/admin/payments", "Payments", "/admin/profile"],
+  ["/admin/emails", "Email", "/admin/profile"], ["/admin/users", "Admin users", "/admin/profile"], ["/admin/changelog", "Change log", "/admin/profile"],
   ["/admin/attendees", "Attendees"], ["/admin/scanner", "QR Scanner"], ["/admin/tracker", "Attendance"], ["/admin", "Dashboard"],
 ];
 export function titleFor(pathname) {
