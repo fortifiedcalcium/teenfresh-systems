@@ -31,12 +31,12 @@ export default function FileUpload({ id, label = "Attach payment receipt", file,
   const shownError = localError || error;
 
   return (
-    <div>
+    <div className={shownError ? "field-error" : undefined}>
       <p className="label" id={`${id}-label`}>{label}{required && <span className="font-normal text-ink-muted"> (required)</span>}</p>
       {/* Drag and drop is only a shortcut; the keyboard path is the real file input below (hence the lint exemption). */}
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
-        className={`rounded-lg border-2 border-dashed p-4 text-center ${over ? "border-ink bg-brand-sky" : "border-link bg-white"}`}
+        className={`rounded-lg border-2 border-dashed p-4 text-center ${over ? "border-ink bg-brand-sky" : shownError ? "border-danger bg-white" : "border-link bg-white"}`}
         onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
         onDrop={(e) => { e.preventDefault(); setOver(false); if (e.dataTransfer.files?.[0]) take(e.dataTransfer.files[0]); }}
       >

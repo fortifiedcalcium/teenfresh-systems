@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { COURIERS, MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, sendOrderEmail, splitCourier } from "../../lib/orders.js";
+import { COURIERS, MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, isFullyPaid, sendOrderEmail, splitCourier } from "../../lib/orders.js";
 import { productImageUrl, removeProductImage, uploadProductImage } from "../../lib/products.js";
 import { IMAGE_TYPES, validateImageFile } from "../../lib/eventImages.js";
 import { peso, parseAmount } from "../../lib/payment.js";
@@ -14,7 +14,7 @@ import CourierEditor from "../../components/admin/CourierEditor.jsx";
 import Field from "../../components/Field.jsx";
 import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
-import { IconBag, IconCheck, IconClose, IconImage, IconPackage, IconSave, IconSend, IconUpload } from "../../components/NavIcons.jsx";
+import { IconBag, IconCheck, IconClose, IconImage, IconPackage, IconSave, IconSend, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
 const MAIL_LABEL = { order_received: "Order received (old, no longer sent)", order_paid: "Payment confirmed", order_shipping_due: "Shipping fee to pay", order_shipped: "Shipped", order_cancelled: "Cancelled" };
 const FILTERS = [["all", "All"], ["pending", "Awaiting payment check"], ["set_fee", "Set shipping fee"], ["ship_review", "Shipping payment to check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
@@ -140,6 +140,24 @@ function OrderDialog({ order, onClose, onChanged }) {
     toast("Courier and tracking number saved", "success");
     onChanged();
   };
+  /** Once everything is paid the receipts are not needed: delete the files and keep only the reference numbers. Returns false if it could not. */
+  const purgeReceipts = async () => {
+    const paths = [order.receipt_path, order.shipping_receipt_path].filter(Boolean);
+    if (!paths.length) return true;
+    const { error } = await supabase.storage.from("payment-receipts").remove(paths);
+    if (error) return false;
+    const { error: e2 } = await supabase.from("orders").update({ receipt_path: null, shipping_receipt_path: null }).eq("id", order.id);
+    return !e2;
+  };
+  const warnPurge = (ok) => { if (!ok) toast("The receipt files could not be deleted. Open the order again and press Delete receipt files.", "error"); };
+  const deleteLeftover = async () => {
+    setBusy(true);
+    const ok = await purgeReceipts();
+    setBusy(false);
+    if (!ok) { toast("The receipt files could not be deleted. Try again.", "error"); return; }
+    toast("Receipt files deleted. Only the reference numbers are kept.", "success");
+    onChanged();
+  };
   const setStatus = async (status) => {
     const ship = status === "shipped" ? shipment() : {};
     if (!ship) return;
@@ -147,6 +165,7 @@ function OrderDialog({ order, onClose, onChanged }) {
     const { error } = await supabase.from("orders").update({ status, ...ship, admin_note: note.trim() || null, updated_at: new Date().toISOString() }).eq("id", order.id);
     setBusy(false);
     if (error) { toast(error.message, "error"); return; }
+    if (status === "paid" && isFullyPaid({ ...order, status })) warnPurge(await purgeReceipts());      // nothing left to pay (free shipping, or an older order)
     const mail = await sendOrderEmail(`order_${status}`, order.id);
     toast(`Order ${order.order_number}: ${STATUS[status].label}. ${mail.ok ? "The shopper was emailed." : "The email could not be sent: " + mail.error}`, mail.ok ? "success" : "error");
     onChanged();
@@ -158,6 +177,7 @@ function OrderDialog({ order, onClose, onChanged }) {
     setBusy(true);
     const { error } = await supabase.rpc("set_order_shipping", { p_order: order.id, p_fee: amount });
     if (error) { setBusy(false); toast(friendlyError(error), "error"); return; }
+    if (amount === 0 && order.status === "paid") warnPurge(await purgeReceipts());                  // free shipping: everything is paid now
     const mail = amount > 0 ? await sendOrderEmail("order_shipping_due", order.id) : { ok: true };
     setBusy(false);
     toast(amount > 0 ? `Shipping fee ${peso(amount)} set. ${mail.ok ? "The shopper was emailed." : "The email could not be sent: " + mail.error}` : "Free shipping set for this order", mail.ok ? "success" : "error");
@@ -170,10 +190,13 @@ function OrderDialog({ order, onClose, onChanged }) {
     const { error } = await supabase.rpc("review_shipping_payment", { p_order: order.id, p_approve: approve, p_note: reason });
     setBusy(false);
     if (error) { toast(friendlyError(error), "error"); return; }
+    if (approve && order.status === "paid") warnPurge(await purgeReceipts());                       // the shipping fee is paid too: everything is paid
     toast(approve ? "Shipping payment confirmed. You can mark the order as shipped." : "The shipping receipt was sent back to the shopper", "success");
     onChanged();
   };
   const shipOk = order.shipping_status === "paid" || order.shipping_status === undefined;
+  const fullyPaid = isFullyPaid(order);
+  const leftoverReceipts = Boolean(order.receipt_path || order.shipping_receipt_path);
   const next = { pending: [["paid", "Mark as paid", IconCheck], ["cancelled", "Cancel order", IconClose]], paid: [["shipped", "Mark as shipped", IconPackage], ["cancelled", "Cancel order", IconClose]], shipped: [], cancelled: [] }[order.status] || [];
   return (
     <Modal title={`Order ${order.order_number}`} onClose={onClose} wide>
@@ -185,7 +208,12 @@ function OrderDialog({ order, onClose, onChanged }) {
         <ul className="divide-y divide-brand-sky rounded-lg border border-brand-sky px-3">
           {items.map((i) => <li key={i.id} className="flex justify-between gap-3 py-2"><span className="break-words">{i.artist}: <strong>{i.title}</strong></span><span className="tabular-nums">{peso(i.unit_price_php)} × {i.quantity}</span></li>)}
         </ul>
-        {order.receipt_path ? <Receipt path={order.receipt_path} /> : <p className="text-ink-muted">No receipt file is stored for this order.</p>}
+        {fullyPaid ? (
+          <div className="space-y-2 rounded-lg bg-brand-ivory p-3">
+            <p>Everything is paid, so the receipts are no longer kept. Only the reference numbers are stored: <span className="font-mono">{order.reference_number}</span>{order.shipping_reference_number ? <> (shipping: <span className="font-mono">{order.shipping_reference_number}</span>)</> : null}.</p>
+            {leftoverReceipts && <div className="flex flex-wrap items-center gap-2"><p className="text-ink-muted">Receipt files from before are still in storage, but they are not shown.</p><button type="button" className="btn-secondary" disabled={busy} onClick={deleteLeftover}><IconTrash />Delete receipt files</button></div>}
+          </div>
+        ) : order.receipt_path ? <Receipt path={order.receipt_path} /> : <p className="text-ink-muted">No receipt file is stored for this order.</p>}
         {(order.status === "pending" || order.status === "paid") && order.shipping_status && order.shipping_status !== "paid" && <CourierEditor key={order.preferred_courier || "none"} order={order} onSaved={onChanged} />}
         {order.status === "paid" && order.shipping_status && (
           <section aria-labelledby="o-shipfee" className="space-y-2 rounded-lg border border-brand-sky p-3">

@@ -236,6 +236,41 @@ describe("attendee pages", () => {
       const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
       expect(within(dialog).getAllByText("Ninja Van").length).toBeGreaterThan(0);                  // in the order
     });
+    it("Admin orders: receipts show while payment is open, vanish once everything is paid, and the files are deleted", async () => {
+      const { storageLog } = await import("./helpers/mockSupabase.js");
+      const user = userEvent.setup();
+      const open = async () => { await user.click(await screen.findByRole("button", { name: /Review order TF-000001/ })); return screen.getByRole("dialog", { name: "Order TF-000001" }); };
+      // 1. the shipping fee is not paid yet: the receipt is still shown
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }];
+      const a = admin(<Orders />); await settled("Shop orders");
+      let dialog = await open();
+      expect(within(dialog).getByRole("link", { name: /Open the receipt/ })).toBeInTheDocument();
+      a.unmount();
+      // 2. the admin confirms the shipping payment: both receipt files are deleted and only the references stay
+      storageLog.removed.length = 0;
+      fixtures.current.writes = [];
+      fixtures.current.rpc = { review_shipping_payment: { shipping_status: "paid" } };
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "pending_review", shipping_fee_php: 150, shipping_sender_name: "Juan D.", shipping_reference_number: "SHIP999", shipping_receipt_path: "u1/ship.png" }];
+      const b = admin(<Orders />); await settled("Shop orders");
+      dialog = await open();
+      await user.click(within(dialog).getByRole("button", { name: "Confirm shipping payment" }));
+      await waitFor(() => expect(storageLog.removed).toEqual(expect.arrayContaining(["u1/a.png", "u1/ship.png"])));
+      await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.op === "update" && w.args[0]?.receipt_path === null && w.args[0]?.shipping_receipt_path === null)).toBe(true));
+      b.unmount();
+      // 3. an order that is already fully paid shows no receipt, only the references, and can clean up old files
+      storageLog.removed.length = 0;
+      fixtures.current.writes = [];
+      fixtures.current.orders = [{ ...order, status: "shipped", shipping_status: "paid", shipping_fee_php: 150, shipping_reference_number: "SHIP999", shipping_receipt_path: "u1/ship.png", courier: "LBC" }];
+      admin(<Orders />); await settled("Shop orders");
+      dialog = await open();
+      expect(within(dialog).queryByRole("link", { name: /Open the receipt/ })).toBeNull();
+      expect(within(dialog).queryByRole("img", { name: /receipt/i })).toBeNull();
+      expect(within(dialog).getByText(/Everything is paid, so the receipts are no longer kept/)).toBeInTheDocument();
+      expect(within(dialog).getByText("SHIP999")).toBeInTheDocument();
+      expect(storageLog.removed).toHaveLength(0);                                                  // nothing is deleted just by looking
+      await user.click(within(dialog).getByRole("button", { name: "Delete receipt files" }));
+      await waitFor(() => expect(storageLog.removed).toEqual(expect.arrayContaining(["u1/a.png", "u1/ship.png"])));
+    });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();
       fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150, preferred_courier: "LBC" }];

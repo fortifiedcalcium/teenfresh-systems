@@ -9,6 +9,8 @@ export const STATUS = {
   cancelled: { tone: "bad",  label: "Cancelled" },
 };
 /** The shipping payment that comes after the order is confirmed. */
+/** Everything is paid: the order is confirmed and its shipping fee is paid (or there is none). Orders from before the shipping step count as paid. */
+export const isFullyPaid = (o) => (o.status === "paid" || o.status === "shipped") && (o.shipping_status ?? "paid") === "paid";
 export const SHIPPING = {
   none:             { tone: "neutral", label: "Shipping fee not set yet" },
   awaiting_payment: { tone: "warn",    label: "Shipping fee to pay" },

@@ -27,15 +27,17 @@ export default function ErrorSummary({ errors, labels = {}, focusSignal = 0, fie
   if (!items.length || !(armed || extra)) return null;
 
   return (
-    <div ref={ref} tabIndex={-1} role="alert" className="alert alert-bad block" aria-labelledby="error-summary-title">
-      <h2 id="error-summary-title" className="text-base font-black text-danger">There {items.length === 1 ? "is 1 problem" : `are ${items.length} problems`} with your submission</h2>
-      <ul className="mt-1 list-disc pl-5">
-        {items.map((i) => (
-          <li key={i.name}>
-            {i.name === "_extra" ? i.message : <a href={`#${fieldIds[i.name] || i.name}`} onClick={(e) => { e.preventDefault(); document.getElementById(fieldIds[i.name] || i.name)?.focus(); }}>{labels[i.name] ? `${labels[i.name]}: ` : ""}{i.message}</a>}
-          </li>
-        ))}
-      </ul>
+    <div ref={ref} tabIndex={-1} role="alert" className="alert alert-bad" aria-labelledby="error-summary-title">
+      <div className="min-w-0 flex-1">
+        <h2 id="error-summary-title" className="text-base font-black text-danger">There {items.length === 1 ? "is 1 problem" : `are ${items.length} problems`} with your submission</h2>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          {items.map((i) => (
+            <li key={i.name}>
+              {i.name === "_extra" ? i.message : <a href={`#${fieldIds[i.name] || i.name}`} className="font-semibold" onClick={(e) => { e.preventDefault(); document.getElementById(fieldIds[i.name] || i.name)?.focus(); }}>{labels[i.name] ? `${labels[i.name]}: ` : ""}{i.message}</a>}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

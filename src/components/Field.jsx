@@ -5,7 +5,7 @@ import React from "react";
 export default function Field({ label, error, hint, id, required, children }) {
   const describedBy = [error ? `${id}-err` : null, hint ? `${id}-hint` : null].filter(Boolean).join(" ") || undefined;
   return (
-    <div>
+    <div className={error ? "field-error" : undefined}>
       <label htmlFor={id} className="label">{label}{required && <span className="font-normal text-ink-muted"> (required)</span>}</label>
       {React.cloneElement(children, { id, "aria-invalid": error ? "true" : undefined, "aria-describedby": describedBy, "aria-required": required ? "true" : undefined })}
       {hint && <p id={`${id}-hint`} className="hint">{hint}</p>}

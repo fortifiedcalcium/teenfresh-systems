@@ -48,6 +48,10 @@
   .input[aria-invalid="true"] { @apply border-2 border-danger; }
   .label { @apply mb-1 block text-sm font-semibold text-ink; }
   .hint { @apply mt-1 text-xs text-ink-muted; }
+  /* A field with a problem: a red bar and a soft red background, so it is easy to spot while scrolling a long form. */
+  .field-error { @apply rounded-lg border-l-4 border-danger bg-brand-blush py-2 pl-3 pr-2; }
+  /* When a field gets focus (from the error summary), keep it clear of the sticky header. */
+  input, select, textarea, .field-error { scroll-margin-top: 7rem; }
   .card { @apply rounded-xl border border-link bg-white; }
 
   /* Badges always carry an icon AND text. The icon is CSS content with an empty alt so it is not read twice. */

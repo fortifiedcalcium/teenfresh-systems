@@ -68,6 +68,12 @@ export default function Checkout() {
     }
   };
 
+  const DELIVERY = ["name", "email", "phone", "address", "province", "city", "postal_code"];
+  const PAYMENT = ["sender_name", "reference_number", "receipt"];
+  const flag = (keys) => {                 // "2 fields need attention" beside a section's title, when it has problems
+    const n = keys.filter((k) => errors[k]).length;
+    return n > 0 ? <span className="ml-2 text-sm font-bold text-danger"><span aria-hidden="true">✕ </span>{n} {n === 1 ? "field needs" : "fields need"} attention</span> : null;
+  };
   const text = (name, label, props = {}, hint) => <Field id={name} label={label} required error={errors[name]} hint={hint}><input className="input" value={f[name]} onChange={set(name)} {...props} /></Field>;
   return (
     <div className="space-y-4">
@@ -77,7 +83,7 @@ export default function Checkout() {
       <ErrorSummary errors={{ ...Object.fromEntries(Object.entries(errors).map(([k, message]) => [k, { message }])) }} labels={LABELS} fieldIds={{ receipt: "receipt" }} extra={serverError} submitCount={submitCount} focusSignal={focusSignal} />
       <form onSubmit={submit} noValidate className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
         <div className="space-y-6">
-          <fieldset className="card space-y-4 p-4"><legend className="px-1 text-lg font-black">Contact and delivery</legend>
+          <fieldset className="card space-y-4 p-4"><legend className="px-1 text-lg font-black">Contact and delivery{flag(DELIVERY)}</legend>
             <div className="grid gap-4 md:grid-cols-2">
               {text("name", "Full name", { autoComplete: "name" })}
               {text("email", "Email", { type: "email", autoComplete: "email" })}
@@ -102,7 +108,7 @@ export default function Checkout() {
             <Field id="notes" label="Notes for the seller" hint="Optional"><textarea className="input" rows={2} maxLength={500} value={f.notes} onChange={set("notes")} /></Field>
           </fieldset>
 
-          <fieldset className="card space-y-4 p-4"><legend className="px-1 text-lg font-black">Pay with GCash</legend>
+          <fieldset className="card space-y-4 p-4"><legend className="px-1 text-lg font-black">Pay with GCash{flag(PAYMENT)}</legend>
             {paymentReady && (
               <div className="rounded-lg bg-brand-sky p-3 text-sm">
                 <p>Send <strong>{peso(totals.totalPhp)}</strong> to:</p>
