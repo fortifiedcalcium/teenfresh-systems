@@ -15,6 +15,17 @@ export const SHIPPING = {
   pending_review:   { tone: "warn",    label: "Checking shipping payment" },
   paid:             { tone: "ok",      label: "Shipping paid" },
 };
+/** The couriers an admin can pick when shipping an order. "Other" lets the admin type any name. */
+export const COURIERS = ["J&T Express", "LBC", "JRS Express", "Ninja Van", "Flash Express", "2GO", "Lalamove", "Grab Express", "Pick-up by the shopper"];
+export const OTHER_COURIER = "Other";
+export const MAX_TRACKING = 60;
+/** The courier name to save, or an error message. `other` is the typed name when "Other" is chosen. */
+export function courierValue(choice, other) {
+  const name = (choice === OTHER_COURIER ? other : choice || "").trim();
+  if (!name) return { error: choice === OTHER_COURIER ? "Type the courier's name." : "Choose the courier." };
+  if (name.length > 60) return { error: "The courier name can be 60 characters at most." };
+  return { value: name };
+}
 const cents = (n) => Math.round(Number(n || 0) * 100);
 
 /** The totals of a cart: lines are { price, quantity } in pesos; the shipping fee is set later by an admin and paid separately, so checkout only charges for the items.

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { SHIPPING, STATUS, sendOrderEmail } from "../../lib/orders.js";
+import { COURIERS, MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, sendOrderEmail } from "../../lib/orders.js";
 import { productImageUrl, removeProductImage, uploadProductImage } from "../../lib/products.js";
 import { IMAGE_TYPES, validateImageFile } from "../../lib/eventImages.js";
 import { peso, parseAmount } from "../../lib/payment.js";
@@ -114,9 +114,34 @@ function OrderDialog({ order, onClose, onChanged }) {
   const [feeError, setFeeError] = useState("");
   useEffect(() => { supabase.from("order_emails").select("*").eq("order_id", order.id).order("sent_at", { ascending: false }).then(({ data }) => setMails(data || [])); }, [order.id]);
   useEffect(() => { supabase.from("order_items").select("*").eq("order_id", order.id).order("title").then(({ data }) => setItems(data || [])); }, [order.id]);
-  const setStatus = async (status) => {
+  const [courierChoice, setCourierChoice] = useState(order.courier ? (COURIERS.includes(order.courier) ? order.courier : OTHER_COURIER) : "");
+  const [courierOther, setCourierOther] = useState(order.courier && !COURIERS.includes(order.courier) ? order.courier : "");
+  const [tracking, setTracking] = useState(order.tracking_number || "");
+  const [shipError, setShipError] = useState("");
+  /** The courier and tracking number to save, or null (and a message on screen) when they are not valid. */
+  const shipment = () => {
+    setShipError("");
+    const c = courierValue(courierChoice, courierOther);
+    if (c.error) { setShipError(c.error); return null; }
+    const t = tracking.trim();
+    if (t.length > MAX_TRACKING) { setShipError(`The tracking number can be ${MAX_TRACKING} characters at most.`); return null; }
+    return { courier: c.value, tracking_number: t || null };
+  };
+  const saveShipment = async () => {
+    const ship = shipment();
+    if (!ship) return;
     setBusy(true);
-    const { error } = await supabase.from("orders").update({ status, admin_note: note.trim() || null, updated_at: new Date().toISOString() }).eq("id", order.id);
+    const { error } = await supabase.from("orders").update({ ...ship, updated_at: new Date().toISOString() }).eq("id", order.id);
+    setBusy(false);
+    if (error) { toast(error.message, "error"); return; }
+    toast("Courier and tracking number saved", "success");
+    onChanged();
+  };
+  const setStatus = async (status) => {
+    const ship = status === "shipped" ? shipment() : {};
+    if (!ship) return;
+    setBusy(true);
+    const { error } = await supabase.from("orders").update({ status, ...ship, admin_note: note.trim() || null, updated_at: new Date().toISOString() }).eq("id", order.id);
     setBusy(false);
     if (error) { toast(error.message, "error"); return; }
     const mail = await sendOrderEmail(`order_${status}`, order.id);
@@ -184,6 +209,25 @@ function OrderDialog({ order, onClose, onChanged }) {
             )}
             {order.shipping_status === "paid" && order.shipping_fee_php != null && <p>{Number(order.shipping_fee_php) > 0 ? `${peso(order.shipping_fee_php)} received.` : "Free shipping."} You can mark the order as shipped.</p>}
             {order.shipping_status !== "paid" && order.shipping_status !== undefined && <p className="text-ink-muted">You can mark the order as shipped after the shipping fee is paid.</p>}
+          </section>
+        )}
+        {(order.status === "shipped" || (order.status === "paid" && shipOk)) && (
+          <section aria-labelledby="o-courier" className="space-y-2 rounded-lg border border-brand-sky p-3">
+            <h3 id="o-courier" className="font-black">Courier and tracking number</h3>
+            <p className="text-ink-muted">{order.status === "paid" ? "Fill these in, then press Mark as shipped. The shopper sees them on their order page and in the shipped email." : "The shopper sees these on their order page. You can correct them here."}</p>
+            {shipError && <Alert tone="bad">{shipError}</Alert>}
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field id="courier" label="Courier" required={order.status === "paid"}>
+                <select className="input" value={courierChoice} onChange={(e) => setCourierChoice(e.target.value)}>
+                  <option value="">Choose a courier…</option>
+                  {COURIERS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  <option value={OTHER_COURIER}>{OTHER_COURIER}…</option>
+                </select>
+              </Field>
+              {courierChoice === OTHER_COURIER && <Field id="courier_other" label="Courier name" required><input className="input" maxLength={60} value={courierOther} onChange={(e) => setCourierOther(e.target.value)} /></Field>}
+              <Field id="tracking_number" label="Tracking number" hint="Leave empty if the courier gives none"><input className="input" maxLength={MAX_TRACKING} autoComplete="off" value={tracking} onChange={(e) => setTracking(e.target.value)} /></Field>
+            </div>
+            {order.status === "shipped" && <div><button type="button" className="btn-secondary" disabled={busy} onClick={saveShipment}><IconSave />Save courier and tracking</button></div>}
           </section>
         )}
         {mails.length > 0 && (

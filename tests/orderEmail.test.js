@@ -46,8 +46,20 @@ describe("editable wording", () => {
   });
   it("escapes the admin's text in the HTML, never lets it add markup", () => {
     const m = renderOrderEmail("order_paid", order, items, "", { heading: "<script>alert(1)</script>", body: "<img src=x onerror=alert(1)>" });
-    expect(m.html).not.toMatch(/<script|<img/);
+    expect(m.html).not.toMatch(/<script|<img src=x/);
+    expect(m.html.match(/<img/g)).toHaveLength(1);                         // only the Teenfresh logo, never an image from the admin's text
+    expect(m.html).toContain('src="https://teenfresh-events.web.app/email/logo.png"');
     expect(m.html).toContain("&lt;script&gt;");
+  });
+  it("the shipped email names the courier and tracking number; other emails do not", () => {
+    const o = { ...order, courier: "J&T Express", tracking_number: "JT123" };
+    const m = renderOrderEmail("order_shipped", o, items, "");
+    expect(m.text).toContain("Courier: J&T Express");
+    expect(m.text).toContain("Tracking number: JT123");
+    expect(m.html).toContain("J&amp;T Express");
+    expect(renderOrderEmail("order_paid", o, items, "").text).not.toContain("Tracking number");
+    expect(renderOrderEmail("order_shipped", { ...o, tracking_number: null }, items, "").text).not.toContain("Tracking number");
+    expect(renderOrderEmail("order_shipped", order, items, "").text).not.toContain("Courier:");   // older orders have none
   });
   it("falls back to the built-in wording for an empty or missing part", () => {
     const m = renderOrderEmail("order_shipped", order, items, "", { subject: "  ", heading: undefined, body: "" });

@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { SHIPPING, STATUS } from "../../lib/orders.js";
 import ShippingPayment from "../../components/ShippingPayment.jsx";
+import CopyButton from "../../components/CopyButton.jsx";
 import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
@@ -81,6 +82,14 @@ export default function OrderDetail() {
           <h2 id="ship-h" className="text-lg font-black">Delivery</h2>
           <p><strong>{order.name}</strong><br />{order.address}<br />{order.city} {order.postal_code}<br />{order.phone}<br />{order.email}</p>
           {order.notes && <p><span className="font-semibold">Your note:</span> {order.notes}</p>}
+          {order.status === "shipped" && order.courier && (
+            <div className="rounded-lg bg-brand-sky p-3">
+              <p><span className="font-semibold">Courier:</span> {order.courier}</p>
+              {order.tracking_number
+                ? <p className="flex flex-wrap items-center gap-2"><span className="font-semibold">Tracking number:</span> <span className="font-mono font-bold">{order.tracking_number}</span><CopyButton text={order.tracking_number} label="Copy tracking number" what="tracking number" /></p>
+                : <p className="text-ink-muted">This courier did not give a tracking number.</p>}
+            </div>
+          )}
           <p className="flex items-center gap-1 text-ink-muted"><IconCheck />GCash reference {order.reference_number}</p>
         </section>
       </div>

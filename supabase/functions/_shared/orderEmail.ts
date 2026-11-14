@@ -1,12 +1,12 @@
 // Builds the shop order emails. Pure functions, no network: the Edge Function sends what these return.
-import { escapeHtml as e } from "./merge.ts";
+import { absoluteUrl, DEFAULT_SITE, escapeHtml as e } from "./merge.ts";
 
 export const ORDER_KINDS = ["order_received", "order_paid", "order_shipping_due", "order_shipped", "order_cancelled"] as const;
 export type OrderKind = (typeof ORDER_KINDS)[number];
 /** The order status each admin email announces (order_received is sent when the order is placed, status "pending"). */
 export const KIND_STATUS: Record<OrderKind, string> = { order_received: "pending", order_paid: "paid", order_shipping_due: "paid", order_shipped: "shipped", order_cancelled: "cancelled" };
 
-export interface OrderRow { id: string; order_number: string; name: string; email: string; phone: string; address: string; city: string; postal_code: string; subtotal_php: number | string; shipping_php: number | string; total_php: number | string; shipping_fee_php?: number | string | null; shipping_status?: string }
+export interface OrderRow { id: string; order_number: string; name: string; email: string; phone: string; address: string; city: string; postal_code: string; subtotal_php: number | string; shipping_php: number | string; total_php: number | string; shipping_fee_php?: number | string | null; shipping_status?: string; courier?: string | null; tracking_number?: string | null }
 export interface ItemRow { artist: string; title: string; unit_price_php: number | string; quantity: number }
 
 const php = (n: unknown) => "PHP " + Number(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -53,13 +53,17 @@ export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[],
   const shippingLabel = hasFee ? "Shipping fee (paid separately)" : "Shipping";
   const shipping = hasFee ? (Number(o.shipping_fee_php) > 0 ? php(o.shipping_fee_php) : "Free")
     : Number(o.shipping_php) > 0 ? php(o.shipping_php) : o.shipping_status === "none" ? "Set after your payment is confirmed" : "Free";
+  // On the shipped email: who is carrying the package and how to follow it.
+  const showTrack = kind === "order_shipped" && !!o.courier;
+  const trackHtml = showTrack ? `<p style="margin:0 0 16px 0;padding:12px;background:#c4d6ea;border-radius:8px;font-size:14px;"><strong>Courier:</strong> ${e(String(o.courier))}${o.tracking_number ? `<br><strong>Tracking number:</strong> ${e(String(o.tracking_number))}` : ""}</p>` : "";
   const html = `<!doctype html><html><body style="margin:0;background:#f1d0d9;font-family:Arial,Helvetica,sans-serif;color:#17303f;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;">
-<tr><td style="background:#f9e7b9;padding:16px 24px;font-size:20px;font-weight:bold;">Teenfresh</td></tr>
+<tr><td style="background:#f9e7b9;padding:16px 24px;"><img src="${e(absoluteUrl("/email/logo.png", DEFAULT_SITE))}" alt="Teenfresh" width="130" style="display:block;width:130px;height:auto;border:0;"></td></tr>
 <tr><td style="padding:24px;">
 <h1 style="margin:0 0 8px 0;font-size:22px;">${e(c.heading)}</h1>
 ${paragraphs(c.body)}
+${trackHtml}
 <p style="margin:0 0 8px 0;"><strong>Order ${e(o.order_number)}</strong></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #c4d6ea;border-bottom:1px solid #c4d6ea;font-size:14px;">${rows}</table>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin-top:8px;">
@@ -72,7 +76,7 @@ ${link ? `<p style="margin:0 0 8px 0;"><a href="${e(link)}" style="color:#1c5a85
 <p style="margin:16px 0 0 0;font-size:12px;color:#2b4c63;">Teenfresh</p>
 </td></tr></table></td></tr></table></body></html>`;
   const text = [
-    c.heading, "", c.body, "", `Order ${o.order_number}`,
+    c.heading, "", c.body, "", ...(showTrack ? [`Courier: ${o.courier}`, ...(o.tracking_number ? [`Tracking number: ${o.tracking_number}`] : []), ""] : []), `Order ${o.order_number}`,
     ...items.map((i) => `- ${i.artist}: ${i.title}  ${php(i.unit_price_php)} x ${i.quantity}`), "",
     `Items: ${php(o.subtotal_php)}`, `${shippingLabel}: ${shipping}`, `Total paid (GCash): ${php(o.total_php)}`, "",
     "Deliver to:", o.name, o.address, `${o.city} ${o.postal_code}`, o.phone,

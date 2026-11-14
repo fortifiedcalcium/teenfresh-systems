@@ -196,6 +196,20 @@ describe("attendee pages", () => {
       expect(await screen.findByText(/48 to 72 hours/)).toBeInTheDocument();
       expect(await check(b.container)).toHaveNoViolations();
     });
+    it("Admin orders: shipping needs a courier, and saves the tracking number with the order", async () => {
+      const user = userEvent.setup();
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "paid", shipping_fee_php: 150 }];
+      admin(<Orders />); await settled("Shop orders");
+      await user.click(await screen.findByRole("button", { name: /Review order TF-000001/ }));
+      const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
+      await user.click(within(dialog).getByRole("button", { name: "Mark as shipped" }));
+      expect(await within(dialog).findByText("Choose the courier.")).toBeInTheDocument();      // nothing was saved
+      expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.args[0]?.status === "shipped")).toBeFalsy();
+      await user.selectOptions(within(dialog).getByRole("combobox", { name: /^Courier/ }), "LBC");
+      await user.type(within(dialog).getByLabelText(/^Tracking number/), "LBC123456");
+      await user.click(within(dialog).getByRole("button", { name: "Mark as shipped" }));
+      await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "orders" && w.args[0]?.status === "shipped" && w.args[0]?.courier === "LBC" && w.args[0]?.tracking_number === "LBC123456")).toBe(true));
+    });
     it("Order page: a confirmed order asks for the shipping fee and sends the receipt", async () => {
       asUser();
       fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }];

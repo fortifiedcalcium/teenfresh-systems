@@ -15,7 +15,7 @@ const WHEN = {
   order_shipped: "Sent when you mark an order as shipped.",
   order_cancelled: "Sent when you cancel an order.",
 };
-const SAMPLE_ORDER = { id: "sample", order_number: "TF-000123", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St., Brgy. Poblacion", city: "Makati", postal_code: "1210", subtotal_php: 1500, shipping_php: 0, total_php: 1500, shipping_fee_php: 150, shipping_status: "awaiting_payment" };
+const SAMPLE_ORDER = { id: "sample", order_number: "TF-000123", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St., Brgy. Poblacion", city: "Makati", postal_code: "1210", subtotal_php: 1500, shipping_php: 0, total_php: 1500, shipping_fee_php: 150, shipping_status: "awaiting_payment", courier: "J&T Express", tracking_number: "JT1234567890" };
 const SAMPLE_ITEMS = [{ artist: "Marv", title: "ÖRBITAL", unit_price_php: 750, quantity: 2 }];
 
 const wording = (rows, k) => { const r = rows?.[k]; return r ? { subject: r.subject, heading: r.heading, body: r.body } : DEFAULT_TEMPLATES[k]; };

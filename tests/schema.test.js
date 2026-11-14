@@ -90,6 +90,7 @@ beforeAll(async () => {
   await db.exec(read("016_shop_pesos.sql"));
   await db.exec(read("017_product_info_images.sql"));
   await db.exec(read("018_order_shipping_payment.sql"));
+  await db.exec(read("019_order_tracking.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -877,7 +878,12 @@ describe("011 orders", () => {
     await fails(sql("select public.review_shipping_payment($1, true, null)", [r.id]), "FORBIDDEN");
     await asUser("admin");
     await sql("select public.review_shipping_payment($1, true, null)", [r.id]);
-    await sql("update public.orders set status = 'shipped' where id = $1", [r.id]);       // allowed now
+    await sql("update public.orders set status = 'shipped', courier = 'LBC', tracking_number = 'LBC-123' where id = $1", [r.id]);       // allowed now
+    await fails(sql("update public.orders set courier = '   ' where id = $1", [r.id]), "courier_check");
+    await fails(sql("update public.orders set tracking_number = repeat('x', 61) where id = $1", [r.id]), "tracking_number_check");
+    await asUser("carol");
+    expect(await row("select courier from public.orders where id = $1", [r.id])).toEqual({ courier: "LBC" });
+    await asUser("admin");
     expect((await row("select status, shipping_status from public.orders where id = $1", [r.id]))).toEqual({ status: "shipped", shipping_status: "paid" });
   });
   it("free shipping (fee 0) needs no payment", async () => {
