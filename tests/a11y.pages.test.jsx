@@ -332,6 +332,30 @@ describe("attendee pages", () => {
       await waitFor(() => expect(screen.queryByText("Sending the email to the shopper…")).toBeNull());
       fixtures.current.fnWait = null;
     });
+    it("Order status: Awaiting payment until the shipping fee is paid too, and Paid only when everything is paid", async () => {
+      asUser();
+      const open = (o) => { fixtures.current.orders = [o]; return render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>)); };
+      let r = open({ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 });
+      await screen.findByRole("heading", { level: 2, name: "Pay your shipping fee" });
+      expect(screen.getAllByText("Awaiting payment").length).toBeGreaterThanOrEqual(2);              // the order status, and the shipping fee
+      expect(screen.queryByText("Paid")).toBeNull();                                                  // not yet: the shipping fee is still to pay
+      r.unmount();
+      r = open({ ...order, status: "paid", shipping_status: "paid", shipping_fee_php: 150 });
+      expect(await screen.findByText("Paid")).toBeInTheDocument();                                    // everything is paid now
+      expect(screen.queryByText("Awaiting payment")).toBeNull();
+      r.unmount();
+      // the admin list agrees, and "Awaiting payment" also lists confirmed orders that still owe their shipping fee
+      fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150 }, { ...order, id: "o9", order_number: "TF-000009", status: "paid", shipping_status: "paid", shipping_fee_php: 150 }];
+      const user = userEvent.setup();
+      admin(<Orders />); await settled("Shop orders");
+      await screen.findByRole("button", { name: /Review order TF-000009/ });
+      await user.click(screen.getByRole("button", { name: "Awaiting payment" }));
+      expect(screen.getByRole("button", { name: /Review order TF-000001/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Review order TF-000009/ })).toBeNull();
+      await user.click(screen.getByRole("button", { name: "Paid" }));
+      expect(screen.getByRole("button", { name: /Review order TF-000009/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Review order TF-000001/ })).toBeNull();
+    });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();
       fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150, preferred_courier: "LBC" }];

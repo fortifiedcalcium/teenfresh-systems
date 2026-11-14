@@ -60,7 +60,7 @@ export default function OrderDetail() {
       {placed && <Alert tone="ok"><span><strong>Thank you! Your order was placed.</strong> Keep your order number: {order.order_number}.</span></Alert>}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-3xl"><IconPackage />Order {order.order_number}</h1>
-        <OrderStatusBadge status={order.status} />
+        <OrderStatusBadge order={order} />
       </div>
       <p className="text-ink-muted">Placed {fmtDateTime(order.created_at)}. {nextText(order)}</p>
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
@@ -76,7 +76,7 @@ export default function OrderDetail() {
             <dl className="mt-3 space-y-1 border-t border-brand-sky pt-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-base font-black">
                 <dt>{order.shipping_status === "awaiting_payment" ? "Shipping fee to pay" : "Shipping fee"}</dt>
-                <dd className="ml-auto flex flex-wrap items-center justify-end gap-2 text-right"><span className="tabular-nums">{peso(order.shipping_fee_php)}</span>{order.shipping_status === "pending_review" && <Badge tone={SHIPPING.pending_review.tone}>{SHIPPING.pending_review.label}</Badge>}</dd>
+                <dd className="ml-auto flex flex-wrap items-center justify-end gap-2 text-right"><span className="tabular-nums">{peso(order.shipping_fee_php)}</span><Badge tone="warn">{order.shipping_status === "awaiting_payment" ? "Awaiting payment" : SHIPPING.pending_review.label}</Badge></dd>
               </div>
               {order.balance_status && order.balance_status !== "none" && order.balance_due_php != null && (<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-base font-black "><dt>{order.balance_status === "awaiting_payment" ? "Still to pay (underpaid)" : "Extra payment being checked"}</dt><dd className="tabular-nums">{peso(order.balance_due_php)}</dd></div>)}
             </dl>

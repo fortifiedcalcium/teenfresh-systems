@@ -1,12 +1,13 @@
 import React from "react";
-import { STATUS } from "../lib/orders.js";
+import { STATUS, displayStatus } from "../lib/orders.js";
 import Badge from "./Badge.jsx";
 import { IconTruck } from "./NavIcons.jsx";
 
 const ICONS = { shipped: <IconTruck /> };
 
-/** The status of a shop order as a badge. Shipped shows a delivery truck; the others use the usual symbol for their colour. */
-export default function OrderStatusBadge({ status }) {
-  const st = STATUS[status] || STATUS.pending;
-  return <Badge tone={st.tone} icon={ICONS[status]}>{st.label}</Badge>;
+/** The status of a shop order as a badge. It says "Paid" only once everything is paid, shipping fee included; Shipped shows a delivery truck. */
+export default function OrderStatusBadge({ order }) {
+  const key = displayStatus(order);
+  const st = STATUS[key] || STATUS.pending;
+  return <Badge tone={st.tone} icon={ICONS[key]}>{st.label}</Badge>;
 }

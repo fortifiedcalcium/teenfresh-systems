@@ -7,6 +7,7 @@ import { useToast } from "../../components/Toast.jsx";
 import { useAnnounce } from "../../a11y.jsx";
 import Modal from "../../components/Modal.jsx";
 import Field from "../../components/Field.jsx";
+import InputWithAction from "../../components/InputWithAction.jsx";
 import Alert from "../../components/Alert.jsx";
 import BoldTextarea from "../../components/BoldTextarea.jsx";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
@@ -215,12 +216,9 @@ export default function Products() {
                 <summary className="cursor-pointer text-sm font-bold">Add or delete categories</summary>
                 <div className="mt-3 space-y-3">
                   {catError && <Alert tone="bad">{catError}</Alert>}
-                  <div className="flex flex-wrap items-end gap-2">
-                    <Field id="new-category" label="New category" hint={`Up to ${CATEGORY_MAX} characters. It also becomes a filter on the shop page.`}>
-                      <input className="input w-64 max-w-full" maxLength={CATEGORY_MAX} value={newCat} onChange={(e) => setNewCat(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCategory(); } }} />
-                    </Field>
-                    <button type="button" className="btn-secondary" disabled={catBusy} onClick={addCategory}><IconPlus />Add category</button>
-                  </div>
+                  <InputWithAction id="new-category" label="New category" hint={`Up to ${CATEGORY_MAX} characters. It also becomes a filter on the shop page.`} className="input w-64 max-w-full" maxLength={CATEGORY_MAX} value={newCat} onChange={(e) => setNewCat(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCategory(); } }}
+                    action={<button type="button" className="btn-secondary" disabled={catBusy} onClick={addCategory}><IconPlus />Add category</button>} />
                   {cats && cats.length > 0 && (
                     <ul className="space-y-1">
                       {cats.map((c) => {

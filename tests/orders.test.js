@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { orderArgs, priceOrder, validateCheckout } from "../src/lib/orders.js";
+import { displayStatus, orderArgs, priceOrder, validateCheckout } from "../src/lib/orders.js";
 
 const good = { name: "Juan Dela Cruz", email: "juan@example.com", phone: "0917 123 4567", address: "12 Rizal St., Brgy. Poblacion", province: "Metro Manila (NCR)", city: "Makati City", postal_code: "1210", notes: "", sender_name: "Juan D.", reference_number: "1234 567 890" };
 
@@ -29,5 +29,22 @@ describe("orderArgs", () => {
     expect(a.p_reference).toBe("1234567890");
     expect(JSON.stringify(a)).not.toMatch(/price/i);
     expect(a.p_city).toBe("Makati City, Metro Manila (NCR)");     // the city column keeps the province too
+  });
+});
+
+describe("displayStatus", () => {
+  const o = (x) => ({ status: "paid", shipping_status: "paid", balance_status: "none", ...x });
+  it("says Paid only once everything is paid, the shipping fee included", () => {
+    expect(displayStatus(o())).toBe("paid");
+    expect(displayStatus(o({ shipping_status: "none" }))).toBe("pending");               // confirmed, but the shipping fee is not set or paid yet
+    expect(displayStatus(o({ shipping_status: "awaiting_payment" }))).toBe("pending");
+    expect(displayStatus(o({ shipping_status: "pending_review" }))).toBe("pending");
+    expect(displayStatus(o({ balance_status: "awaiting_payment" }))).toBe("pending");    // an underpayment is still open
+  });
+  it("leaves the other statuses alone", () => {
+    expect(displayStatus(o({ status: "pending", shipping_status: "none" }))).toBe("pending");
+    expect(displayStatus(o({ status: "shipped" }))).toBe("shipped");
+    expect(displayStatus(o({ status: "cancelled", shipping_status: "none" }))).toBe("cancelled");
+    expect(displayStatus({ status: "paid" })).toBe("paid");                              // an older order has no shipping step
   });
 });

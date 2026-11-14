@@ -35,7 +35,7 @@ export default function MyOrders() {
                     <h2 className="font-black">Order {o.order_number}</h2>
                     <p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)}</p>
                   </div>
-                  <div className="flex items-center gap-3"><OrderStatusBadge status={o.status} /><Link to={`/orders/${o.id}`} className="btn-secondary no-underline"><IconEye />View order{" "}<span className="sr-only">{o.order_number}</span></Link></div>
+                  <div className="flex items-center gap-3"><OrderStatusBadge order={o} /><Link to={`/orders/${o.id}`} className="btn-secondary no-underline"><IconEye />View order{" "}<span className="sr-only">{o.order_number}</span></Link></div>
                 </li>
               );
             })}

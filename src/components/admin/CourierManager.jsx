@@ -4,7 +4,7 @@ import { COURIER_MAX, validateCourierName } from "../../lib/orders.js";
 import { useToast } from "../Toast.jsx";
 import { useAnnounce } from "../../a11y.jsx";
 import Alert from "../Alert.jsx";
-import Field from "../Field.jsx";
+import InputWithAction from "../InputWithAction.jsx";
 import { Loading } from "../Spinner.jsx";
 import { IconPackage, IconPlus, IconTrash } from "../NavIcons.jsx";
 
@@ -50,12 +50,9 @@ export default function CourierManager() {
       <h2 id="couriers-h" className="flex items-center gap-2 text-lg font-black"><IconPackage />Couriers</h2>
       <p className="text-sm text-ink-muted">Shoppers choose their courier from this list, and you ship with one of them. "Other" (typing any name) is always offered. Deleting a courier does not change orders that already use it.</p>
       {error && <Alert tone="bad">{error}</Alert>}
-      <div className="flex flex-wrap items-end gap-2">
-        <Field id="new-courier" label="New courier" hint={`Up to ${COURIER_MAX} characters`}>
-          <input className="input w-64 max-w-full" maxLength={COURIER_MAX} value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
-        </Field>
-        <button type="button" className="btn-secondary" disabled={busy} onClick={add}><IconPlus />Add courier</button>
-      </div>
+      <InputWithAction id="new-courier" label="New courier" hint={`Up to ${COURIER_MAX} characters`} className="input w-64 max-w-full" maxLength={COURIER_MAX} value={name} onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+        action={<button type="button" className="btn-secondary" disabled={busy} onClick={add}><IconPlus />Add courier</button>} />
       {list === null ? <Loading label="Loading couriers…" /> : list.length === 0 ? <p className="text-sm text-ink-muted">No couriers yet. Shoppers can only type a courier name until you add some.</p> : (
         <ul className="space-y-1">
           {list.map((c) => (

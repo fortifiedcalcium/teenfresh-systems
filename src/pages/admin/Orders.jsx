@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, isFullyPaid, sendOrderEmail, splitCourier } from "../../lib/orders.js";
+import { MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, displayStatus, isFullyPaid, sendOrderEmail, splitCourier } from "../../lib/orders.js";
 import { productImageUrl, removeProductImage, uploadProductImage } from "../../lib/products.js";
 import { IMAGE_TYPES, validateImageFile } from "../../lib/eventImages.js";
 import { peso, parseAmount } from "../../lib/payment.js";
@@ -14,6 +14,7 @@ import CourierEditor from "../../components/admin/CourierEditor.jsx";
 import Receipt from "../../components/admin/Receipt.jsx";
 import BalanceSection from "../../components/admin/BalanceSection.jsx";
 import BusyOverlay from "../../components/BusyOverlay.jsx";
+import InputWithAction from "../../components/InputWithAction.jsx";
 import CourierManager from "../../components/admin/CourierManager.jsx";
 import { useCouriers } from "../../lib/useShop.js";
 import Field from "../../components/Field.jsx";
@@ -157,7 +158,7 @@ function OrderDialog({ order, onClose, onChanged }) {
     setSending(true);
     const mail = await sendOrderEmail(`order_${status}`, order.id);
     setSending(false);
-    toast(`Order ${order.order_number}: ${STATUS[status].label}. ${mail.ok ? "The shopper was emailed." : "The email could not be sent: " + mail.error}`, mail.ok ? "success" : "error");
+    toast(`Order ${order.order_number}: ${status === "paid" && !isFullyPaid({ ...order, status }) ? "payment confirmed, the shipping fee is next" : STATUS[status].label}. ${mail.ok ? "The shopper was emailed." : "The email could not be sent: " + mail.error}`, mail.ok ? "success" : "error");
     onChanged();
   };
   const sendFee = async () => {
@@ -217,10 +218,8 @@ function OrderDialog({ order, onClose, onChanged }) {
             {(order.shipping_status === "none" || order.shipping_status === "awaiting_payment") && (
               <>
                 <p className="text-ink-muted">{order.shipping_status === "none" ? "Set what this shopper pays for shipping. They are emailed and can then pay it from their order page." : "The shopper has not paid yet. You can still change the fee."}</p>
-                <div className="flex flex-wrap items-end gap-2">
-                  <Field id="ship_fee" label="Shipping fee (PHP)" hint="0 = free shipping"><input className="input w-40" inputMode="decimal" value={fee} onChange={(e) => setFee(e.target.value)} /></Field>
-                  <button type="button" className="btn-primary" disabled={busy} onClick={sendFee}><IconSend />{order.shipping_status === "none" ? "Send shipping fee" : "Update fee"}</button>
-                </div>
+                <InputWithAction id="ship_fee" label="Shipping fee (PHP)" hint="0 = free shipping" className="input w-40" inputMode="decimal" value={fee} onChange={(e) => setFee(e.target.value)}
+                  action={<button type="button" className="btn-primary" disabled={busy} onClick={sendFee}><IconSend />{order.shipping_status === "none" ? "Send shipping fee" : "Update fee"}</button>} />
               </>
             )}
             {order.shipping_status === "pending_review" && (
@@ -288,7 +287,7 @@ export default function Orders() {
     ship_review: (o) => o.shipping_status === "pending_review",
     underpaid: (o) => Boolean(o.balance_status) && o.balance_status !== "none",
   };
-  const shown = (orders || []).filter((o) => filter === "all" || (matches[filter] ? matches[filter](o) : o.status === filter));
+  const shown = (orders || []).filter((o) => filter === "all" || (matches[filter] ? matches[filter](o) : displayStatus(o) === filter));
   return (
     <div className="space-y-4">
       <h1 className="flex items-center gap-2 text-2xl"><IconBag />Shop orders</h1>
@@ -303,7 +302,7 @@ export default function Orders() {
             return (
               <li key={o.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
                 <div><h2 className="font-black">{o.order_number} · {o.name}</h2><p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)} · ref {o.reference_number}{o.preferred_courier ? ` · wants ${o.preferred_courier}` : ""}</p></div>
-                <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={o.status} />{o.balance_status && o.balance_status !== "none" && <Badge tone="warn">{o.balance_status === "awaiting_payment" ? "Underpaid" : "Extra payment to check"}</Badge>}{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
+                <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge order={o} />{o.balance_status && o.balance_status !== "none" && <Badge tone="warn">{o.balance_status === "awaiting_payment" ? "Underpaid" : "Extra payment to check"}</Badge>}{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
               </li>
             );
           })}
