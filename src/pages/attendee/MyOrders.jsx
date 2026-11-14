@@ -7,7 +7,7 @@ import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
-import { IconPackage } from "../../components/NavIcons.jsx";
+import { IconEye, IconPackage } from "../../components/NavIcons.jsx";
 
 export default function MyOrders() {
   const [orders, setOrders] = useState(null);
@@ -37,7 +37,7 @@ export default function MyOrders() {
                     <h2 className="font-black">Order {o.order_number}</h2>
                     <p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)}</p>
                   </div>
-                  <div className="flex items-center gap-3"><Badge tone={st.tone}>{st.label}</Badge><Link to={`/orders/${o.id}`}>View order{" "}<span className="sr-only">{o.order_number}</span></Link></div>
+                  <div className="flex items-center gap-3"><Badge tone={st.tone}>{st.label}</Badge><Link to={`/orders/${o.id}`} className="btn-secondary no-underline"><IconEye />View order{" "}<span className="sr-only">{o.order_number}</span></Link></div>
                 </li>
               );
             })}
