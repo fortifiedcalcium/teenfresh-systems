@@ -71,7 +71,7 @@ export default function ProductDetail() {
       <section className="rounded-2xl border border-link bg-white p-4 sm:p-6">
         {error && <Alert tone="bad" className="mb-4">{error}</Alert>}
         <Empty>This product is not available.</Empty>
-        <p className="mt-4 text-center"><Link to="/shop" className="underline">Back to the shop</Link></p>
+        <p className="mt-4 text-center"><Link to="/shop" className="shop-link">Back to the shop</Link></p>
       </section>
     );
   }
@@ -85,8 +85,8 @@ export default function ProductDetail() {
 
   return (
     <section className="rounded-2xl border border-link bg-white p-4 sm:p-6" aria-labelledby="product-title">
-      <nav aria-label="Breadcrumb" className="mb-4 text-sm">
-        <Link to="/shop" className="underline">Shop</Link>
+      <nav aria-label="Breadcrumb" className="mb-4">
+        <Link to="/shop" className="shop-link"><span aria-hidden="true">←</span> Shop</Link>
       </nav>
       <div className="pd-layout">
         <div className="pd-media">
@@ -130,12 +130,15 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
-      {INFO_SECTIONS.some(([k]) => p[k]) && (
+      {(INFO_SECTIONS.some(([k]) => p[k]) || (p.info_images || []).length > 0) && (
         <div className="pd-accordion">
-          {INFO_SECTIONS.filter(([k]) => p[k]).map(([k, label], i) => (
+          {INFO_SECTIONS.filter(([k]) => p[k] || (k === "info_description" && (p.info_images || []).length > 0)).map(([k, label], i) => (
             <details key={k} open={i === 0}>
               <summary>{label}</summary>
-              <div className="pd-prose">{p[k]}</div>
+              <div className="pd-prose">
+                {k === "info_description" && (p.info_images || []).map((path, n) => <img key={path} src={productImageUrl({ image_path: path })} alt={`${p.title}, detail ${n + 1}`} loading="lazy" className="pd-desc-img" />)}
+                {p[k]}
+              </div>
             </details>
           ))}
         </div>

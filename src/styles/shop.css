@@ -13,6 +13,11 @@
   .shop-new { @apply mt-1 self-start rounded-md bg-ink px-2 py-0.5 text-sm font-bold text-brand-ivory; }
 
   /* Product detail page (src/pages/attendee/ProductDetail.jsx): image left, buying panel right, monochrome */
+  /* The "Shop" link back to the product list: clearly a link (link colour, bold, underline) and a comfortable tap target */
+  .shop-link { @apply inline-flex min-h-target items-center gap-1 rounded-md px-1 text-base font-bold text-link underline underline-offset-4 decoration-2; }
+  .shop-link:hover { @apply bg-brand-sky; text-decoration-thickness: 3px; }
+  .shop-link:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
+
   .pd-layout { @apply grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-10; }
   .pd-media { @apply aspect-square overflow-hidden rounded-2xl border border-link bg-brand-ivory md:sticky md:top-4 md:self-start; }
   .pd-info { @apply flex flex-col gap-4; }
@@ -36,6 +41,7 @@
   .pd-accordion summary::-webkit-details-marker { display: none; }
   .pd-accordion summary::after { content: ""; @apply h-2.5 w-2.5 shrink-0 rotate-45 border-b-2 border-r-2 border-ink-muted transition-transform; }
   .pd-accordion details[open] summary::after { @apply -rotate-[135deg]; }
+  .pd-desc-img { @apply mx-auto mb-4 block h-auto max-w-full rounded-lg; }   /* natural proportions, scaled down to the column, never cropped or stretched */
   .pd-prose { @apply pb-5 text-sm leading-relaxed text-ink; white-space: pre-line; overflow-wrap: anywhere; }
 
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {

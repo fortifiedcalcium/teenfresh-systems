@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { CATEGORIES, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateProduct } from "../../lib/products.js";
+import { CATEGORIES, INFO_IMAGES_MAX, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateProduct } from "../../lib/products.js";
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "../../lib/eventImages.js";
 import { peso } from "../../lib/payment.js";
 import { useToast } from "../../components/Toast.jsx";
@@ -13,8 +13,8 @@ import ErrorSummary, { useErrorFocus } from "../../components/ErrorSummary.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconBag, IconClose, IconImage, IconPencil, IconPlus, IconSave, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
-const blank = () => ({ id: null, artist: "", title: "", price: "", discount_percent: "0", pre_order: false, is_new: true, categories: [], image_path: null, image_alt: "", active: true, ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, ""])) });
-const toForm = (p) => ({ ...blank(), ...p, ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, p[k] || ""])), price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] });
+const blank = () => ({ id: null, artist: "", title: "", price: "", discount_percent: "0", pre_order: false, is_new: true, categories: [], image_path: null, image_alt: "", active: true, info_images: [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, ""])) });
+const toForm = (p) => ({ ...blank(), ...p, info_images: p.info_images || [], ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, p[k] || ""])), price: String(p.price), discount_percent: String(p.discount_percent ?? 0), image_alt: p.image_alt || "", categories: p.categories || [] });
 const ACCEPT = Object.keys(IMAGE_TYPES).join(",");
 
 function Thumb({ p, className = "" }) {
@@ -32,6 +32,7 @@ export default function Products() {
   const [form, setForm] = useState(null);       // null = closed; object = new (no id) or editing
   const [file, setFile] = useState(null);       // a newly chosen image, not uploaded until Save
   const [preview, setPreview] = useState(null);
+  const [descFiles, setDescFiles] = useState([]);   // new description images { file, url }, not uploaded until Save
   const [fileError, setFileError] = useState("");
   const [errors, setErrors] = useState({});
   const [submitCount, setSubmitCount] = useState(0);
@@ -55,10 +56,25 @@ export default function Products() {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const open = (p) => { setForm(p ? toForm(p) : blank()); setFile(null); setFileError(""); setErrors({}); setFormError(""); };
-  const close = () => setForm(null);
+  const clearDesc = () => setDescFiles((cur) => { cur.forEach((d) => URL.revokeObjectURL(d.url)); return []; });
+  const open = (p) => { clearDesc(); setForm(p ? toForm(p) : blank()); setFile(null); setFileError(""); setErrors({}); setFormError(""); };
+  const close = () => { clearDesc(); setForm(null); };
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const toggleCategory = (c) => setForm((f) => ({ ...f, categories: f.categories.includes(c) ? f.categories.filter((x) => x !== c) : [...f.categories, c] }));
+
+  const takeDesc = (list) => {
+    const room = INFO_IMAGES_MAX - form.info_images.length - descFiles.length;
+    const picked = [];
+    for (const f of list) {
+      const bad = validateImageFile(f);
+      if (bad) { setFileError(`${f.name}: ${bad}`); announce(bad, "assertive"); continue; }
+      if (picked.length >= room) { setFileError(`A product can have up to ${INFO_IMAGES_MAX} description images`); break; }
+      picked.push({ file: f, url: URL.createObjectURL(f) });
+    }
+    if (picked.length) { setFileError(""); setDescFiles((cur) => [...cur, ...picked]); announce(`Added ${picked.length} ${picked.length === 1 ? "image" : "images"}`); }
+  };
+  const dropDesc = (d) => { URL.revokeObjectURL(d.url); setDescFiles((cur) => cur.filter((x) => x !== d)); };
+  const dropSaved = (path) => setForm((f) => ({ ...f, info_images: f.info_images.filter((x) => x !== path) }));
 
   const take = (f) => {
     const bad = validateImageFile(f);
@@ -74,17 +90,22 @@ export default function Products() {
     if (Object.keys(errs).length) { bumpFocus(); return; }
     setSaving(true);
     let newPath = null;
+    const newDesc = [];
     try {
       const row = productRow(form);
       if (file) { newPath = await uploadProductImage(file); row.image_path = newPath; }
+      for (const d of descFiles) newDesc.push(await uploadProductImage(d.file));
+      row.info_images = [...form.info_images, ...newDesc];
       const { error } = form.id ? await supabase.from("products").update(row).eq("id", form.id) : await supabase.from("products").insert(row);
       if (error) throw new Error(error.message);
       if (newPath && form.image_path) await removeProductImage(form.image_path);   // tidy up the replaced file
+      const before = rows.find((r) => r.id === form.id)?.info_images || [];
+      await Promise.all(before.filter((x) => !form.info_images.includes(x)).map(removeProductImage));   // and description images that were removed
       toast(form.id ? "Product saved" : "Product added", "success");
-      setForm(null);
+      clearDesc(); setForm(null);
       await load();
     } catch (e) {
-      if (newPath) await removeProductImage(newPath);                              // do not leave an orphaned upload behind
+      await Promise.all([newPath, ...newDesc].filter(Boolean).map(removeProductImage));                              // do not leave an orphaned upload behind
       setFormError(e.message || "Could not save the product");
     } finally { setSaving(false); }
   };
@@ -96,7 +117,7 @@ export default function Products() {
   const remove = async () => {
     const { error } = await supabase.from("products").delete().eq("id", deleting.id);
     if (error) toast(error.message, "error");
-    else { await removeProductImage(deleting.image_path); toast("Product deleted", "success"); load(); }
+    else { await Promise.all([deleting.image_path, ...(deleting.info_images || [])].map(removeProductImage)); toast("Product deleted", "success"); load(); }
     setDeleting(null);
   };
 
@@ -181,6 +202,28 @@ export default function Products() {
 
             <fieldset className="space-y-3">
               <legend className="label">Product info <span className="font-normal text-ink-muted">(shown as sections on the product page)</span></legend>
+              <div className="space-y-2">
+                <p className="label" id="p-desc-images-label">Description images</p>
+                {(form.info_images.length > 0 || descFiles.length > 0) && (
+                  <ul className="flex flex-wrap gap-3">
+                    {form.info_images.map((path, i) => (
+                      <li key={path} className="w-28 space-y-1">
+                        <img src={productImageUrl({ image_path: path })} alt={`Description illustration ${i + 1}`} className="w-full rounded-lg border border-link" />
+                        <button type="button" className="btn-secondary w-full" onClick={() => dropSaved(path)}><IconTrash />Remove<span className="sr-only"> description image {i + 1}</span></button>
+                      </li>
+                    ))}
+                    {descFiles.map((d, i) => (
+                      <li key={d.url} className="w-28 space-y-1">
+                        <img src={d.url} alt={`New description illustration ${i + 1}`} className="w-full rounded-lg border border-link" />
+                        <button type="button" className="btn-secondary w-full" onClick={() => dropDesc(d)}><IconClose />Undo<span className="sr-only"> new description image {i + 1}</span></button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <input id="p-desc-images" type="file" multiple accept={ACCEPT} className="file-input sr-only" aria-describedby="p-desc-images-hint" onChange={(e) => { takeDesc([...e.target.files]); e.target.value = ""; }} />
+                <label htmlFor="p-desc-images" className="btn-secondary cursor-pointer"><IconUpload />Add images</label>
+                <p id="p-desc-images-hint" className="hint">Shown at the top of the Description, in the order added. Each image keeps its own proportions and is scaled down to fit the page width, never cropped. Up to {INFO_IMAGES_MAX} images; they upload when you save.</p>
+              </div>
               {INFO_SECTIONS.map(([k, label]) => (
                 <Field key={k} id={`p-${k}`} label={label} error={errors[k]} hint="Leave empty to hide this section. Line breaks are kept.">
                   <textarea className="input" rows={4} maxLength={INFO_MAX} value={form[k]} onChange={set(k)} />

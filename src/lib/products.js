@@ -13,6 +13,7 @@ export const INFO_SECTIONS = [
   ["info_notes", "Other notes"],
 ];
 export const INFO_MAX = 4000;
+export const INFO_IMAGES_MAX = 10;
 
 export const productMatches = (p, chip) => chip === "All" || (chip === "Pre-Order" ? p.pre_order : (p.categories || []).includes(chip));
 

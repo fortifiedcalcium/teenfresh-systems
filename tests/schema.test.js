@@ -88,6 +88,7 @@ beforeAll(async () => {
   await db.exec(read("014_product_info.sql"));
   await db.exec(read("015_shop_gcash_qr.sql"));
   await db.exec(read("016_shop_pesos.sql"));
+  await db.exec(read("017_product_info_images.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
