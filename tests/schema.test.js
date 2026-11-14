@@ -95,6 +95,7 @@ beforeAll(async () => {
   await db.exec(read("021_product_categories.sql"));
   await db.exec(read("022_courier_locked_after_fee.sql"));
   await db.exec(read("023_couriers.sql"));
+  await db.exec(read("024_underpaid_balance.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -926,6 +927,58 @@ describe("011 orders", () => {
     await asUser("carol");
     await fails(sql("select public.set_preferred_courier($1, 'LBC')", [r.id]), "ORDER_LOCKED");   // shipped: too late
   });
+  it("underpaid: the admin asks for the remaining amount, the shopper pays it, the admin confirms it, and a reference is never reused", async () => {
+    const sql = (q, a) => db.query(q, a);
+    const rec = () => `${ids.carol}/${randomUUID()}.jpg`;
+    await asUser("carol");
+    const r = await place("carol", items([p1, 2]));                                            // 25 for the items
+    await asUser("alice");
+    await fails(sql("select public.request_balance($1, 'items', 10, null)", [r.id]), "FORBIDDEN");
+    await asUser("admin");
+    await fails(sql("select public.request_balance($1, 'items', -1, null)", [r.id]), "INVALID_BALANCE");
+    await fails(sql("select public.request_balance($1, 'items', 30, null)", [r.id]), "INVALID_BALANCE");          // never more than the order asks for
+    await fails(sql("select public.request_balance($1, 'shipping', 5, null)", [r.id]), "SHIPPING_NOT_PENDING");
+    expect((await sql("select public.request_balance($1, 'items', 10, 'Receipt shows 15') as r", [r.id])).rows[0].r).toMatchObject({ balance_status: "awaiting_payment" });
+    await fails(sql("update public.orders set status = 'paid' where id = $1", [r.id]), "orders_balance_blocks_paid");   // cannot be paid while an amount is missing
+    await asUser("dave");
+    await fails(sql("select public.submit_balance_payment($1,'Dave D.','BAL-X',$2)", [r.id, `${ids.dave}/${randomUUID()}.jpg`]), "NOT_FOUND");
+    await asUser("carol");
+    await fails(sql("select public.submit_balance_payment($1,'Carol C.','REF-DUP-1',$2)", [r.id, rec()]), "DUPLICATE_REFERENCE");   // already used on another order
+    await sql("select public.submit_balance_payment($1,'Carol C.','BAL-1',$2)", [r.id, rec()]);
+    await fails(sql("select public.submit_balance_payment($1,'Carol C.','BAL-2',$2)", [r.id, rec()]), "BALANCE_NOT_DUE");   // already sent
+    await asUser("admin");
+    await fails(sql("select public.request_balance($1, 'items', 5, null)", [r.id]), "BALANCE_LOCKED");                    // review what was sent first
+    await fails(sql("select public.review_balance_payment($1, false, '  ')", [r.id]), "REASON_REQUIRED");
+    await sql("select public.review_balance_payment($1, false, 'Blurry receipt')", [r.id]);
+    let o = (await sql("select balance_status, balance_note, balance_reference_number from public.orders where id = $1", [r.id])).rows[0];
+    expect(o).toEqual({ balance_status: "awaiting_payment", balance_note: "Blurry receipt", balance_reference_number: null });
+    await asUser("carol");
+    await sql("select public.submit_balance_payment($1,'Carol C.','BAL-1',$2)", [r.id, rec()]);                         // the same reference again after a rejection
+    await asUser("alice");
+    await fails(sql("select public.review_balance_payment($1, true, null)", [r.id]), "FORBIDDEN");
+    await asUser("admin");
+    await sql("select public.review_balance_payment($1, true, null)", [r.id]);
+    o = (await sql("select balance_status, balance_paid_php from public.orders where id = $1", [r.id])).rows[0];
+    expect({ s: o.balance_status, paid: Number(o.balance_paid_php) }).toEqual({ s: "none", paid: 10 });
+    await sql("update public.orders set status = 'paid' where id = $1", [r.id]);                                          // now it can be paid
+    // the shipping fee can be short too
+    await sql("select public.set_order_shipping($1, 100)", [r.id]);
+    await asUser("carol");
+    await sql("select public.submit_shipping_payment($1,'Carol C.','SHIP-B',$2)", [r.id, rec()]);
+    await asUser("admin");
+    await sql("select public.request_balance($1, 'shipping', 40, null)", [r.id]);
+    await fails(sql("select public.review_shipping_payment($1, true, null)", [r.id]), "BALANCE_OPEN");                    // not while 40 is missing
+    await asUser("carol");
+    await sql("select public.submit_balance_payment($1,'Carol C.','BAL-2',$2)", [r.id, rec()]);
+    await asUser("admin");
+    await sql("select public.review_balance_payment($1, true, null)", [r.id]);
+    await sql("select public.review_shipping_payment($1, true, null)", [r.id]);
+    expect((await sql("select shipping_status, balance_status from public.orders where id = $1", [r.id])).rows[0]).toEqual({ shipping_status: "paid", balance_status: "none" });
+    await asUser("carol");
+    await fails(place("carol", items([p1, 1]), { ref: "BAL-2" }), "DUPLICATE_REFERENCE");                                  // an extra payment's reference cannot pay another order
+    await asUser("admin");
+    await sql("update public.orders set status = 'shipped', courier = 'LBC' where id = $1", [r.id]);
+  });
   it("free shipping (fee 0) needs no payment", async () => {
     await asUser("carol");
     const r = await place("carol", items([p1, 1]));
@@ -970,6 +1023,35 @@ describe("021 product categories", () => {
   });
 });
 
+describe("023 couriers", () => {
+  it("starts with the usual couriers, in order, and everyone can read them", async () => {
+    for (const who of [null, "alice"]) {
+      await asUser(who);
+      expect((await db.query("select name from public.couriers order by id")).rows.map((r) => r.name))
+        .toEqual(["J&T Express", "LBC", "JRS Express", "Ninja Van", "Flash Express", "2GO", "Lalamove", "Grab Express", "Pick-up by the shopper"]);
+    }
+  });
+  it("only admins add or delete couriers; names are unique ignoring case and \"Other\" is reserved", async () => {
+    await asUser("alice");
+    await fails(db.query("insert into public.couriers (name) values ('Entrego')"), "row-level security");
+    await db.query("delete from public.couriers where name = 'LBC'");                                           // RLS: nothing is deleted
+    expect((await row("select count(*)::int as n from public.couriers where name = 'LBC'")).n).toBe(1);
+    await asUser("admin");
+    await db.query("insert into public.couriers (name) values ('Entrego')");
+    await fails(db.query("insert into public.couriers (name) values ('ENTREGO')"), "couriers_name_key");
+    await fails(db.query("insert into public.couriers (name) values ('other')"), "couriers_name_check");
+    await fails(db.query("insert into public.couriers (name) values (' padded ')"), "couriers_name_check");
+    await fails(db.query("insert into public.couriers (name) values (repeat('x', 61))"), "couriers_name_check");
+  });
+  it("deleting a courier leaves orders that already use it untouched", async () => {
+    await asUser("admin");
+    const o = (await db.query("select id from public.orders where courier = 'LBC' limit 1")).rows[0];
+    await db.query("delete from public.couriers where name = 'LBC'");
+    expect((await row("select count(*)::int as n from public.couriers where name = 'LBC'")).n).toBe(0);
+    if (o) expect((await row("select courier from public.orders where id = $1", [o.id])).courier).toBe("LBC");
+  });
+});
+
 describe("012 order emails", () => {
   it("only admins can read the email log, and nobody can write it from the browser", async () => {
     await asSuper();
@@ -1002,32 +1084,3 @@ describe("013 order email templates", () => {
     await fails(ins("order_paid"), "duplicate key");
   });
 });
-describe("023 couriers", () => {
-  it("starts with the usual couriers, in order, and everyone can read them", async () => {
-    for (const who of [null, "alice"]) {
-      await asUser(who);
-      expect((await db.query("select name from public.couriers order by id")).rows.map((r) => r.name))
-        .toEqual(["J&T Express", "LBC", "JRS Express", "Ninja Van", "Flash Express", "2GO", "Lalamove", "Grab Express", "Pick-up by the shopper"]);
-    }
-  });
-  it("only admins add or delete couriers; names are unique ignoring case and \"Other\" is reserved", async () => {
-    await asUser("alice");
-    await fails(db.query("insert into public.couriers (name) values ('Entrego')"), "row-level security");
-    await db.query("delete from public.couriers where name = 'LBC'");                                           // RLS: nothing is deleted
-    expect((await row("select count(*)::int as n from public.couriers where name = 'LBC'")).n).toBe(1);
-    await asUser("admin");
-    await db.query("insert into public.couriers (name) values ('Entrego')");
-    await fails(db.query("insert into public.couriers (name) values ('ENTREGO')"), "couriers_name_key");
-    await fails(db.query("insert into public.couriers (name) values ('other')"), "couriers_name_check");
-    await fails(db.query("insert into public.couriers (name) values (' padded ')"), "couriers_name_check");
-    await fails(db.query("insert into public.couriers (name) values (repeat('x', 61))"), "couriers_name_check");
-  });
-  it("deleting a courier leaves orders that already use it untouched", async () => {
-    await asUser("admin");
-    const o = (await db.query("select id from public.orders where courier = 'LBC' limit 1")).rows[0];
-    await db.query("delete from public.couriers where name = 'LBC'");
-    expect((await row("select count(*)::int as n from public.couriers where name = 'LBC'")).n).toBe(0);
-    if (o) expect((await row("select courier from public.orders where id = $1", [o.id])).courier).toBe("LBC");
-  });
-});
-

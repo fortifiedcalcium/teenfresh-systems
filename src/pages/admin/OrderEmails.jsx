@@ -7,14 +7,15 @@ import Field from "../../components/Field.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { IconMail, IconRefresh, IconSave } from "../../components/NavIcons.jsx";
 
-const LABEL = { order_paid: "Payment confirmed", order_shipping_due: "Shipping fee to pay", order_shipped: "Order shipped", order_cancelled: "Order cancelled" };
+const LABEL = { order_paid: "Payment confirmed", order_balance_due: "Payment short", order_shipping_due: "Shipping fee to pay", order_shipped: "Order shipped", order_cancelled: "Order cancelled" };
 const WHEN = {
   order_paid: "Sent when you mark an order as paid. It is the first email the shopper gets for an order.",
+  order_balance_due: "Sent when you ask a shopper for the remaining amount after an underpayment. Use {{Amount Due}} for that amount.",
   order_shipping_due: "Sent when you set a shipping fee on a confirmed order. It asks the shopper to pay it and upload the receipt.",
   order_shipped: "Sent when you mark an order as shipped.",
   order_cancelled: "Sent when you cancel an order.",
 };
-const SAMPLE_ORDER = { id: "sample", order_number: "TF-000123", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St., Brgy. Poblacion", city: "Makati", postal_code: "1210", subtotal_php: 1500, shipping_php: 0, total_php: 1500, shipping_fee_php: 150, shipping_status: "awaiting_payment", courier: "J&T Express", tracking_number: "JT1234567890" };
+const SAMPLE_ORDER = { id: "sample", order_number: "TF-000123", name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St., Brgy. Poblacion", city: "Makati", postal_code: "1210", subtotal_php: 1500, shipping_php: 0, total_php: 1500, shipping_fee_php: 150, shipping_status: "awaiting_payment", balance_due_php: 250, balance_status: "awaiting_payment", courier: "J&T Express", tracking_number: "JT1234567890" };
 const SAMPLE_ITEMS = [{ artist: "Marv", title: "ÖRBITAL", unit_price_php: 750, quantity: 2 }];
 
 const wording = (rows, k) => { const r = rows?.[k]; return r ? { subject: r.subject, heading: r.heading, body: r.body } : DEFAULT_TEMPLATES[k]; };

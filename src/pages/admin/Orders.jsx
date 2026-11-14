@@ -11,6 +11,8 @@ import Alert from "../../components/Alert.jsx";
 import Badge from "../../components/Badge.jsx";
 import OrderStatusBadge from "../../components/OrderStatusBadge.jsx";
 import CourierEditor from "../../components/admin/CourierEditor.jsx";
+import Receipt from "../../components/admin/Receipt.jsx";
+import BalanceSection from "../../components/admin/BalanceSection.jsx";
 import CourierManager from "../../components/admin/CourierManager.jsx";
 import { useCouriers } from "../../lib/useShop.js";
 import Field from "../../components/Field.jsx";
@@ -18,8 +20,8 @@ import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconBag, IconCheck, IconClose, IconImage, IconPackage, IconSave, IconSend, IconTrash, IconUpload } from "../../components/NavIcons.jsx";
 
-const MAIL_LABEL = { order_received: "Order received (old, no longer sent)", order_paid: "Payment confirmed", order_shipping_due: "Shipping fee to pay", order_shipped: "Shipped", order_cancelled: "Cancelled" };
-const FILTERS = [["all", "All"], ["pending", "Awaiting payment check"], ["set_fee", "Set shipping fee"], ["ship_review", "Shipping payment to check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
+const MAIL_LABEL = { order_received: "Order received (old, no longer sent)", order_paid: "Payment confirmed", order_balance_due: "Payment short: remaining amount", order_shipping_due: "Shipping fee to pay", order_shipped: "Shipped", order_cancelled: "Cancelled" };
+const FILTERS = [["all", "All"], ["pending", "Awaiting payment check"], ["set_fee", "Set shipping fee"], ["underpaid", "Underpaid"], ["ship_review", "Shipping payment to check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
 
 /** Rate, shipping fee and GCash details. */
 function SettingsCard() {
@@ -87,26 +89,6 @@ function SettingsCard() {
   );
 }
 
-/** A receipt from the private bucket through a short-lived signed URL. */
-function Receipt({ path, label = "Payment receipt" }) {
-  const [url, setUrl] = useState(null);
-  const [err, setErr] = useState("");
-  useEffect(() => {
-    let alive = true;
-    supabase.storage.from("payment-receipts").createSignedUrl(path, 300).then(({ data, error }) => { if (!alive) return; if (error) setErr("Could not open this receipt."); else setUrl(data.signedUrl); });
-    return () => { alive = false; };
-  }, [path]);
-  if (err) return <p className="text-sm font-semibold text-danger">{err}</p>;
-  if (!url) return <Loading label="Loading receipt…" className="p-4" />;
-  return (
-    <figure className="space-y-2">
-      {/\.pdf$/i.test(path) ? <p className="rounded-lg bg-brand-sky p-3 text-sm font-semibold">PDF receipt: open it in a new tab to read it.</p>
-        : <img src={url} alt={label} className="mx-auto max-h-96 rounded-lg border border-link object-contain" />}
-      <figcaption className="text-sm"><a href={url} target="_blank" rel="noopener noreferrer">Open the receipt in a new tab{" "}<span className="sr-only">(link expires in 5 minutes)</span></a></figcaption>
-    </figure>
-  );
-}
-
 function OrderDialog({ order, onClose, onChanged }) {
   const toast = useToast();
   const [items, setItems] = useState([]);
@@ -146,11 +128,11 @@ function OrderDialog({ order, onClose, onChanged }) {
   };
   /** Once everything is paid the receipts are not needed: delete the files and keep only the reference numbers. Returns false if it could not. */
   const purgeReceipts = async () => {
-    const paths = [order.receipt_path, order.shipping_receipt_path].filter(Boolean);
+    const paths = [order.receipt_path, order.shipping_receipt_path, order.balance_receipt_path].filter(Boolean);
     if (!paths.length) return true;
     const { error } = await supabase.storage.from("payment-receipts").remove(paths);
     if (error) return false;
-    const { error: e2 } = await supabase.from("orders").update({ receipt_path: null, shipping_receipt_path: null }).eq("id", order.id);
+    const { error: e2 } = await supabase.from("orders").update({ receipt_path: null, shipping_receipt_path: null, balance_receipt_path: null }).eq("id", order.id);
     return !e2;
   };
   const warnPurge = (ok) => { if (!ok) toast("The receipt files could not be deleted. Open the order again and press Delete receipt files.", "error"); };
@@ -200,7 +182,8 @@ function OrderDialog({ order, onClose, onChanged }) {
   };
   const shipOk = order.shipping_status === "paid" || order.shipping_status === undefined;
   const fullyPaid = isFullyPaid(order);
-  const leftoverReceipts = Boolean(order.receipt_path || order.shipping_receipt_path);
+  const leftoverReceipts = Boolean(order.receipt_path || order.shipping_receipt_path || order.balance_receipt_path);
+  const balanceOpen = Boolean(order.balance_status) && order.balance_status !== "none";
   const next = { pending: [["paid", "Mark as paid", IconCheck], ["cancelled", "Cancel order", IconClose]], paid: [["shipped", "Mark as shipped", IconPackage], ["cancelled", "Cancel order", IconClose]], shipped: [], cancelled: [] }[order.status] || [];
   return (
     <Modal title={`Order ${order.order_number}`} onClose={onClose} wide>
@@ -218,6 +201,7 @@ function OrderDialog({ order, onClose, onChanged }) {
             {leftoverReceipts && <div className="flex flex-wrap items-center gap-2"><p className="text-ink-muted">Receipt files from before are still in storage, but they are not shown.</p><button type="button" className="btn-secondary" disabled={busy} onClick={deleteLeftover}><IconTrash />Delete receipt files</button></div>}
           </div>
         ) : order.receipt_path ? <Receipt path={order.receipt_path} /> : <p className="text-ink-muted">No receipt file is stored for this order.</p>}
+        <BalanceSection key={`${order.balance_status}-${order.balance_due_php}`} order={order} onChanged={onChanged} />
         {(order.status === "pending" || order.status === "paid") && order.shipping_status && order.shipping_status !== "paid" && <CourierEditor key={order.preferred_courier || "none"} order={order} onSaved={onChanged} />}
         {order.status === "paid" && order.shipping_status && (
           <section aria-labelledby="o-shipfee" className="space-y-2 rounded-lg border border-brand-sky p-3">
@@ -238,7 +222,7 @@ function OrderDialog({ order, onClose, onChanged }) {
                 {order.shipping_receipt_path ? <Receipt path={order.shipping_receipt_path} label="Shipping payment receipt" /> : <p className="text-ink-muted">No receipt file is stored.</p>}
                 <Field id="ship_reason" label="Reason (only needed to send it back)" hint="The shopper sees this and can pay again"><input className="input" maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} /></Field>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" className="btn-primary" disabled={busy} onClick={() => reviewShipping(true)}><IconCheck />Confirm shipping payment</button>
+                  <button type="button" className="btn-primary" disabled={busy || balanceOpen} onClick={() => reviewShipping(true)}><IconCheck />Confirm shipping payment</button>
                   <button type="button" className="btn-danger" disabled={busy} onClick={() => reviewShipping(false)}><IconClose />Send back</button>
                 </div>
               </>
@@ -274,7 +258,7 @@ function OrderDialog({ order, onClose, onChanged }) {
         <Field id="admin_note" label="Note (only admins see this)"><textarea className="input" rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
         <div className="sheet-actions flex flex-wrap justify-end gap-2 border-t border-brand-sky">
           <button type="button" className="btn-secondary" onClick={onClose}><IconClose />Close</button>
-          {next.map(([s, label, I]) => <button key={s} type="button" className={s === "cancelled" ? "btn-danger" : "btn-primary"} disabled={busy || (s === "shipped" && !shipOk)} onClick={() => setStatus(s)}><I />{label}</button>)}
+          {next.map(([s, label, I]) => <button key={s} type="button" className={s === "cancelled" ? "btn-danger" : "btn-primary"} disabled={busy || (s === "shipped" && !shipOk) || (s === "paid" && balanceOpen)} onClick={() => setStatus(s)}><I />{label}</button>)}
         </div>
       </div>
     </Modal>
@@ -295,6 +279,7 @@ export default function Orders() {
   const matches = {
     set_fee: (o) => o.status === "paid" && o.shipping_status === "none",
     ship_review: (o) => o.shipping_status === "pending_review",
+    underpaid: (o) => Boolean(o.balance_status) && o.balance_status !== "none",
   };
   const shown = (orders || []).filter((o) => filter === "all" || (matches[filter] ? matches[filter](o) : o.status === filter));
   return (
@@ -311,7 +296,7 @@ export default function Orders() {
             return (
               <li key={o.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
                 <div><h2 className="font-black">{o.order_number} · {o.name}</h2><p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)} · ref {o.reference_number}{o.preferred_courier ? ` · wants ${o.preferred_courier}` : ""}</p></div>
-                <div className="flex items-center gap-3"><OrderStatusBadge status={o.status} />{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
+                <div className="flex items-center gap-3"><OrderStatusBadge status={o.status} />{o.balance_status && o.balance_status !== "none" && <Badge tone="warn">{o.balance_status === "awaiting_payment" ? "Underpaid" : "Extra payment to check"}</Badge>}{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
               </li>
             );
           })}

@@ -273,6 +273,49 @@ describe("attendee pages", () => {
       await user.click(within(dialog).getByRole("button", { name: "Delete receipt files" }));
       await waitFor(() => expect(storageLog.removed).toEqual(expect.arrayContaining(["u1/a.png", "u1/ship.png"])));
     });
+    it("Underpaid: the shopper sends only the missing amount, and the admin asks for it", async () => {
+      asUser();
+      fixtures.current.rpc = { submit_balance_payment: { balance_status: "pending_review" }, request_balance: { balance_status: "awaiting_payment" } };
+      fixtures.current.orders = [{ ...order, balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250, balance_note: "The receipt shows 1,232.48" }];
+      const user = userEvent.setup();
+      const b = render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>));
+      expect(await screen.findByRole("heading", { level: 2, name: /Your payment was short: send the remaining ₱250\.00/ })).toBeInTheDocument();
+      expect(screen.getByText(/Send only the missing/)).toBeInTheDocument();
+      expect(screen.getByText(/The receipt shows 1,232.48/)).toBeInTheDocument();
+      expect(await check(b.container)).toHaveNoViolations();
+      await user.type(screen.getByLabelText(/^GCash sender name/), "Juan D.");
+      await user.type(screen.getByLabelText(/^Reference number/), "BAL123");
+      await user.upload(b.container.querySelector("#bal_receipt"), new File(["x"], "receipt.png", { type: "image/png" }));
+      await user.click(screen.getByRole("button", { name: "Send the extra payment" }));
+      await waitFor(() => expect(fixtures.current.rpcCalls?.some((c) => c.name === "submit_balance_payment" && c.args.p_order === "o1" && c.args.p_reference === "BAL123")).toBe(true));
+      b.unmount();
+      // the admin: cannot ask for more than the order costs, then asks for 250 and the shopper is emailed; the order cannot be marked paid meanwhile
+      fixtures.current.rpcCalls = [];
+      fixtures.current.orders = [{ ...order, balance_status: "none" }];
+      admin(<Orders />); await settled("Shop orders");
+      await user.click(await screen.findByRole("button", { name: /Review order TF-000001/ }));
+      let dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
+      await user.type(within(dialog).getByLabelText(/^Amount still to pay/), "5000");
+      await user.click(within(dialog).getByRole("button", { name: "Ask for the remaining amount" }));
+      expect(await within(dialog).findByText(/more than the items cost/)).toBeInTheDocument();
+      expect(fixtures.current.rpcCalls?.some((c) => c.name === "request_balance")).toBeFalsy();
+      await user.clear(within(dialog).getByLabelText(/^Amount still to pay/));
+      await user.type(within(dialog).getByLabelText(/^Amount still to pay/), "250");
+      await user.click(within(dialog).getByRole("button", { name: "Ask for the remaining amount" }));
+      await waitFor(() => expect(fixtures.current.rpcCalls?.some((c) => c.name === "request_balance" && c.args.p_for === "items" && c.args.p_amount === 250)).toBe(true));
+      await waitFor(() => expect(fixtures.current.fnCalls?.some((c) => c.name === "send-order-email" && c.body.kind === "order_balance_due" && c.body.order_id === "o1")).toBe(true));
+    });
+    it("Underpaid: the order cannot be marked paid while an amount is still missing", async () => {
+      const user = userEvent.setup();
+      fixtures.current.orders = [{ ...order, balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250 }];
+      admin(<Orders />); await settled("Shop orders");
+      await screen.findByRole("button", { name: /Review order TF-000001/ });
+      expect(screen.getAllByText("Underpaid").length).toBeGreaterThanOrEqual(2);                     // the filter chip and the badge on the order in the list
+      await user.click(screen.getByRole("button", { name: /Review order TF-000001/ }));
+      const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
+      expect(within(dialog).getByRole("button", { name: "Mark as paid" })).toBeDisabled();
+      expect(within(dialog).getByRole("button", { name: "Cancel the request" })).toBeInTheDocument();
+    });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();
       fixtures.current.orders = [{ ...order, status: "paid", shipping_status: "awaiting_payment", shipping_fee_php: 150, preferred_courier: "LBC" }];

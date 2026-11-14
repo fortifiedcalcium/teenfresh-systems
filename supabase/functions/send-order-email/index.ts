@@ -1,5 +1,5 @@
 // POST { kind, order_id }
-//   kind "order_paid" | "order_shipping_due" | "order_shipped" | "order_cancelled"   admin only, and only while the order is in that status
+//   kind "order_paid" | "order_balance_due" | "order_shipping_due" | "order_shipped" | "order_cancelled"   admin only, and only while the order is in that status
 //   (there is no email when an order is placed: the shopper's first email is "order_paid", sent when an admin confirms the payment)
 // The email goes to the address saved on the order. Every attempt is written to order_emails.
 import { corsHeaders, json } from "../_shared/cors.ts";
@@ -23,7 +23,9 @@ Deno.serve(async (req) => {
   const { data: order } = await db.from("orders").select("*").eq("id", body.order_id).maybeSingle();
   if (!order) return json({ error: "Order not found" }, 404);
   if (!caller.isAdmin) return json({ error: "Admins only" }, 403);
-  if (order.status !== KIND_STATUS[kind]) return json({ error: `The order is not ${KIND_STATUS[kind]}` }, 400);
+  if (kind === "order_balance_due") {
+    if (order.balance_status !== "awaiting_payment") return json({ error: "No extra payment is being asked for" }, 400);
+  } else if (order.status !== KIND_STATUS[kind]) return json({ error: `The order is not ${KIND_STATUS[kind]}` }, 400);
   if (kind === "order_shipping_due" && order.shipping_status !== "awaiting_payment") return json({ error: "No shipping fee is waiting for payment" }, 400);
 
   const { data: custom } = await db.from("order_email_templates").select("subject,heading,body").eq("kind", kind).maybeSingle();   // none = the built-in wording

@@ -1,12 +1,12 @@
 // Builds the shop order emails. Pure functions, no network: the Edge Function sends what these return.
 import { absoluteUrl, DEFAULT_SITE, escapeHtml as e } from "./merge.ts";
 
-export const ORDER_KINDS = ["order_paid", "order_shipping_due", "order_shipped", "order_cancelled"] as const;
+export const ORDER_KINDS = ["order_paid", "order_balance_due", "order_shipping_due", "order_shipped", "order_cancelled"] as const;
 export type OrderKind = (typeof ORDER_KINDS)[number];
 /** The order status each email announces. All of them are sent by an admin; the first email a shopper gets is "payment confirmed". */
-export const KIND_STATUS: Record<OrderKind, string> = { order_paid: "paid", order_shipping_due: "paid", order_shipped: "shipped", order_cancelled: "cancelled" };
+export const KIND_STATUS: Record<OrderKind, string> = { order_paid: "paid", order_balance_due: "pending or paid", order_shipping_due: "paid", order_shipped: "shipped", order_cancelled: "cancelled" };
 
-export interface OrderRow { id: string; order_number: string; name: string; email: string; phone: string; address: string; city: string; postal_code: string; subtotal_php: number | string; shipping_php: number | string; total_php: number | string; shipping_fee_php?: number | string | null; shipping_status?: string; courier?: string | null; tracking_number?: string | null }
+export interface OrderRow { id: string; order_number: string; name: string; email: string; phone: string; address: string; city: string; postal_code: string; subtotal_php: number | string; shipping_php: number | string; total_php: number | string; balance_due_php?: number | string | null; balance_status?: string; shipping_fee_php?: number | string | null; shipping_status?: string; courier?: string | null; tracking_number?: string | null }
 export interface ItemRow { artist: string; title: string; unit_price_php: number | string; quantity: number }
 
 const php = (n: unknown) => "PHP " + Number(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -16,13 +16,14 @@ export interface OrderTemplate { subject: string; heading: string; body: string 
 /** The built-in wording. An admin can override each one on the Order emails page (table order_email_templates). */
 export const DEFAULT_TEMPLATES: Record<OrderKind, OrderTemplate> = {
   order_paid:     { subject: "Payment confirmed for order {{Order Number}}", heading: "Thank you! Your payment is confirmed", body: "Hi {{Name}},\n\nThank you for your order! We checked your GCash payment and it is confirmed.\n\nNext, we will set your shipping fee and email you when it is ready to pay, so we can ship your order." },
+  order_balance_due: { subject: "Your payment for order {{Order Number}} was short", heading: "Please send the remaining amount", body: "Hi {{Name}},\n\nThank you for your payment. It was a little short of what your order needs, so please send the remaining {{Amount Due}} by GCash. You do not need to pay the full amount again.\n\nThen open your order with the link below and upload the receipt for this extra payment. We will continue with your order once it is confirmed." },
   order_shipping_due: { subject: "Pay the shipping fee for order {{Order Number}}", heading: "Your order is confirmed. Shipping fee to pay", body: "Hi {{Name}},\n\nYour order is confirmed. The shipping fee is {{Shipping Fee}}.\n\nPlease pay it by GCash, then open your order with the link below and upload your receipt. We ship your order once the shipping fee is confirmed." },
   order_shipped:  { subject: "Your order {{Order Number}} has shipped", heading: "Your order is on its way", body: "Hi {{Name}},\n\nYour order has been shipped to the address below. It should reach you soon." },
   order_cancelled:{ subject: "Your order {{Order Number}} was cancelled", heading: "Your order was cancelled", body: "Hi {{Name}},\n\nYour order was cancelled. If you already paid and think this is a mistake, reply to this email and we will help." },
 };
 
 /** The placeholders an admin may use in the wording. */
-export const ORDER_FIELDS = ["Name", "Order Number", "Total", "Shipping Fee"] as const;
+export const ORDER_FIELDS = ["Name", "Order Number", "Total", "Shipping Fee", "Amount Due"] as const;
 const fieldKey = (k: string) => k.trim().toLowerCase().replace(/\s+/g, " ");
 const KNOWN = new Set(ORDER_FIELDS.map(fieldKey));
 
@@ -43,7 +44,7 @@ const paragraphs = (t: string) => t.split(/\n{2,}/).map((p) => p.trim()).filter(
 export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[], site: string, custom?: Partial<OrderTemplate> | null) {
   const d = DEFAULT_TEMPLATES[kind];
   const pick = (v: string | undefined, f: string) => (v && v.trim() ? v : f);
-  const vals = { "Name": o.name, "Order Number": o.order_number, "Total": php(o.total_php), "Shipping Fee": o.shipping_fee_php == null ? "" : Number(o.shipping_fee_php) > 0 ? php(o.shipping_fee_php) : "free" };
+  const vals = { "Name": o.name, "Order Number": o.order_number, "Total": php(o.total_php), "Amount Due": o.balance_due_php == null ? "" : php(o.balance_due_php), "Shipping Fee": o.shipping_fee_php == null ? "" : Number(o.shipping_fee_php) > 0 ? php(o.shipping_fee_php) : "free" };
   const c = { subject: fillOrderFields(pick(custom?.subject, d.subject), vals), heading: fillOrderFields(pick(custom?.heading, d.heading), vals), body: fillOrderFields(pick(custom?.body, d.body), vals) };
   const link = site ? `${site.replace(/\/$/, "")}/orders/${o.id}` : "";
   const rows = items.map((i) => `<tr><td style="padding:6px 0;">${e(i.artist)}<br><strong>${e(i.title)}</strong></td><td style="padding:6px 0;text-align:right;white-space:nowrap;">${php(i.unit_price_php)} × ${i.quantity}</td></tr>`).join("");
@@ -55,6 +56,9 @@ export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[],
   // On the shipped email: who is carrying the package and how to follow it.
   const showTrack = kind === "order_shipped" && !!o.courier;
   const trackHtml = showTrack ? `<p style="margin:0 0 16px 0;padding:12px;background:#c4d6ea;border-radius:8px;font-size:14px;"><strong>Courier:</strong> ${e(String(o.courier))}${o.tracking_number ? `<br><strong>Tracking number:</strong> ${e(String(o.tracking_number))}` : ""}</p>` : "";
+  // On the "payment short" email: the amount to send, in a box like the courier box on the shipped email.
+  const showDue = kind === "order_balance_due" && o.balance_due_php != null;
+  const dueHtml = showDue ? `<p style="margin:0 0 16px 0;padding:12px;background:#c4d6ea;border-radius:8px;font-size:16px;"><strong>Amount to pay now:</strong> ${e(php(o.balance_due_php))}</p>` : "";
   const html = `<!doctype html><html><body style="margin:0;background:#f1d0d9;font-family:Arial,Helvetica,sans-serif;color:#17303f;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;">
@@ -63,6 +67,7 @@ export function renderOrderEmail(kind: OrderKind, o: OrderRow, items: ItemRow[],
 <h1 style="margin:0 0 8px 0;font-size:22px;">${e(c.heading)}</h1>
 ${paragraphs(c.body)}
 ${trackHtml}
+${dueHtml}
 <p style="margin:0 0 8px 0;"><strong>Order ${e(o.order_number)}</strong></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #c4d6ea;border-bottom:1px solid #c4d6ea;font-size:14px;">${rows}</table>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin-top:8px;">
@@ -75,7 +80,7 @@ ${link ? `<p style="margin:0 0 8px 0;"><a href="${e(link)}" style="color:#1c5a85
 <p style="margin:16px 0 0 0;font-size:12px;color:#2b4c63;">Teenfresh</p>
 </td></tr></table></td></tr></table></body></html>`;
   const text = [
-    c.heading, "", c.body, "", ...(showTrack ? [`Courier: ${o.courier}`, ...(o.tracking_number ? [`Tracking number: ${o.tracking_number}`] : []), ""] : []), `Order ${o.order_number}`,
+    c.heading, "", c.body, "", ...(showDue ? [`Amount to pay now: ${php(o.balance_due_php)}`, ""] : []), ...(showTrack ? [`Courier: ${o.courier}`, ...(o.tracking_number ? [`Tracking number: ${o.tracking_number}`] : []), ""] : []), `Order ${o.order_number}`,
     ...items.map((i) => `- ${i.artist}: ${i.title}  ${php(i.unit_price_php)} x ${i.quantity}`), "",
     `Items: ${php(o.subtotal_php)}`, `${shippingLabel}: ${shipping}`, `Total paid (GCash): ${php(o.total_php)}`, "",
     "Deliver to:", o.name, o.address, `${o.city} ${o.postal_code}`, o.phone,

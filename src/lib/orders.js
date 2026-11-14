@@ -10,7 +10,9 @@ export const STATUS = {
 };
 /** The shipping payment that comes after the order is confirmed. */
 /** Everything is paid: the order is confirmed and its shipping fee is paid (or there is none). Orders from before the shipping step count as paid. */
-export const isFullyPaid = (o) => (o.status === "paid" || o.status === "shipped") && (o.shipping_status ?? "paid") === "paid";
+export const isFullyPaid = (o) => (o.status === "paid" || o.status === "shipped") && (o.shipping_status ?? "paid") === "paid" && (o.balance_status ?? "none") === "none";
+/** Which payment an admin can ask a remaining amount for right now: "items" (order pending), "shipping" (its receipt is being checked), or null. */
+export const balanceStage = (o) => (o.balance_status === undefined ? null : o.status === "pending" ? "items" : o.status === "paid" && o.shipping_status === "pending_review" ? "shipping" : null);
 export const SHIPPING = {
   none:             { tone: "neutral", label: "Shipping fee not set yet" },
   awaiting_payment: { tone: "warn",    label: "Shipping fee to pay" },

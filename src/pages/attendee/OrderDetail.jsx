@@ -5,6 +5,7 @@ import { SHIPPING } from "../../lib/orders.js";
 import ShippingPayment from "../../components/ShippingPayment.jsx";
 import CopyButton from "../../components/CopyButton.jsx";
 import CourierChoice from "../../components/CourierChoice.jsx";
+import BalancePayment from "../../components/BalancePayment.jsx";
 import { peso } from "../../lib/payment.js";
 import { fmtDateTime } from "../../lib/availability.js";
 import Alert from "../../components/Alert.jsx";
@@ -23,6 +24,8 @@ export const NEXT = {
 /** One order: used right after checkout (with a thank-you banner) and from My orders. Only the owner and admins can open it (RLS). */
 /** What happens next, including the separate shipping payment. Orders from before that step have shipping_status "paid". */
 export function nextText(order) {
+  if (order.balance_status === "awaiting_payment") return `Your payment was short. Please send the remaining ${peso(order.balance_due_php)} below.`;
+  if (order.balance_status === "pending_review") return "We received your extra payment and are checking it. We will update this page when it is confirmed.";
   if (order.status !== "paid") return NEXT[order.status];
   switch (order.shipping_status) {
     case "none": return "Your payment is confirmed. We will set your shipping fee next and email you when it is ready to pay.";
@@ -99,7 +102,8 @@ export default function OrderDetail() {
           <p className="flex items-center gap-1 text-ink-muted"><IconCheck />GCash reference {order.reference_number}</p>
         </section>
       </div>
-      {order.status === "paid" && order.shipping_status === "awaiting_payment" && <ShippingPayment order={order} onSent={() => setReload((n) => n + 1)} />}
+      {(order.status === "pending" || order.status === "paid") && order.balance_status === "awaiting_payment" && <BalancePayment order={order} onSent={() => setReload((n) => n + 1)} />}
+      {order.status === "paid" && order.shipping_status === "awaiting_payment" && order.balance_status !== "awaiting_payment" && <ShippingPayment order={order} onSent={() => setReload((n) => n + 1)} />}
       <p className="flex flex-wrap gap-2"><Link to="/shop" className="btn-secondary no-underline"><IconArrowLeft />Back to the shop</Link><Link to="/my-orders" className="btn-secondary no-underline"><IconPackage />All my orders</Link></p>
     </div>
   );

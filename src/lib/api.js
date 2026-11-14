@@ -80,6 +80,12 @@ const ERRORS = {
   ORDER_LOCKED: "This order can no longer be changed.",
   COURIER_LOCKED: "The courier can no longer be changed because your shipping fee is already set.",
   INVALID_COURIER: "Choose a courier (up to 60 characters).",
+  BALANCE_OPEN: "The shopper still has an extra payment to make or to be checked. Finish that first.",
+  BALANCE_LOCKED: "The shopper already sent the extra payment. Review it first.",
+  BALANCE_NOT_DUE: "There is no extra payment to make for this order right now.",
+  INVALID_BALANCE: "Enter an amount above 0 that is not more than the order asks for.",
+  ORDER_NOT_PENDING: "The items of this order are already paid.",
+  SHIPPING_NOT_PENDING: "There is no shipping receipt being checked for this order.",
   PAYMENT_NOT_SET_UP: "Checkout is not open yet because payment details are not set up. Please try again later.",
 };
 

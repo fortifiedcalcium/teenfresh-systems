@@ -61,6 +61,16 @@ describe("editable wording", () => {
     expect(renderOrderEmail("order_shipped", { ...o, tracking_number: null }, items, "").text).not.toContain("Tracking number");
     expect(renderOrderEmail("order_shipped", order, items, "").text).not.toContain("Courier:");   // older orders have none
   });
+  it("the payment-short email names the amount to send, and every other email leaves it out", () => {
+    const o = { ...order, balance_due_php: "250.00", balance_status: "awaiting_payment" };
+    const m = renderOrderEmail("order_balance_due", o, items, "https://shop.example/");
+    expect(m.subject).toContain("TF-000007");
+    expect(m.text).toContain("send the remaining PHP 250.00 by GCash");              // the {{Amount Due}} placeholder in the wording
+    expect(m.text).toContain("Amount to pay now: PHP 250.00");
+    expect(m.html).toContain("Amount to pay now:");
+    expect(m.html).toContain('href="https://shop.example/orders/o1"');                // the shopper opens their order to upload the receipt
+    expect(renderOrderEmail("order_paid", o, items, "").text).not.toContain("Amount to pay now");
+  });
   it("falls back to the built-in wording for an empty or missing part", () => {
     const m = renderOrderEmail("order_shipped", order, items, "", { subject: "  ", heading: undefined, body: "" });
     expect(m.subject).toBe("Your order TF-000007 has shipped");
