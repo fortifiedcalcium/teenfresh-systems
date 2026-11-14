@@ -10,6 +10,8 @@ import AdminTopBar from "../components/admin/AdminTopBar.jsx";
 import { usePendingPayments } from "../hooks/usePendingPayments.js";
 import { useAdminNotifications } from "../hooks/useAdminNotifications.js";
 import { useToast } from "../components/Toast.jsx";
+import { playChime, unlockChime } from "../lib/chime.js";
+import { typesForLocation } from "../lib/notifications.js";
 import { useKeyboardOpen } from "../hooks/useKeyboardOpen.js";
 
 /** Admin frame. Below 1024px: sticky top bar + bottom navigation (raised scan button). From 1024px: the sidebar.
@@ -28,7 +30,11 @@ export default function AdminLayout() {
   const pending = usePendingPayments(true);
   const toast = useToast();
   // something new is waiting for an admin: say so, wherever they are in the admin area
-  const { counts } = useAdminNotifications(true, (types) => types.forEach((t) => toast(t.toast, "info")));
+  const { counts, unread, markRead, markAllRead } = useAdminNotifications(true, (types) => { types.forEach((t) => toast(t.toast, "info")); playChime(); }, { userId: profile?.id });
+  useEffect(() => unlockChime(), []);                                        // the browser allows sound after the first click or key press
+  // Looking at the page a notification leads to counts as reading it (once, when the page opens: not while it sits open and new ones arrive).
+  const loaded = counts !== null;
+  useEffect(() => { if (loaded) markRead(typesForLocation(pathname, search)); }, [pathname, search, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
   const keyboardOpen = useKeyboardOpen();
 
   const reload = useCallback(async () => {
@@ -53,9 +59,9 @@ export default function AdminLayout() {
   return (
     <div className="min-h-[100vh] min-h-dvh lg:flex">
       <SkipLink />
-      <AdminSidebar email={profile?.email} onSignOut={signOut} pending={pending} notes={counts} />
+      <AdminSidebar email={profile?.email} onSignOut={signOut} pending={pending} notes={{ counts, unread, onRead: markRead, onReadAll: markAllRead }} />
       <div className="min-w-0 flex-1">
-        <AdminTopBar notes={counts} />
+        <AdminTopBar notes={{ counts, unread, onRead: markRead, onReadAll: markAllRead }} />
         {!onShopPage && <section aria-label="Event selection" className="flex flex-wrap items-center gap-2 border-b border-link bg-brand-cream px-4 py-3">
           <label htmlFor="event-select" className="text-sm font-semibold">Event</label>
           <select id="event-select" className="input max-w-md" value={event?.id || ""} onChange={(e) => select(e.target.value)} disabled={!events?.length}>

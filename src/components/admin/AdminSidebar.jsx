@@ -24,7 +24,7 @@ export default function AdminSidebar({ email, onSignOut, pending = 0, notes }) {
             {collapsed ? <IconChevronRight /> : <IconChevronLeft />}<span className="sr-only">{collapsed ? "Expand sidebar" : "Collapse sidebar"}</span>
           </button>
         </div>
-        <div className={`mb-3 flex ${collapsed ? "justify-center" : "px-1"}`}><NotificationBell counts={notes} align="left" iconOnly={collapsed} /></div>
+        <div className={`mb-3 flex ${collapsed ? "justify-center" : "px-1"}`}><NotificationBell {...notes} align="left" iconOnly={collapsed} /></div>
         <nav aria-label="Admin">
           <ul id="admin-nav-list" className="space-y-1">
             {SIDEBAR.map(([to, text, Icon, end, badge]) => (

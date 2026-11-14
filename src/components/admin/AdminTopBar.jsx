@@ -15,7 +15,7 @@ export default function AdminTopBar({ notes }) {
       {back && <Link to={back} className="btn-secondary min-w-target px-2" aria-label="Back to Profile"><IconArrowLeft /></Link>}
       <p className="min-w-0 flex-1 truncate text-lg font-extrabold" aria-hidden="true">{title}</p>
       <div id="admin-topbar-actions" className="flex items-center gap-2" />
-      <NotificationBell counts={notes} align="right" />
+      <NotificationBell {...notes} align="right" />
     </header>
   );
 }

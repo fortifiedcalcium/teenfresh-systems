@@ -17,12 +17,14 @@ const { useAdminNotifications } = await import("../src/hooks/useAdminNotificatio
 
 const K = { event: "payments|status=pending", order: "orders|status=pending&balance_status=none", setFee: "orders|status=paid&shipping_status=none", ship: "orders|shipping_status=pending_review" };
 let seen = []; const toasts = [];
-function Harness() { const { counts } = useAdminNotifications(true, (types) => toasts.push(...types.map((t) => t.key)), { throttleMs: 1000, pollMs: 60000 }); seen.push(counts); return <p>{counts ? JSON.stringify(counts) : "loading"}</p>; }
+let api = null;
+function Harness({ userId = "u2" }) { const r = useAdminNotifications(true, (types) => toasts.push(...types.map((t) => t.key)), { throttleMs: 1000, pollMs: 60000, userId }); api = r; seen.push(r.counts); return <p>{r.counts ? JSON.stringify(r.counts) : "loading"}</p>; }
 const flush = async (ms = 0) => { await act(async () => { await vi.advanceTimersByTimeAsync(ms); }); };
 const last = () => seen.at(-1);
+const cleanupAll = () => { document.body.innerHTML = ""; };
 
 describe("useAdminNotifications", () => {
-  beforeEach(() => { state.counts = { [K.event]: 2, [K.order]: 1 }; state.handlers = []; state.removed = 0; state.fail = new Set(); seen = []; toasts.length = 0; vi.useFakeTimers({ shouldAdvanceTime: false }); });
+  beforeEach(() => { state.counts = { [K.event]: 2, [K.order]: 1 }; state.handlers = []; state.removed = 0; state.fail = new Set(); seen = []; toasts.length = 0; localStorage.clear(); vi.useFakeTimers({ shouldAdvanceTime: false }); });
 
   it("reads the counts once, with no toast for what was already waiting", async () => {
     render(<Harness />); await flush(0);
@@ -58,5 +60,42 @@ describe("useAdminNotifications", () => {
     const { unmount } = render(<Harness />); await flush(0);
     unmount();
     expect(state.removed).toBe(1);
+  });
+
+  it("counts what is new, and reading it makes its counter go away until something newer arrives", async () => {
+    render(<Harness />); await flush(0);
+    expect(api.unread).toMatchObject({ event_payments: 2, order_payments: 1 });                 // nothing was seen yet
+    act(() => api.markRead(["event_payments"]));
+    expect(api.unread).toMatchObject({ event_payments: 0, order_payments: 1 });
+    state.counts[K.event] = 3;                                                                   // one more arrives
+    state.handlers.forEach((h) => h({})); await flush(1100);
+    expect(api.unread.event_payments).toBe(1);                                                   // only the newcomer
+    act(() => api.markAllRead());
+    expect(Object.values(api.unread).every((n) => n === 0)).toBe(true);
+  });
+  it("remembers what was read after a reload, for each admin separately", async () => {
+    const first = render(<Harness userId="u2" />); await flush(0);
+    act(() => api.markRead(["event_payments", "order_payments"]));
+    first.unmount();
+    render(<Harness userId="u2" />); await flush(0);
+    expect(api.unread).toMatchObject({ event_payments: 0, order_payments: 0 });                  // still read
+    cleanupAll();
+    render(<Harness userId="u7" />); await flush(0);
+    expect(api.unread).toMatchObject({ event_payments: 2, order_payments: 1 });                  // another admin has not seen them
+  });
+  it("what the admin dealt with does not hide the next arrival", async () => {
+    render(<Harness />); await flush(0);
+    act(() => api.markRead(["event_payments"]));                                                 // saw 2
+    state.counts[K.event] = 0;                                                                   // all handled
+    state.handlers.forEach((h) => h({})); await flush(1100);
+    state.counts[K.event] = 1;                                                                   // a new one
+    state.handlers.forEach((h) => h({})); await flush(1100);
+    expect(api.unread.event_payments).toBe(1);
+  });
+  it("ignores reading before the first count has loaded", async () => {
+    render(<Harness />);
+    act(() => api.markRead(["event_payments"]));                                                 // too early: nothing to mark
+    await flush(0);
+    expect(api.unread.event_payments).toBe(2);
   });
 });

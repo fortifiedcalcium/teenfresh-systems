@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NOTE_TYPES, arrivals, pendingNotes, totalNeeding } from "../src/lib/notifications.js";
+import { NOTE_TYPES, arrivals, pendingNotes, reconcileSeen, totalNeeding, totalUnread, typesForLocation, unreadOf } from "../src/lib/notifications.js";
 
 describe("notifications", () => {
   it("lists only what is waiting, in a fixed order, with its count", () => {
@@ -22,5 +22,24 @@ describe("notifications", () => {
   });
   it("every kind has a label and a place to go", () => {
     for (const t of NOTE_TYPES) { expect(t.label).toBeTruthy(); expect(t.to).toMatch(/^\/admin\/payments/); }
+  });
+
+  it("unread is what came since the admin last looked, and only for what people send", () => {
+    expect(unreadOf({ event_payments: 5, order_payments: 2 }, { event_payments: 3 })).toMatchObject({ event_payments: 2, order_payments: 2, extra_payments: 0 });
+    expect(unreadOf({ set_fee: 9, ready_to_ship: 9 }, {})).not.toHaveProperty("set_fee");       // the admin's own work is never "new"
+    expect(totalUnread(unreadOf({ event_payments: 5 }, { event_payments: 5 }))).toBe(0);
+    expect(totalUnread(unreadOf({ event_payments: 5, shipping_payments: 1 }, {}))).toBe(6);
+    expect(unreadOf(null, null).event_payments).toBe(0);
+  });
+  it("what was seen can never be above what is waiting, so the next arrival is not missed", () => {
+    expect(reconcileSeen({ event_payments: 5 }, { event_payments: 2 }).event_payments).toBe(2);   // 3 were dealt with
+    expect(unreadOf({ event_payments: 3 }, reconcileSeen({ event_payments: 5 }, { event_payments: 2 })).event_payments).toBe(1);   // one new one after that
+    expect(reconcileSeen({ event_payments: 1 }, { event_payments: 4 }).event_payments).toBe(1);
+  });
+  it("viewing the page a notification leads to counts as reading it", () => {
+    expect(typesForLocation("/admin/payments", "")).toEqual(["event_payments"]);
+    expect(typesForLocation("/admin/payments", "?tab=shop").sort()).toEqual(["extra_payments", "order_payments", "shipping_payments"]);
+    expect(typesForLocation("/admin/payments", "?tab=event")).toEqual([]);
+    expect(typesForLocation("/admin/users", "")).toEqual([]);
   });
 });

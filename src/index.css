@@ -57,6 +57,9 @@
   .notif-title { margin: 0; padding: 0.75rem 1rem; border-bottom: 1px solid var(--brand-sky); font-size: 1rem; font-weight: 800; }
   .notif-item { display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; padding: 0.6rem 1rem; color: var(--ink); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
   .notif-item:hover { background: var(--brand-sky); }
+  .notif-sub { margin: 0; padding: 0.6rem 1rem 0.25rem; border-top: 1px solid var(--brand-sky); font-size: 0.8rem; font-weight: 700; color: var(--ink-muted); }
+  .notif-item--seen { font-weight: 500; color: var(--ink-muted); }
+  .notif-sound { display: flex; align-items: center; gap: 0.6rem; min-height: 2.75rem; padding: 0.4rem 1rem; border-top: 1px solid var(--brand-sky); font-size: 0.85rem; cursor: pointer; }
   .notif-count { display: inline-flex; min-width: 1.75rem; justify-content: center; border-radius: 9999px; background: var(--brand-coral); color: var(--ink); padding: 0.1rem 0.4rem; font-weight: 800; }
 
   /* A screen over the whole page while an email is being sent, so nobody clicks away mid-send. */
