@@ -4,6 +4,10 @@ import { isValidReference, normalizePhone, normalizeReference } from "./payment.
 export const MAX_QTY = 10;
 export const STATUS = {
   pending:   { tone: "warn", label: "Awaiting payment" },     // the payment is not confirmed yet
+  // shown instead of "Awaiting payment" while the shopper owes the missing part of a payment
+  short_items:    { tone: "warn", label: "Payment is short" },
+  short_shipping: { tone: "warn", label: "Shipping fee payment is short" },
+  extra_review:   { tone: "warn", label: "Checking the extra payment" },
   paid:      { tone: "ok",   label: "Paid" },
   shipped:   { tone: "info", label: "Shipped" },
   cancelled: { tone: "bad",  label: "Cancelled" },
@@ -12,8 +16,12 @@ export const STATUS = {
 /** Everything is paid: the order is confirmed and its shipping fee is paid (or there is none). Orders from before the shipping step count as paid. */
 export const isFullyPaid = (o) => (o.status === "paid" || o.status === "shipped") && (o.shipping_status ?? "paid") === "paid" && (o.balance_status ?? "none") === "none";
 /** The status a person sees. "Paid" only once EVERYTHING is paid (the items and the shipping fee); until then an order whose
- *  items are confirmed still reads "Awaiting payment", because the shipping fee is still to come. */
-export const displayStatus = (o) => (o.status === "paid" && !isFullyPaid(o) ? "pending" : o.status);
+ *  items are confirmed still reads "Awaiting payment", because the shipping fee is still to come. A payment that came up short says so. */
+export const displayStatus = (o) => {
+  if ((o.status === "pending" || o.status === "paid") && o.balance_status === "awaiting_payment") return o.balance_for === "shipping" ? "short_shipping" : "short_items";
+  if ((o.status === "pending" || o.status === "paid") && o.balance_status === "pending_review") return "extra_review";
+  return o.status === "paid" && !isFullyPaid(o) ? "pending" : o.status;
+};
 /** Which payment an admin can ask a remaining amount for right now: "items" (order pending), "shipping" (its receipt is being checked), or null. */
 export const balanceStage = (o) => (o.balance_status === undefined ? null : o.status === "pending" ? "items" : o.status === "paid" && o.shipping_status === "pending_review" ? "shipping" : null);
 export const SHIPPING = {

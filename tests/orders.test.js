@@ -39,7 +39,9 @@ describe("displayStatus", () => {
     expect(displayStatus(o({ shipping_status: "none" }))).toBe("pending");               // confirmed, but the shipping fee is not set or paid yet
     expect(displayStatus(o({ shipping_status: "awaiting_payment" }))).toBe("pending");
     expect(displayStatus(o({ shipping_status: "pending_review" }))).toBe("pending");
-    expect(displayStatus(o({ balance_status: "awaiting_payment" }))).toBe("pending");    // an underpayment is still open
+    expect(displayStatus(o({ balance_status: "awaiting_payment", balance_for: "items", status: "pending", shipping_status: "none" }))).toBe("short_items");
+    expect(displayStatus(o({ balance_status: "awaiting_payment", balance_for: "shipping", shipping_status: "pending_review" }))).toBe("short_shipping");
+    expect(displayStatus(o({ balance_status: "pending_review", balance_for: "shipping", shipping_status: "pending_review" }))).toBe("extra_review");
   });
   it("leaves the other statuses alone", () => {
     expect(displayStatus(o({ status: "pending", shipping_status: "none" }))).toBe("pending");

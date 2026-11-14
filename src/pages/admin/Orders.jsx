@@ -302,7 +302,7 @@ export default function Orders() {
             return (
               <li key={o.id} className="card flex flex-wrap items-center justify-between gap-3 p-4">
                 <div><h2 className="font-black">{o.order_number} · {o.name}</h2><p className="text-sm text-ink-muted">{fmtDateTime(o.created_at)} · {peso(o.total_php)} · ref {o.reference_number}{o.preferred_courier ? ` · wants ${o.preferred_courier}` : ""}</p></div>
-                <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge order={o} />{o.balance_status && o.balance_status !== "none" && <Badge tone="warn">{o.balance_status === "awaiting_payment" ? "Underpaid" : "Extra payment to check"}</Badge>}{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
+                <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge order={o} />{o.status === "paid" && o.shipping_status && o.shipping_status !== "paid" && <Badge tone={SHIPPING[o.shipping_status].tone}>{SHIPPING[o.shipping_status].label}</Badge>}<button type="button" className="btn-secondary" onClick={() => setOpen(o)}>Review{" "}<span className="sr-only">order {o.order_number}</span></button></div>
               </li>
             );
           })}

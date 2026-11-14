@@ -310,7 +310,8 @@ describe("attendee pages", () => {
       fixtures.current.orders = [{ ...order, balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250 }];
       admin(<Orders />); await settled("Shop orders");
       await screen.findByRole("button", { name: /Review order TF-000001/ });
-      expect(screen.getAllByText("Underpaid").length).toBeGreaterThanOrEqual(2);                     // the filter chip and the badge on the order in the list
+      expect(screen.getByText("Underpaid")).toBeInTheDocument();                                     // the filter chip
+      expect(screen.getByText("Payment is short")).toBeInTheDocument();                              // and the status of the order in the list
       await user.click(screen.getByRole("button", { name: /Review order TF-000001/ }));
       const dialog = screen.getByRole("dialog", { name: "Order TF-000001" });
       expect(within(dialog).getByRole("button", { name: "Mark as paid" })).toBeDisabled();
@@ -355,6 +356,20 @@ describe("attendee pages", () => {
       await user.click(screen.getByRole("button", { name: "Paid" }));
       expect(screen.getByRole("button", { name: /Review order TF-000009/ })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Review order TF-000001/ })).toBeNull();
+    });
+    it("Order status: a short payment says so, for the items and for the shipping fee", async () => {
+      asUser();
+      const open = (o) => { fixtures.current.orders = [o]; return render(shell(<MemoryRouter initialEntries={["/orders/o1"]}><Routes><Route path="/orders/:id" element={<OrderDetail />} /></Routes></MemoryRouter>)); };
+      let r = open({ ...order, status: "pending", shipping_status: "none", balance_status: "awaiting_payment", balance_for: "items", balance_due_php: 250 });
+      await screen.findByRole("heading", { level: 2, name: /Your payment was short/ });
+      expect(screen.getAllByText("Payment is short").length).toBeGreaterThan(0);                      // the order status
+      expect(screen.queryByText("Awaiting payment")).toBeNull();
+      r.unmount();
+      r = open({ ...order, status: "paid", shipping_status: "pending_review", shipping_fee_php: 150, balance_status: "awaiting_payment", balance_for: "shipping", balance_due_php: 40 });
+      await screen.findByRole("heading", { level: 2, name: /Your payment was short/ });
+      expect(screen.getAllByText("Shipping fee payment is short").length).toBeGreaterThan(0);        // the order status says it is the shipping fee
+      expect(screen.getByText(/Still to pay \(underpaid\)/)).toBeInTheDocument();
+      expect(screen.queryByText("Paid")).toBeNull();
     });
     it("Courier: the shopper can change it only until the shipping fee is set; an admin can always edit it", async () => {
       asUser();
