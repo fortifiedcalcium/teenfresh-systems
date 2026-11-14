@@ -1,15 +1,24 @@
 import { supabase } from "./supabaseClient.js";
 import { BUCKET, IMAGE_TYPES, validateImageFile } from "./eventImages.js";
 
-/** The shop's filter chips. "All" and "Pre-Order" are computed; the rest are categories an admin ticks on a product. */
-export const CATEGORIES = ["BEST", "ALBUM", "Drama/Movie", "DVD", "PHOTOBOOK", "MD", "2027 Season's Greetings"];
-export const CHIPS = ["All", "BEST", "ALBUM", "Drama/Movie", "DVD", "PHOTOBOOK", "MD", "Pre-Order", "2027 Season's Greetings"];
+/** The shop's filter chips: "All" and "Pre-Order" are built in; the rest are the categories an admin manages (table product_categories). */
+export const chipsFor = (categories) => ["All", ...(categories || []), "Pre-Order"];
+export const CATEGORY_MAX = 40;
+/** A problem with a new category name, or "" when it is fine. `existing` are the names already in use. */
+export function validateCategoryName(name, existing = []) {
+  const n = String(name).trim();
+  if (!n) return "Type a category name.";
+  if (n.length > CATEGORY_MAX) return `A category name can be ${CATEGORY_MAX} characters at most.`;
+  if (["all", "pre-order"].includes(n.toLowerCase())) return `"${n}" is a built-in filter, so it cannot be a category.`;
+  if (existing.some((e) => e.trim().toLowerCase() === n.toLowerCase())) return "That category already exists.";
+  return "";
+}
 
 /** The accordion sections on the product page: [column, heading]. A section with no text is not shown. */
 export const INFO_SECTIONS = [
   ["info_description", "Description"],
   ["info_specs", "Specifications"],
-  ["info_shipping", "Shipping & exchange"],
+  ["info_shipping", "Shipping"],
   ["info_notes", "Other notes"],
 ];
 export const INFO_MAX = 4000;

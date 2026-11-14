@@ -19,6 +19,17 @@ export function useCartProducts() {
   return state;
 }
 
+/** The product categories (names, in the order an admin made them). null while loading. */
+export function useProductCategories() {
+  const [names, setNames] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    supabase.from("product_categories").select("name").order("id").then(({ data }) => { if (alive) setNames((data || []).map((r) => r.name)); });
+    return () => { alive = false; };
+  }, []);
+  return names;
+}
+
 /** The GCash details. null while loading. */
 export function useShopSettings() {
   const [settings, setSettings] = useState(null);

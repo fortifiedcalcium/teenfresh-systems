@@ -92,6 +92,7 @@ beforeAll(async () => {
   await db.exec(read("018_order_shipping_payment.sql"));
   await db.exec(read("019_order_tracking.sql"));
   await db.exec(read("020_preferred_courier.sql"));
+  await db.exec(read("021_product_categories.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -920,6 +921,40 @@ describe("011 orders", () => {
     await db.query("update public.orders set status = 'paid' where id = $1", [r.id]);
     expect((await db.query("select public.set_order_shipping($1, 0) as r", [r.id])).rows[0].r).toMatchObject({ shipping_status: "paid" });
     await db.query("update public.orders set status = 'shipped' where id = $1", [r.id]);
+  });
+});
+
+describe("021 product categories", () => {
+  it("starts with the usual categories, in order, and everyone can read them", async () => {
+    for (const who of [null, "alice"]) {
+      await asUser(who);
+      expect((await db.query("select name from public.product_categories order by id")).rows.map((r) => r.name))
+        .toEqual(["BEST", "ALBUM", "Drama/Movie", "DVD", "PHOTOBOOK", "MD", "2027 Season's Greetings"]);
+    }
+  });
+  it("only admins add categories; names are unique ignoring case, and All and Pre-Order are reserved", async () => {
+    await asUser("alice");
+    await fails(db.query("insert into public.product_categories (name) values ('Lightstick')"), "row-level security");
+    await asUser("admin");
+    await db.query("insert into public.product_categories (name) values ('Lightstick')");
+    await fails(db.query("insert into public.product_categories (name) values ('LIGHTSTICK')"), "product_categories_name_key");
+    await fails(db.query("insert into public.product_categories (name) values ('all')"), "product_categories_name_check");
+    await fails(db.query("insert into public.product_categories (name) values ('Pre-Order')"), "product_categories_name_check");
+    await fails(db.query("insert into public.product_categories (name) values (' padded ')"), "product_categories_name_check");
+    await fails(db.query("insert into public.product_categories (name) values (repeat('x', 41))"), "product_categories_name_check");
+  });
+  it("deleting a category removes it from every product; only admins can", async () => {
+    await asUser("admin");
+    await db.query("insert into public.products (artist, title, price, categories) values ('A', 'Cat one', 5, array['Lightstick', 'DVD']), ('B', 'Cat two', 6, array['DVD']), ('C', 'Cat three', 7, array['MD'])");
+    await asUser("alice");
+    await fails(db.query("select public.delete_product_category('Lightstick')"), "FORBIDDEN");
+    await asUser("admin");
+    expect((await db.query("select public.delete_product_category('Lightstick') as n")).rows[0].n).toBe(1);   // one product had it
+    expect((await db.query("select name from public.product_categories where name = 'Lightstick'")).rows).toHaveLength(0);
+    expect((await db.query("select categories from public.products where title = 'Cat one'")).rows[0].categories).toEqual(["DVD"]);
+    expect((await db.query("select categories from public.products where title = 'Cat three'")).rows[0].categories).toEqual(["MD"]);   // others untouched
+    await asUser(null);
+    await fails(db.query("select public.delete_product_category('DVD')"), "permission denied");
   });
 });
 

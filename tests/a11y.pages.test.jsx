@@ -111,9 +111,12 @@ describe("public and auth pages", () => {
   });
 });
 
+const CATEGORY_ROWS = ["BEST", "ALBUM", "Drama/Movie", "DVD", "PHOTOBOOK", "MD", "2027 Season's Greetings"].map((name) => ({ name }));
+
 describe("attendee pages", () => {
   it("Shop: loads products, the chips narrow the grid, and the page has no violations", async () => {
     const user = userEvent.setup();
+    fixtures.current.product_categories = CATEGORY_ROWS;
     fixtures.current.products = [
       { id: "p1", artist: "Marv", title: "ÖRBITAL", price: 741.24, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: "products/a.png", image_alt: "Black cover", active: true },
       { id: "p2", artist: "KASSY", title: "EP [ODYSSEY]", price: 17.04, discount_percent: 0, pre_order: true, is_new: false, categories: ["ALBUM"], image_path: null, image_alt: null, active: true },
@@ -278,8 +281,35 @@ describe("attendee pages", () => {
     await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "order_email_templates" && w.op === "delete")).toBe(true));
     expect(screen.getByLabelText(/^Subject/)).toHaveValue("Payment confirmed for order {{Order Number}}");
   });
+  it("Products (admin): adds and deletes categories inside the product form", async () => {
+    const user = userEvent.setup();
+    fixtures.current.product_categories = CATEGORY_ROWS;
+    fixtures.current.rpc = { delete_product_category: 1 };
+    fixtures.current.products = [{ id: "p1", artist: "Marv", title: "ÖRBITAL", price: 741.24, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: null, active: true }];
+    admin(<Products />); await settled("Shop products");
+    await user.click(await screen.findByRole("button", { name: "Add a product" }));
+    const dialog = screen.getByRole("dialog", { name: "Add a product" });
+    expect(within(dialog).getByRole("checkbox", { name: "DVD" })).toBeInTheDocument();           // the list comes from the database
+    await user.click(within(dialog).getByText("Add or delete categories"));
+    await user.click(within(dialog).getByRole("button", { name: "Add category" }));
+    expect(await within(dialog).findByText("Type a category name.")).toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText(/^New category/), "dvd");
+    await user.click(within(dialog).getByRole("button", { name: "Add category" }));
+    expect(await within(dialog).findByText("That category already exists.")).toBeInTheDocument();   // not case sensitive
+    await user.clear(within(dialog).getByLabelText(/^New category/));
+    await user.type(within(dialog).getByLabelText(/^New category/), "Lightstick");
+    await user.click(within(dialog).getByRole("button", { name: "Add category" }));
+    await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "product_categories" && w.op === "insert" && w.args[0].name === "Lightstick")).toBe(true));
+    expect(within(dialog).getByRole("checkbox", { name: "Lightstick" })).toBeChecked();             // ticked for this product
+    await user.click(within(dialog).getByRole("button", { name: "Delete category MD" }));
+    expect(within(dialog).getByText("Delete it?")).toBeInTheDocument();                             // asks first; nothing is deleted yet
+    expect(fixtures.current.rpcCalls?.some((c) => c.name === "delete_product_category")).toBeFalsy();
+    await user.click(within(dialog).getByRole("button", { name: "Yes, delete MD" }));
+    await waitFor(() => expect(fixtures.current.rpcCalls?.some((c) => c.name === "delete_product_category" && c.args.p_name === "MD")).toBe(true));
+  });
   it("Products (admin): lists products, validates, and saves a new one", async () => {
     const user = userEvent.setup();
+    fixtures.current.product_categories = CATEGORY_ROWS;
     fixtures.current.products = [{ id: "p1", artist: "Marv", title: "ÖRBITAL", price: 741.24, discount_percent: 20, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: null, active: true }];
     const { container } = admin(<Products />); await settled("Shop products");
     expect(await screen.findByRole("heading", { level: 2, name: "ÖRBITAL" })).toBeInTheDocument();

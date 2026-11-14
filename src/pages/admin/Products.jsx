@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
-import { CATEGORIES, INFO_IMAGES_MAX, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateProduct } from "../../lib/products.js";
+import { CATEGORY_MAX, INFO_IMAGES_MAX, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateCategoryName, validateProduct } from "../../lib/products.js";
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "../../lib/eventImages.js";
 import { peso } from "../../lib/payment.js";
 import { useToast } from "../../components/Toast.jsx";
@@ -50,6 +50,19 @@ export default function Products() {
   }, [toast]);
   useEffect(() => { load(); }, [load]);
 
+  // ---- the categories an admin can tick (add and delete them right in the form)
+  const [cats, setCats] = useState(null);                 // names, in the order they were made
+  const [newCat, setNewCat] = useState("");
+  const [catError, setCatError] = useState("");
+  const [confirmCat, setConfirmCat] = useState(null);     // the category waiting for "Yes, delete"
+  const [catBusy, setCatBusy] = useState(false);
+  const loadCats = useCallback(async () => {
+    const { data, error } = await supabase.from("product_categories").select("name").order("id");
+    if (error) { toast("Could not load the categories: " + error.message, "error"); setCats([]); return; }
+    setCats((data || []).map((r) => r.name));
+  }, [toast]);
+  useEffect(() => { loadCats(); }, [loadCats]);
+
   useEffect(() => {
     if (!file) { setPreview(null); return undefined; }
     const url = URL.createObjectURL(file);
@@ -61,6 +74,28 @@ export default function Products() {
   const open = (p) => { clearDesc(); setForm(p ? toForm(p) : blank()); setFile(null); setFileError(""); setErrors({}); setFormError(""); };
   const close = () => { clearDesc(); setForm(null); };
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+  const addCategory = async () => {
+    const problem = validateCategoryName(newCat, cats || []);
+    if (problem) { setCatError(problem); announce(problem, "assertive"); return; }
+    setCatBusy(true); setCatError("");
+    const name = newCat.trim();
+    const { error } = await supabase.from("product_categories").insert({ name });
+    setCatBusy(false);
+    if (error) { const m = error.code === "23505" ? "That category already exists." : error.message; setCatError(m); announce(m, "assertive"); return; }
+    setNewCat("");
+    setForm((f) => ({ ...f, categories: f.categories.includes(name) ? f.categories : [...f.categories, name] }));   // tick it for this product
+    announce(`Category ${name} added`);
+    await loadCats();
+  };
+  const deleteCategory = async (name) => {
+    setCatBusy(true); setCatError("");
+    const { error } = await supabase.rpc("delete_product_category", { p_name: name });
+    setCatBusy(false); setConfirmCat(null);
+    if (error) { setCatError(error.message); return; }
+    setForm((f) => ({ ...f, categories: f.categories.filter((x) => x !== name) }));
+    toast(`Category ${name} deleted`, "success");
+    await Promise.all([loadCats(), load()]);
+  };
   const toggleCategory = (c) => setForm((f) => ({ ...f, categories: f.categories.includes(c) ? f.categories.filter((x) => x !== c) : [...f.categories, c] }));
 
   const takeDesc = (list) => {
@@ -170,11 +205,43 @@ export default function Products() {
             <fieldset className="space-y-2">
               <legend className="label">Categories <span className="font-normal text-ink-muted">(the shop filters)</span></legend>
               <div className="flex flex-wrap gap-x-5 gap-y-1">
-                {CATEGORIES.map((c) => (
+                {[...(cats || []), ...form.categories.filter((c) => !(cats || []).includes(c))].map((c) => (
                   <label key={c} className="flex min-h-target items-center gap-2 text-sm"><input type="checkbox" className="check" checked={form.categories.includes(c)} onChange={() => toggleCategory(c)} />{c}</label>
                 ))}
+                {cats && cats.length === 0 && <p className="text-sm text-ink-muted">No categories yet. Add one below.</p>}
               </div>
               <p className="hint">The Pre-Order filter uses the Pre-order switch below.</p>
+              <details className="rounded-lg border border-brand-sky p-3">
+                <summary className="cursor-pointer text-sm font-bold">Add or delete categories</summary>
+                <div className="mt-3 space-y-3">
+                  {catError && <Alert tone="bad">{catError}</Alert>}
+                  <div className="flex flex-wrap items-end gap-2">
+                    <Field id="new-category" label="New category" hint={`Up to ${CATEGORY_MAX} characters. It also becomes a filter on the shop page.`}>
+                      <input className="input w-64 max-w-full" maxLength={CATEGORY_MAX} value={newCat} onChange={(e) => setNewCat(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCategory(); } }} />
+                    </Field>
+                    <button type="button" className="btn-secondary" disabled={catBusy} onClick={addCategory}><IconPlus />Add category</button>
+                  </div>
+                  {cats && cats.length > 0 && (
+                    <ul className="space-y-1">
+                      {cats.map((c) => {
+                        const used = (rows || []).filter((p) => (p.categories || []).includes(c)).length;
+                        return (
+                          <li key={c} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-brand-ivory px-3 py-1 text-sm">
+                            <span className="font-semibold">{c} <span className="font-normal text-ink-muted">· {used} {used === 1 ? "product" : "products"}</span></span>
+                            {confirmCat === c ? (
+                              <span className="flex flex-wrap items-center gap-2" role="group" aria-label={`Delete ${c}?`}>
+                                <span>{used > 0 ? `Remove it from ${used} ${used === 1 ? "product" : "products"}?` : "Delete it?"}</span>
+                                <button type="button" className="btn-danger" disabled={catBusy} onClick={() => deleteCategory(c)}><IconTrash />Yes, delete{" "}<span className="sr-only">{c}</span></button>
+                                <button type="button" className="btn-secondary" onClick={() => setConfirmCat(null)}>Cancel</button>
+                              </span>
+                            ) : <button type="button" className="btn-secondary" onClick={() => setConfirmCat(c)}><IconTrash />Delete{" "}<span className="sr-only">category {c}</span></button>}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </details>
             </fieldset>
 
             <div className="flex flex-wrap gap-x-6 gap-y-1">

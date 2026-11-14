@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
-import { CHIPS, productImageUrl, productMatches } from "../../lib/products.js";
+import { chipsFor, productImageUrl, productMatches } from "../../lib/products.js";
 import { peso } from "../../lib/payment.js";
+import { useProductCategories } from "../../lib/useShop.js";
 import { useAnnounce } from "../../a11y.jsx";
 import Alert from "../../components/Alert.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
@@ -53,7 +54,8 @@ export default function Shop() {
   }, []);
 
   // "All" always shows; a category chip appears only once it has more than one product
-  const chips = CHIPS.filter((c) => c === "All" || (products || []).filter((p) => productMatches(p, c)).length > 1);
+  const categories = useProductCategories();
+  const chips = chipsFor(categories).filter((c) => c === "All" || (products || []).filter((p) => productMatches(p, c)).length > 1);
   const shown = (products || []).filter((p) => productMatches(p, chip));
   const pick = (c) => {
     setChip(c);
