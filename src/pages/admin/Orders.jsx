@@ -14,7 +14,7 @@ import Modal from "../../components/Modal.jsx";
 import { Empty, Loading } from "../../components/Spinner.jsx";
 import { IconBag, IconCheck, IconClose, IconImage, IconPackage, IconSave, IconSend, IconUpload } from "../../components/NavIcons.jsx";
 
-const MAIL_LABEL = { order_received: "Order received", order_paid: "Payment confirmed", order_shipping_due: "Shipping fee to pay", order_shipped: "Shipped", order_cancelled: "Cancelled" };
+const MAIL_LABEL = { order_received: "Order received (old, no longer sent)", order_paid: "Payment confirmed", order_shipping_due: "Shipping fee to pay", order_shipped: "Shipped", order_cancelled: "Cancelled" };
 const FILTERS = [["all", "All"], ["pending", "Awaiting payment check"], ["set_fee", "Set shipping fee"], ["ship_review", "Shipping payment to check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
 
 /** Rate, shipping fee and GCash details. */

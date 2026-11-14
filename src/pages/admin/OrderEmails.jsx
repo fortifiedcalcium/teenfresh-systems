@@ -7,10 +7,9 @@ import Field from "../../components/Field.jsx";
 import { Loading } from "../../components/Spinner.jsx";
 import { IconMail, IconRefresh, IconSave } from "../../components/NavIcons.jsx";
 
-const LABEL = { order_received: "Order received", order_paid: "Payment confirmed", order_shipping_due: "Shipping fee to pay", order_shipped: "Order shipped", order_cancelled: "Order cancelled" };
+const LABEL = { order_paid: "Payment confirmed", order_shipping_due: "Shipping fee to pay", order_shipped: "Order shipped", order_cancelled: "Order cancelled" };
 const WHEN = {
-  order_received: "Sent right after the shopper places the order.",
-  order_paid: "Sent when you mark an order as paid.",
+  order_paid: "Sent when you mark an order as paid. It is the first email the shopper gets for an order.",
   order_shipping_due: "Sent when you set a shipping fee on a confirmed order. It asks the shopper to pay it and upload the receipt.",
   order_shipped: "Sent when you mark an order as shipped.",
   order_cancelled: "Sent when you cancel an order.",

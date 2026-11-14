@@ -1,6 +1,6 @@
 // POST { kind, order_id }
-//   kind "order_received"                                         the person who placed the order (or an admin), once per order
 //   kind "order_paid" | "order_shipping_due" | "order_shipped" | "order_cancelled"   admin only, and only while the order is in that status
+//   (there is no email when an order is placed: the shopper's first email is "order_paid", sent when an admin confirms the payment)
 // The email goes to the address saved on the order. Every attempt is written to order_emails.
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { getCaller, serviceClient, siteUrl } from "../_shared/send.ts";
@@ -22,17 +22,9 @@ Deno.serve(async (req) => {
 
   const { data: order } = await db.from("orders").select("*").eq("id", body.order_id).maybeSingle();
   if (!order) return json({ error: "Order not found" }, 404);
-  if (kind === "order_received") {
-    if (order.user_id !== caller.id && !caller.isAdmin) return json({ error: "Not your order" }, 403);
-    if (!caller.isAdmin) {   // shoppers: one confirmation per order, ever
-      const { count } = await db.from("order_emails").select("id", { count: "exact", head: true }).eq("order_id", order.id).eq("kind", kind);
-      if ((count ?? 0) > 0) return json({ error: "Already sent" }, 429);
-    }
-  } else {
-    if (!caller.isAdmin) return json({ error: "Admins only" }, 403);
-    if (order.status !== KIND_STATUS[kind]) return json({ error: `The order is not ${KIND_STATUS[kind]}` }, 400);
-    if (kind === "order_shipping_due" && order.shipping_status !== "awaiting_payment") return json({ error: "No shipping fee is waiting for payment" }, 400);
-  }
+  if (!caller.isAdmin) return json({ error: "Admins only" }, 403);
+  if (order.status !== KIND_STATUS[kind]) return json({ error: `The order is not ${KIND_STATUS[kind]}` }, 400);
+  if (kind === "order_shipping_due" && order.shipping_status !== "awaiting_payment") return json({ error: "No shipping fee is waiting for payment" }, 400);
 
   const { data: custom } = await db.from("order_email_templates").select("subject,heading,body").eq("kind", kind).maybeSingle();   // none = the built-in wording
   const { data: items } = await db.from("order_items").select("artist,title,unit_price_php,quantity").eq("order_id", order.id).order("title");

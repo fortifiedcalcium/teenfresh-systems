@@ -15,7 +15,7 @@ describe("renderOrderEmail", () => {
     expect(Object.keys(KIND_STATUS).sort()).toEqual([...ORDER_KINDS].sort());
   });
   it("lists the items, the totals and the delivery address, and links to the order", () => {
-    const m = renderOrderEmail("order_received", order, items, "https://shop.example/");
+    const m = renderOrderEmail("order_paid", order, items, "https://shop.example/");
     expect(m.text).toContain("PHP 741.24 x 2");
     expect(m.text).toContain("Items: PHP 1,482.48");
     expect(m.text).toContain("12 Rizal St.");
@@ -37,7 +37,7 @@ describe("renderOrderEmail", () => {
 describe("editable wording", () => {
   it("uses the admin's text, fills the placeholders and keeps the order details", () => {
     const tpl = { subject: "Order {{order number}} is in, {{Name}}!", heading: "Salamat!", body: "Hello {{Name}}.\n\nYour total is {{Total}}.\nSee you soon." };
-    const m = renderOrderEmail("order_received", order, items, "", tpl);
+    const m = renderOrderEmail("order_paid", order, items, "", tpl);
     expect(m.subject).toBe("Order TF-000007 is in, Juan <b>Dela</b> Cruz!");
     expect(m.text).toContain("Salamat!");
     expect(m.text).toContain("Your total is PHP 1,632.48.");

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { friendlyError } from "../../lib/api.js";
-import { orderArgs, priceOrder, sendOrderEmail, validateCheckout } from "../../lib/orders.js";
+import { orderArgs, priceOrder, validateCheckout } from "../../lib/orders.js";
 import { useCart, useCartLines } from "../../lib/cart.jsx";
 import { useCartProducts, useShopSettings } from "../../lib/useShop.js";
 import { peso, receiptPath, validateReceiptFile } from "../../lib/payment.js";
@@ -58,7 +58,6 @@ export default function Checkout() {
       const { data, error } = await supabase.rpc("place_order", orderArgs(f, items, path));
       if (error) throw error;
       clear();
-      sendOrderEmail("order_received", data.id);        // not awaited: the confirmation email must never hold up or undo the order
       navigate(`/orders/${data.id}`, { replace: true, state: { placed: true } });
     } catch (e) {
       if (path) supabase.storage.from("payment-receipts").remove([path]);      // do not leave an unused receipt behind

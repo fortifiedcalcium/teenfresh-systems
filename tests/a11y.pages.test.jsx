@@ -175,7 +175,7 @@ describe("attendee pages", () => {
       const call = fixtures.current.rpcCalls.find((c) => c.name === "place_order");
       expect(call.args.p_items).toEqual([{ product_id: "p1", quantity: 2 }]);
       expect(call.args.p_receipt_path).toMatch(/^u1\/[0-9a-f-]{36}\.png$/);
-      await waitFor(() => expect(fixtures.current.fnCalls?.some((c) => c.name === "send-order-email" && c.body.kind === "order_received")).toBe(true));   // the confirmation email
+      expect(fixtures.current.fnCalls?.some((c) => c.name === "send-order-email")).toBeFalsy();   // placing an order sends no email: the first one is "payment confirmed", sent by an admin
     });
     it("Checkout stays closed when no GCash number is set", async () => {
       asUser();
@@ -243,8 +243,8 @@ describe("attendee pages", () => {
     const user = userEvent.setup();
     fixtures.current.order_email_templates = [];
     const { container } = admin(<OrderEmails />); await settled("Order emails");
-    expect(screen.getByLabelText(/^Subject/)).toHaveValue("We received your order {{Order Number}}");
-    expect(screen.getByLabelText("Email preview")).toHaveTextContent("Thank you for your order!");
+    expect(screen.getByLabelText(/^Subject/)).toHaveValue("Payment confirmed for order {{Order Number}}");
+    expect(screen.getByLabelText("Email preview")).toHaveTextContent("Thank you! Your payment is confirmed");
     expect(await check(container)).toHaveNoViolations();
     const subject = screen.getByLabelText(/^Subject/);
     await user.clear(subject); await user.type(subject, "Got it {{{{Nmae}}");
@@ -253,10 +253,10 @@ describe("attendee pages", () => {
     await user.clear(subject); await user.type(subject, "Got it, {{{{Name}}");
     await waitFor(() => expect(screen.getByText(/Subject:/).parentElement).toHaveTextContent("Got it, Juan Dela Cruz"));
     await user.click(screen.getByRole("button", { name: "Save wording" }));
-    await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "order_email_templates" && w.op === "upsert" && w.args[0].kind === "order_received" && w.args[0].subject === "Got it, {{Name}}")).toBe(true));
+    await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "order_email_templates" && w.op === "upsert" && w.args[0].kind === "order_paid" && w.args[0].subject === "Got it, {{Name}}")).toBe(true));
     await user.click(await screen.findByRole("button", { name: "Restore default wording" }));
     await waitFor(() => expect(fixtures.current.writes?.some((w) => w.table === "order_email_templates" && w.op === "delete")).toBe(true));
-    expect(screen.getByLabelText(/^Subject/)).toHaveValue("We received your order {{Order Number}}");
+    expect(screen.getByLabelText(/^Subject/)).toHaveValue("Payment confirmed for order {{Order Number}}");
   });
   it("Products (admin): lists products, validates, and saves a new one", async () => {
     const user = userEvent.setup();
