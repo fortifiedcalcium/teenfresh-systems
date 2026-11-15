@@ -30,18 +30,23 @@ export function badgeFor(p: BadgeProduct, versions: Pick<VariationRow, "stock" |
 
 const priceOf = (price: number | string, v: Pick<VariationRow, "price">) => (v.price != null ? Number(v.price) : Number(price));
 
-/** The price a shopper sees: the lowest among the versions still in stock (all of them when nothing is in stock, next to the Sold out badge).
- *  `from` is true when the versions do not all cost the same, so the card says "From". */
-export function priceFor(price: number | string, versions: Pick<VariationRow, "price" | "stock" | "active">[] = []): { amount: number; from: boolean } {
+/** The price a shopper sees for a product with versions: the range from the lowest to the highest price among the versions still in stock
+ *  (among all of them when nothing is in stock, next to the Sold out badge). A product with no versions, or with versions that all cost the
+ *  same, has one price (`range` is false). */
+export function priceFor(price: number | string, versions: Pick<VariationRow, "price" | "stock" | "active">[] = []): { min: number; max: number; amount: number; range: boolean } {
   const on = live(versions) as Pick<VariationRow, "price" | "stock" | "active">[];
-  if (on.length === 0) return { amount: Number(price), from: false };
-  const all = on.map((v) => priceOf(price, v));
-  const inStock = on.filter((v) => v.stock == null || v.stock > 0).map((v) => priceOf(price, v));
-  return { amount: Math.min(...(inStock.length ? inStock : all)), from: Math.min(...all) !== Math.max(...all) };
+  if (on.length === 0) return { min: Number(price), max: Number(price), amount: Number(price), range: false };
+  const open = on.filter((v) => v.stock == null || v.stock > 0);
+  const prices = (open.length ? open : on).map((v) => priceOf(price, v));
+  const min = Math.min(...prices), max = Math.max(...prices);
+  return { min, max, amount: min, range: min !== max };
 }
 
-/** "From ₱x": the lowest in-stock price when a product's versions cost different amounts, else null. */
+/** "₱750.00" or, for a range, "₱750.00 – ₱900.00". */
+export const priceText = (r: { min: number; max: number }, fmt: (n: number) => string): string => (r.min === r.max ? fmt(r.min) : `${fmt(r.min)} – ${fmt(r.max)}`);
+
+/** The lowest in-stock price when a product's versions cost different amounts, else null. */
 export function fromPrice(price: number | string, versions: Pick<VariationRow, "price" | "stock" | "active">[] = []): number | null {
   const r = priceFor(price, versions);
-  return r.from ? r.amount : null;
+  return r.range ? r.amount : null;
 }

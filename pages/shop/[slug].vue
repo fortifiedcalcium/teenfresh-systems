@@ -2,11 +2,11 @@
 import { supabase } from "~/lib/supabaseClient";
 import { INFO_SECTIONS, productImageUrl } from "~/lib/products";
 import { peso } from "~/lib/payment";
-import { inStock, normalizeLayers, stockNote, variationLabel } from "~/lib/variations";
+import { groupVariations, inStock, normalizeLayers, stockNote, variationLabel } from "~/lib/variations";
 import { MAX_QTY } from "~/lib/orders";
 import { findByRef, productPath } from "~/lib/slug";
 import { lineKey } from "~/lib/cartLine";
-import { badgeFor, isSoldOut, priceFor } from "~/lib/productBadge";
+import { badgeFor, isSoldOut, priceFor, priceText } from "~/lib/productBadge";
 import { preorderBuyable, preorderNotice, preorderState } from "~/lib/preorder";
 
 definePageMeta({ middleware: ["shop"] });
@@ -16,6 +16,7 @@ const { add, setQty } = useCart();
 const toast = useToast();
 const product = ref(undefined);   // undefined = loading, null = not found
 const related = ref([]);
+const relatedVersions = ref({});
 const error = ref("");
 const qty = ref(1);
 const variations = ref([]);       // this product's versions, in the admin's order
@@ -30,10 +31,12 @@ async function fetchProduct(slug: string) {
   if (err) return { ok: false };
   const all = data || [];
   const me = findByRef(all, slug) || null;
-  if (!me) return { ok: true, product: null, related: [], variations: [] };
+  if (!me) return { ok: true, product: null, related: [], variations: [], relatedVersions: {} };
   const v = await supabase.from("product_variations").select("*").eq("product_id", me.id).eq("active", true).order("position");
   const related = all.filter((x) => x.id !== me.id && (x.artist === me.artist || (x.categories || []).some((c) => (me.categories || []).includes(c)))).slice(0, 4);
-  return { ok: true, product: me, related, variations: v.data || [] };
+  // the related products' versions too, so their cards show the same price range as the shop
+  const rv = related.length ? await supabase.from("product_variations").select("*").in("product_id", related.map((x) => x.id)).eq("active", true).order("position") : { data: [] };
+  return { ok: true, product: me, related, variations: v.data || [], relatedVersions: groupVariations(rv.data || []) };
 }
 // Loaded on the server, so the product is already in the page that search engines and link previews read. If the server could not reach the
 // database, the browser asks again once the page is up.
@@ -43,7 +46,7 @@ let retried = false;
 function apply(d) {
   if (!d) return;
   if (!d.ok) { if (import.meta.client && (!hydrating || retried)) { error.value = "We could not load this product. Check your connection and refresh the page."; product.value = null; } return; }
-  product.value = d.product; related.value = d.related; variations.value = d.variations;
+  product.value = d.product; related.value = d.related; relatedVersions.value = d.relatedVersions || {}; variations.value = d.variations;
   if (d.variations.length === 1) { choice.value = d.variations[0].id; if (d.variations[0].options) picks.value = { ...d.variations[0].options }; }   // only one version: no need to ask
 }
 apply(loaded.value);
@@ -85,6 +88,8 @@ const left = computed(() => (chosen.value ? chosen.value.stock : variations.valu
 const maxQty = computed(() => (left.value != null ? Math.max(1, Math.min(MAX_QTY, left.value)) : MAX_QTY));                    // no more than what is left
 const preorderDay = (iso: string) => new Date(`${iso}T00:00:00+08:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "Asia/Manila" });
 const poState = computed(() => preorderState(p.value));
+const qtyLocked = computed(() => variations.value.length > 0 && !selectedId.value);        // pick a version first; then the quantity (a product with no versions is never locked)
+watch(selectedId, () => { qty.value = 1; });                                                   // a new pick starts again at 1, so it cannot exceed what that version has left
 const canBuy = computed(() => !soldOutAll.value && preorderBuyable(p.value));
 const total = computed(() => unit.value * Math.min(qty.value, maxQty.value));
 const infoSections = computed(() => INFO_SECTIONS.filter(([k]) => p.value[k] || (k === "info_description" && (p.value.info_images || []).length > 0)));
@@ -146,7 +151,7 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
 
         <p class="pd-price">
           <span v-if="p.discount_percent > 0" class="text-danger"><span class="sr-only">Discount </span>{{ p.discount_percent }}%</span>
-          <span><template v-if="!chosen && variations.length"><span v-if="shownPrice.from" class="text-base font-semibold">From </span>{{ peso(shownPrice.amount) }}</template><template v-else>{{ peso(unit) }}</template></span>
+          <span><template v-if="!chosen && variations.length">{{ priceText(shownPrice, peso) }}</template><template v-else>{{ peso(unit) }}</template></span>
         </p>
 
         <div v-if="p.pre_order" class="pd-status">
@@ -184,14 +189,15 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
           <div class="pd-option-row" role="group" aria-labelledby="opt-label">
             <span class="pd-option-name">{{ p.title }}{{ chosen ? ` · ${variationLabel(chosen)}` : "" }}</span>
             <div class="pd-qty">
-              <button type="button" aria-label="Decrease quantity" :disabled="qty <= 1" @click="qty = Math.max(1, qty - 1)">−</button>
+              <button type="button" aria-label="Decrease quantity" :disabled="qtyLocked || qty <= 1" @click="qty = Math.max(1, qty - 1)">−</button>
               <output aria-live="polite" aria-label="Quantity">{{ qty }}</output>
-              <button type="button" aria-label="Increase quantity" :disabled="qty >= maxQty" @click="qty = Math.min(maxQty, qty + 1)">+</button>
+              <button type="button" aria-label="Increase quantity" :disabled="qtyLocked || qty >= maxQty" @click="qty = Math.min(maxQty, qty + 1)">+</button>
             </div>
           </div>
         </div>
 
-        <p class="pd-total"><span>Total</span><strong class="tabular-nums">{{ peso(total) }}</strong></p>
+        <p v-if="qtyLocked" class="text-sm text-ink-muted">Choose {{ layered ? "an option in each group" : "a version" }} above to set the quantity.</p>
+        <p class="pd-total"><span>Total</span><strong class="tabular-nums">{{ qtyLocked ? "—" : peso(total) }}</strong></p>
 
         <div class="pd-actions">
           <BaseButton variant="secondary" :disabled="!canBuy" @click="onAdd"><IconCart />Add to cart</BaseButton>
@@ -211,7 +217,7 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
     <section v-if="related.length" class="mt-8" aria-labelledby="related-title">
       <h2 id="related-title" class="mb-4 text-lg font-bold">Related products</h2>
       <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <li v-for="(r, i) in related" :key="r.id"><ProductCard :title="r.title" :artist="r.artist" :to="productPath(r)" :image="productImageUrl(r)" :image-alt="r.image_alt || ''" :tint="i" :price-label="peso(unitPrice(r))" /></li>
+        <li v-for="(r, i) in related" :key="r.id"><ProductCard :title="r.title" :artist="r.artist" :to="productPath(r)" :image="productImageUrl(r)" :image-alt="r.image_alt || ''" :tint="i" :price-label="priceText(priceFor(r.price, relatedVersions[r.id] || []), peso)" /></li>
       </ul>
     </section>
   </section>

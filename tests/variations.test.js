@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { validateVariations, validateProduct } from "../lib/products";
+import { validateVariations, validateProduct, productRow } from "../lib/products";
+import { productToForm } from "../lib/productForm";
 import { lineKey } from "../lib/cartLine";
 import { orderArgs } from "../lib/orders";
 import { buildCombos, groupVariations, comboKeyOf, finalVariations, normalizeLayers, parseValues, validateLayers, validateStock, inStock, stockNote, allSoldOut, variationLabel } from "../lib/variations";
@@ -26,7 +27,7 @@ describe("validateVariations", () => {
   it("is part of validating a product", () => {
     const f = { artist: "A", title: "T", price: "10", discount_percent: "0", variations: [{ name: "", price: "" }] };
     expect(validateProduct(f).variations).toMatch(/needs a name/);
-    expect(validateProduct({ ...f, variations: [{ name: "A", price: "" }] }).variations).toBeUndefined();
+    expect(validateProduct({ ...f, variations: [{ name: "A", price: "10" }] }).variations).toBeUndefined();
     expect(validateProduct({ ...f, variations: undefined }).variations).toBeUndefined();            // a product form from before has none
   });
 });
@@ -102,7 +103,9 @@ describe("layers of variations (like buying a phone)", () => {
     expect(productRow({ artist: "A", title: "T", price: "1", discount_percent: "0", categories: [], image_alt: "" }).variation_layers).toEqual([]);
     const f = { artist: "A", title: "T", price: "10", discount_percent: "0" };
     expect(validateProduct({ ...f, layers: [{ name: "Color", values: "" }] }).variations).toMatch(/Add at least one value/);
-    expect(validateProduct({ ...f, layers: phone, combos: {} }).variations).toBeUndefined();
+    const priced = Object.fromEntries(buildCombos(normalizeLayers(phone)).map((c) => [c.key, { price: "10" }]));
+    expect(validateProduct({ ...f, layers: phone, combos: priced }).variations).toBeUndefined();
+    expect(validateProduct({ ...f, layers: phone, combos: {} }).variations).toMatch(/Enter a price for/);        // every combination needs its own price
     expect(validateProduct({ ...f, layers: phone, combos: { [buildCombos(normalizeLayers(phone))[0].key]: { price: "-5" } } }).variations).toMatch(/must be above 0/);
   });
   it("reads a chosen combination to a shopper", () => {
@@ -133,5 +136,26 @@ describe("stock", () => {
     expect(allSoldOut([{ stock: 0 }, { stock: 0 }])).toBe(true);
     expect(allSoldOut([{ stock: 0 }, { stock: null }])).toBe(false);
     expect(allSoldOut([])).toBe(false);
+  });
+});
+
+describe("a product with variations has no price of its own", () => {
+  const base = { artist: "A", title: "T", discount_percent: "0", price: "" };
+  it("needs no product price when it has variations, but a price on every variation", () => {
+    expect(validateProduct({ ...base, variations: [{ name: "A", price: "10" }, { name: "B", price: "20" }] })).toEqual({});
+    expect(validateProduct({ ...base, variations: [{ name: "A", price: "10" }, { name: "B", price: "" }] }).variations).toMatch(/Enter a price for "B"/);
+  });
+  it("still needs the product price when there are no variations", () => {
+    expect(validateProduct({ ...base, variations: [] }).price).toBeTruthy();
+    expect(validateProduct({ ...base, price: "10", variations: [] }).price).toBeUndefined();
+  });
+  it("saves the lowest variation price as the product's own price", () => {
+    const row = productRow({ ...base, categories: [], image_alt: "", layers: [], variations: [{ name: "A", price: "50" }, { name: "B", price: "35.5" }, { name: "C", price: "90" }] });
+    expect(row.price).toBe(35.5);
+    expect(productRow({ ...base, price: "120", categories: [], image_alt: "", layers: [], variations: [] }).price).toBe(120);
+  });
+  it("loads an old variation that had no price with the product's price, so nothing has to be retyped", () => {
+    const f = productToForm({ id: "1", artist: "A", title: "T", price: 75, categories: [] }, [{ id: "v1", name: "One", price: null, stock: null }, { id: "v2", name: "Two", price: 90, stock: 1 }]);
+    expect(f.variations.map((v) => v.price)).toEqual(["75", "90"]);
   });
 });

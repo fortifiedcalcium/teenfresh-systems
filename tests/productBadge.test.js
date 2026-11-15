@@ -21,7 +21,7 @@ describe("product badge", () => {
   });
 });
 
-import { isSoldOut, priceFor } from "../lib/productBadge.ts";
+import { isSoldOut, priceFor, priceText } from "../lib/productBadge.ts";
 describe("stock on the product itself", () => {
   it("a product with no versions is sold out at 0, low at 1 to 5, and never when not counted", () => {
     expect(badgeFor({ pre_order: false, is_new: false, stock: 0 }, [])).toEqual({ label: "Sold out", tone: "bad" });
@@ -37,23 +37,33 @@ describe("stock on the product itself", () => {
 });
 describe("the price shown", () => {
   const v = (price, stock = null) => ({ price, stock, active: true });
-  it("is the lowest among the versions still in stock, with From", () => {
-    expect(priceFor(100, [v(35, 0), v(50, 4), v(60, 2)])).toEqual({ amount: 50, from: true });
-    expect(priceFor(100, [v(35, 2), v(50, 4)])).toEqual({ amount: 35, from: true });
+  const r = (x) => [x.min, x.max, x.range];
+  it("is the range from the lowest to the highest price among the versions still in stock", () => {
+    expect(r(priceFor(100, [v(35, 0), v(50, 4), v(60, 2)]))).toEqual([50, 60, true]);
+    expect(r(priceFor(100, [v(35, 2), v(50, 4), v(80, 9)]))).toEqual([35, 80, true]);
   });
-  it("keeps From when the cheapest sells out and the rest cost the same", () => {
-    expect(priceFor(100, [v(35, 0), v(50, 4), v(50, 1)])).toEqual({ amount: 50, from: true });
+  it("drops a sold-out version from either end of the range", () => {
+    expect(r(priceFor(100, [v(35, 2), v(50, 4), v(80, 0)]))).toEqual([35, 50, true]);
+    expect(r(priceFor(100, [v(35, 0), v(50, 4), v(80, 0)]))).toEqual([50, 50, false]);
   });
-  it("shows the lowest price of all when everything is sold out", () => {
-    expect(priceFor(100, [v(35, 0), v(50, 0)])).toEqual({ amount: 35, from: true });
+  it("is one price when the versions in stock cost the same", () => {
+    expect(r(priceFor(100, [v(35, 0), v(50, 4), v(50, 1)]))).toEqual([50, 50, false]);
+  });
+  it("shows the range of all of them when everything is sold out", () => {
+    expect(r(priceFor(100, [v(35, 0), v(50, 0), v(90, 0)]))).toEqual([35, 90, true]);
   });
   it("uses the product's price for a version with none, and for a product with no versions", () => {
-    expect(priceFor(80, [v(null, 1), v(120, 1)])).toEqual({ amount: 80, from: true });
-    expect(priceFor(80, [])).toEqual({ amount: 80, from: false });
-    expect(priceFor(80, [v(null, 1), v(null, 1)])).toEqual({ amount: 80, from: false });
+    expect(r(priceFor(80, [v(null, 1), v(120, 1)]))).toEqual([80, 120, true]);
+    expect(r(priceFor(80, []))).toEqual([80, 80, false]);
+    expect(r(priceFor(80, [v(null, 1), v(null, 1)]))).toEqual([80, 80, false]);
   });
   it("ignores versions that are switched off", () => {
-    expect(priceFor(100, [{ price: 10, stock: 1, active: false }, v(50, 1)])).toEqual({ amount: 50, from: false });
+    expect(r(priceFor(100, [{ price: 10, stock: 1, active: false }, v(50, 1)]))).toEqual([50, 50, false]);
+  });
+  it("reads as one price or as a range", () => {
+    const f = (n) => `P${n}`;
+    expect(priceText({ min: 50, max: 50 }, f)).toBe("P50");
+    expect(priceText({ min: 50, max: 90 }, f)).toBe("P50 – P90");
   });
 });
 describe("Pre-order badge follows the period", () => {

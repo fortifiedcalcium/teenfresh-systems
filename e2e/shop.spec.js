@@ -1,12 +1,12 @@
 import { test, expect } from "./fixtures.js";
 
 // The shop and the event page: readable addresses, the small status badge on each card, From prices, SEO tags.
-test("shop cards: badges, From price, and links by slug", async ({ page, as }) => {
+test("shop cards: badges, price range, and links by slug", async ({ page, as }) => {
   await as(null);
   await page.goto("/shop");
   const card = (name) => page.locator("article.pcard", { hasText: name });
   await expect(card("ÖRBITAL")).toContainText("New");
-  await expect(card("ÖRBITAL")).toContainText("From");                // Version B costs more than the base price
+  await expect(card("ÖRBITAL")).toContainText(/₱\s?750(\.00)?\s*–\s*₱\s?900/);   // from the lowest to the highest version
   await expect(card("Light stick")).toContainText("Low stock");       // 3 left
   await expect(card("Photocard set")).toContainText("Sold out");
   await expect(card("Season's greetings")).toContainText("Pre-order");
@@ -71,12 +71,13 @@ test("category chips: every category has one (even with a single product or none
 });
 
 // Stock, the price shown and the pre-order period
-test("price: the lowest among the versions still in stock, with From (the cheaper Version C is sold out)", async ({ page, as }) => {
+test("price: a range from the lowest to the highest version still in stock (the cheaper Version C is sold out)", async ({ page, as }) => {
   await as(null);
   await page.goto("/shop");
-  await expect(page.locator("article.pcard", { hasText: "ÖRBITAL" })).toContainText(/From\s*₱\s?750/);
+  await expect(page.locator("article.pcard", { hasText: "ÖRBITAL" })).toContainText(/₱\s?750(\.00)?\s*–\s*₱\s?900/);
   await page.goto("/shop/orbital");
-  await expect(page.locator(".pd-price")).toContainText(/From\s*₱\s?750/);
+  await expect(page.locator(".pd-price")).toContainText(/₱\s?750(\.00)?\s*–\s*₱\s?900/);
+  await expect(page.locator(".pd-price")).not.toContainText(/₱\s?600/);       // the sold-out version is not in the range
   const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').first().innerHTML());
   expect(ld.offers.lowPrice).toBe("750");
   expect(ld.offers.highPrice).toBe("900");
@@ -111,4 +112,25 @@ test("an open pre-order can still be added to the cart", async ({ page, as }) =>
   await as(null);
   await page.goto("/shop/season-greetings");
   await expect(page.getByRole("button", { name: "Add to cart" })).toBeEnabled();
+});
+
+test("quantity is locked until a version is picked, and free for a product with no versions", async ({ page, as }) => {
+  await as(null);
+  await page.goto("/shop/orbital");
+  await page.waitForLoadState("networkidle");
+  const plus = page.getByRole("button", { name: "Increase quantity" }), minus = page.getByRole("button", { name: "Decrease quantity" });
+  await expect(plus).toBeDisabled();
+  await expect(minus).toBeDisabled();
+  await expect(page.getByText("Choose a version above to set the quantity.")).toBeVisible();
+  await page.getByRole("radio", { name: /Version A/ }).check();
+  await expect(plus).toBeEnabled();
+  await plus.click();
+  await expect(page.getByRole("status", { name: "Quantity" }).or(page.locator("output"))).toHaveText("2");
+  await page.getByRole("radio", { name: /Version B/ }).check();                      // a new pick starts again at 1
+  await expect(page.locator("output")).toHaveText("1");
+  await page.goto("/shop/photocard-set");                                             // a product with no versions: nothing is locked
+  await page.goto("/shop/season-greetings");
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByRole("button", { name: "Increase quantity" })).toBeEnabled();
+  await expect(page.getByText("to set the quantity")).toHaveCount(0);
 });
