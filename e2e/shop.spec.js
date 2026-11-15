@@ -48,6 +48,67 @@ test("admin: the shop products page loads the products and their variations", as
   await expect(page.getByRole("heading", { level: 1, name: "Shop products" })).toBeVisible();
   const row = page.locator("li.card", { hasText: "ÖRBITAL" });
   await expect(row).toBeVisible();
-  await expect(row).toContainText("2 variations");                    // loaded from product_variations (this page stayed on "Loading products…" when that call failed)
+  await expect(row).toContainText("3 variations");                    // loaded from product_variations (this page stayed on "Loading products…" when that call failed)
   await expect(page.locator("li.card", { hasText: "Photocard set" })).toContainText("Sold out");
+});
+
+test("category chips: every category has one (even with a single product or none), filtering works and the count is announced", async ({ page, as }) => {
+  await as(null);
+  await page.goto("/shop");
+  await page.waitForLoadState("networkidle");
+  await page.locator("html[data-hydrated]").waitFor({ state: "attached" });      // the server-rendered page is interactive
+  const group = page.getByRole("group", { name: "Filter products" });
+  for (const name of ["All", "ALBUM", "MD", "SINGLE", "LIMITED", "Pre-Order"]) await expect(group.getByRole("button", { name, exact: true })).toBeVisible();
+  await group.getByRole("button", { name: "SINGLE", exact: true }).click();
+  await expect(group.getByRole("button", { name: "SINGLE", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("article.pcard")).toHaveCount(1);
+  await expect(page.getByRole("status").filter({ hasText: "SINGLE: 1 product" })).toHaveCount(1);
+  await group.getByRole("button", { name: "ALBUM", exact: true }).click();
+  await expect(page.locator("article.pcard")).toHaveCount(2);
+  await expect(page.getByRole("status").filter({ hasText: "ALBUM: 2 products" })).toHaveCount(1);
+  await group.getByRole("button", { name: "LIMITED", exact: true }).click();
+  await expect(page.getByText("No products in LIMITED yet.")).toBeVisible();
+});
+
+// Stock, the price shown and the pre-order period
+test("price: the lowest among the versions still in stock, with From (the cheaper Version C is sold out)", async ({ page, as }) => {
+  await as(null);
+  await page.goto("/shop");
+  await expect(page.locator("article.pcard", { hasText: "ÖRBITAL" })).toContainText(/From\s*₱\s?750/);
+  await page.goto("/shop/orbital");
+  await expect(page.locator(".pd-price")).toContainText(/From\s*₱\s?750/);
+  const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').first().innerHTML());
+  expect(ld.offers.lowPrice).toBe("750");
+  expect(ld.offers.highPrice).toBe("900");
+  expect(ld.offers.availability).toBe("https://schema.org/InStock");
+});
+
+test("a product with no versions and a stock of 0 is Sold out: badge, and Add to cart is switched off", async ({ page, as }) => {
+  await as(null);
+  await page.goto("/shop");
+  await expect(page.locator("article.pcard", { hasText: "Plain sold out" })).toContainText("Sold out");
+  await page.goto("/shop/plain-sold-out");
+  await expect(page.getByRole("button", { name: "Add to cart" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Buy now" })).toBeDisabled();
+  const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').first().innerHTML());
+  expect(ld.offers.availability).toBe("https://schema.org/SoldOut");
+});
+
+test("an ended pre-order: a label on the thumbnail instead of the Pre-order badge, and Add to cart is switched off", async ({ page, as }) => {
+  await as(null);
+  await page.goto("/shop");
+  const card = page.locator("article.pcard", { hasText: "Ended pre-order" });
+  await expect(card.locator(".pcard__notice")).toHaveText("Pre-order period ended");
+  await expect(card.locator(".pcard__photo").getByText("Pre-order", { exact: true })).toHaveCount(0);
+  await expect(page.locator("article.pcard", { hasText: "Season's greetings" }).locator(".pcard__notice")).toHaveCount(0);   // an open pre-order has none
+  await page.goto("/shop/ended-preorder");
+  await expect(page.getByRole("button", { name: "Add to cart" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Buy now" })).toBeDisabled();
+  await expect(page.getByRole("status").filter({ hasText: "Pre-order period ended" })).toBeVisible();
+});
+
+test("an open pre-order can still be added to the cart", async ({ page, as }) => {
+  await as(null);
+  await page.goto("/shop/season-greetings");
+  await expect(page.getByRole("button", { name: "Add to cart" })).toBeEnabled();
 });

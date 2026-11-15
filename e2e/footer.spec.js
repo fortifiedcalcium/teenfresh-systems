@@ -27,6 +27,17 @@ test.describe("footer", () => {
     await expect(page.getByRole("link", { name: "Report an accessibility issue" })).toBeVisible();
   });
 
+  test("no logo in the footer; the accessibility link sits to the right of the social row on desktop", async ({ page, as }) => {
+    await as(null);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    const footer = page.getByRole("contentinfo");
+    await expect(footer.locator("img")).toHaveCount(0);
+    const social = await footer.getByRole("navigation", { name: "Social media" }).boundingBox();
+    const report = await footer.getByRole("link", { name: "Report an accessibility issue" }).boundingBox();
+    expect(report.x).toBeGreaterThan(social.x + social.width);
+  });
+
   test("icons are 40 px wide on desktop and 28 px under 480 px, and the row has no horizontal scroll", async ({ page, as }) => {
     await as(null);
     await page.setViewportSize({ width: 1280, height: 800 });

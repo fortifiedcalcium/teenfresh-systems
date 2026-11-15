@@ -5,6 +5,8 @@ import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "~/lib/eventImag
 import { peso } from "~/lib/payment";
 import { COMBOS_MAX, LAYERS_MAX, LAYER_VALUES_MAX, buildCombos, finalVariations, groupVariations, normalizeLayers, validateLayers } from "~/lib/variations";
 import { blankProduct, productToForm } from "~/lib/productForm";
+import { preorderState } from "~/lib/preorder";
+import { isSoldOut } from "~/lib/productBadge";
 
 // Admin: add, edit, hide and delete the products on the public Shop page.
 definePageMeta({ middleware: ["shop"] });
@@ -160,7 +162,7 @@ async function remove() {
 const shownImage = computed(() => preview.value || (form.value?.image_path ? productImageUrl(form.value) : null));
 const summaryErrors = computed(() => Object.fromEntries(Object.entries(errors.value).map(([k, message]) => [`p-${k}`, message])));
 const versionsOf = (p) => versions.value[p.id] || [];
-const allSold = (p) => { const on = versionsOf(p).filter((v) => v.active !== false); return on.length > 0 && on.every((v) => v.stock === 0); };
+const allSold = (p) => isSoldOut(p, versionsOf(p));
 
 // layers and combinations
 const layersN = computed(() => (form.value ? normalizeLayers(form.value.layers) : []));
@@ -192,7 +194,7 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
           <p class="text-sm text-ink-muted">{{ p.artist }} · {{ peso(p.price) }}{{ p.discount_percent > 0 ? ` · ${p.discount_percent}% off` : "" }}</p>
           <p class="mt-1 flex flex-wrap gap-1">
             <span :class="['badge', p.active ? 'badge-ok' : 'badge-neutral']">{{ p.active ? "Visible" : "Hidden" }}</span>
-            <span v-if="p.pre_order" class="badge badge-info">Pre-order</span>
+            <span v-if="p.pre_order" class="badge badge-info">{{ preorderState(p) === "ended" ? "Pre-order ended" : preorderState(p) === "upcoming" ? "Pre-order not open yet" : "Pre-order" }}</span>
             <span v-if="p.is_new" class="badge badge-info">New</span>
             <span v-if="allSold(p)" class="badge badge-neutral">Sold out</span>
             <span v-if="versionsOf(p).length > 0" class="badge badge-neutral">{{ versionsOf(p).length }} {{ versionsOf(p).length === 1 ? "variation" : "variations" }}</span>
@@ -304,11 +306,24 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
           </div>
         </fieldset>
 
+        <Field v-if="form.layers.length === 0 && form.variations.length === 0" id="p-stock" v-slot="a" label="Stock" :error="errors.stock" hint="How many you have. Leave it empty if you do not count it; 0 means sold out. With variations, count the stock on each variation instead.">
+          <input v-bind="a" v-model="form.stock" class="input w-40" inputmode="numeric">
+        </Field>
+
         <div class="flex flex-wrap gap-x-6 gap-y-1">
           <label class="flex min-h-target items-center gap-3 text-sm"><input v-model="form.pre_order" type="checkbox" class="check">Pre-order</label>
           <label class="flex min-h-target items-center gap-3 text-sm"><input v-model="form.is_new" type="checkbox" class="check">Show the NEW badge</label>
           <label class="flex min-h-target items-center gap-3 text-sm"><input v-model="form.active" type="checkbox" class="check">Visible in the shop</label>
         </div>
+        <fieldset v-if="form.pre_order" class="space-y-2">
+          <legend class="label">Pre-order period <span class="font-normal text-ink-muted">(optional, Philippine time)</span></legend>
+          <p class="hint">Shoppers can order from the start date to the end date, both included. After the end date the product shows "Pre-order period ended" and cannot be added to the cart. Leave both empty for no limit.</p>
+          <p v-if="errors.pre_order_dates" id="p-po-err" role="alert" class="field-msg"><span class="error-icon error-icon--sm" aria-hidden="true">!</span>{{ errors.pre_order_dates }}</p>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <Field id="p-po-start" v-slot="a" label="Opens on"><input v-bind="a" v-model="form.pre_order_starts_on" type="date" class="input" :aria-describedby="errors.pre_order_dates ? 'p-po-err' : undefined"></Field>
+            <Field id="p-po-end" v-slot="a" label="Last day to order"><input v-bind="a" v-model="form.pre_order_ends_on" type="date" class="input" :aria-describedby="errors.pre_order_dates ? 'p-po-err' : undefined"></Field>
+          </div>
+        </fieldset>
 
         <fieldset class="space-y-3">
           <legend class="label">Image</legend>

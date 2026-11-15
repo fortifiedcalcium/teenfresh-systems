@@ -7,6 +7,7 @@
    ===================================================================================== */
 :root {
   /* Teenfresh brand: primary */
+  --hero-overlay-alpha: 0.85;   /* how much of the cream overlay covers a banner picture (scripts/contrast.js checks the worst case) */
   --brand-cream: #f9e7b9;
   --brand-blue:  #65a6d0;
   --brand-coral: #ec9697;

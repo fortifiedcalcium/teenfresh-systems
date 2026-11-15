@@ -105,6 +105,9 @@ beforeAll(async () => {
   await db.exec(read("031_variation_stock.sql"));
   await db.exec(read("032_slugs.sql"));
   await db.exec(read("033_event_tagline.sql"));
+  await db.exec(read("034_home_settings.sql"));
+  await db.exec(read("035_product_stock.sql"));
+  await db.exec(read("036_preorder_period.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1363,5 +1366,138 @@ describe("event tagline (migration 033)", () => {
     const none = await db.query("insert into events (title, event_date, capacity, ticket_prefix) values ('Tag B', now() + interval '30 days', 10, 'TAGB') returning tagline");
     expect(none.rows[0].tagline).toBeNull();
     await expect(db.query("insert into events (title, event_date, capacity, ticket_prefix, tagline) values ('Tag C', now() + interval '30 days', 10, 'TAGC', $1)", ["x".repeat(121)])).rejects.toThrow();
+  });
+});
+
+describe("home banner settings (migration 034)", () => {
+  it("everyone can read them, but only an admin can change them (a visitor's update changes nothing)", async () => {
+    await asUser(null);
+    expect((await db.query("select banner_path from public.home_settings")).rows).toHaveLength(1);
+    await asUser("alice");
+    await db.query("update public.home_settings set banner_path = 'home/x.jpg', banner_decorative = true where id");
+    await expect(db.query("insert into public.home_settings (id) values (false)")).rejects.toThrow();
+    expect((await row("select banner_path from public.home_settings")).banner_path).toBeNull();
+    await asUser("admin");
+    await db.query("update public.home_settings set banner_path = 'home/x.jpg', banner_alt = 'A crowd at the show' where id");
+    expect((await row("select banner_alt from public.home_settings")).banner_alt).toBe("A crowd at the show");
+  });
+  it("needs alt text for a picture unless it is marked decorative, and keeps one row only", async () => {
+    await asUser("admin");
+    await expect(db.query("update public.home_settings set banner_path = 'home/y.jpg', banner_alt = '  ', banner_decorative = false where id")).rejects.toThrow();
+    await db.query("update public.home_settings set banner_path = 'home/y.jpg', banner_alt = null, banner_decorative = true where id");
+    await expect(db.query("insert into public.home_settings (id) values (false)")).rejects.toThrow();
+  });
+  it("forgets a featured event that is deleted", async () => {
+    await asSuper();
+    const e = (await db.query("insert into events (title, event_date, capacity, ticket_prefix) values ('Feat', now() + interval '30 days', 10, 'FEAT') returning id")).rows[0];
+    await db.query("update public.home_settings set featured_event_id = $1 where id", [e.id]);
+    await db.query("delete from events where id = $1", [e.id]);
+    expect((await row("select featured_event_id from public.home_settings")).featured_event_id).toBeNull();
+  });
+});
+
+describe("035 stock of the item itself", () => {
+  const place = (lines, ref) => db.query("select public.place_order($1::jsonb,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r",
+    [JSON.stringify(lines), "S Person", "alice@example.com", "09171234567", "1 Stock St.", "Makati City, Metro Manila (NCR)", "1210", null, "S P.", ref, `${ids.alice}/${randomUUID()}.jpg`]).then((r) => r.rows[0].r);
+  const productStock = async (id) => { await asUser("admin"); return (await db.query("select stock from public.products where id = $1", [id])).rows[0].stock; };
+  const mkProduct = async (stock) => { await asUser("admin"); return (await db.query("insert into public.products (artist, title, price, stock) values ('Maker', 'Plain', 100, $1) returning id", [stock])).rows[0].id; };
+
+  it("a product with no versions takes its own stock down, in one step, and refuses to oversell", async () => {
+    const prod = await mkProduct(3);
+    await asUser("alice");
+    await place([{ product_id: prod, quantity: 2 }], "IS-1");
+    expect(await productStock(prod)).toBe(1);
+    await asUser("alice");
+    await fails(place([{ product_id: prod, quantity: 2 }], "IS-2"), "OUT_OF_STOCK");
+    expect(await productStock(prod)).toBe(1);                                  // a refused order changes nothing
+    await asUser("alice");
+    await place([{ product_id: prod, quantity: 1 }], "IS-3");
+    await asUser("alice");
+    await fails(place([{ product_id: prod, quantity: 1 }], "IS-4"), "OUT_OF_STOCK");      // at 0 it is sold out
+  });
+  it("an empty stock is not counted, so it is always available", async () => {
+    const prod = await mkProduct(null);
+    await asUser("alice");
+    await place([{ product_id: prod, quantity: 10 }], "IS-5");
+    expect(await productStock(prod)).toBeNull();
+  });
+  it("a refused line puts nothing of the other lines back out of stock (all or nothing)", async () => {
+    const a = await mkProduct(5), b = await mkProduct(0);
+    await asUser("alice");
+    await fails(place([{ product_id: a, quantity: 2 }, { product_id: b, quantity: 1 }], "IS-6"), "OUT_OF_STOCK");
+    expect(await productStock(a)).toBe(5);
+  });
+  it("cancelling or deleting a live order puts the product's stock back, once", async () => {
+    const prod = await mkProduct(4);
+    await asUser("alice");
+    const o = await place([{ product_id: prod, quantity: 3 }], "IS-7");
+    expect(await productStock(prod)).toBe(1);
+    await asUser("admin");
+    await db.query("update public.orders set status = 'cancelled' where id = $1", [o.id]);
+    expect(await productStock(prod)).toBe(4);
+    await db.query("delete from public.orders where id = $1", [o.id]);          // already cancelled: not returned twice
+    expect(await productStock(prod)).toBe(4);
+  });
+  it("the price comes from the database, never from the browser", async () => {
+    const prod = await mkProduct(5);
+    await asUser("alice");
+    const r = await db.query("select public.place_order($1::jsonb,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r",
+      [JSON.stringify([{ product_id: prod, quantity: 2, price: 1, unit_price_php: 1 }]), "S Person", "alice@example.com", "09171234567", "1 Stock St.", "Makati City, Metro Manila (NCR)", "1210", null, "S P.", "IS-8", `${ids.alice}/${randomUUID()}.jpg`]);
+    expect(Number(r.rows[0].r.total_php)).toBe(200);
+  });
+  it("only an admin can change a product's stock, and it cannot be negative", async () => {
+    const prod = await mkProduct(5);
+    await asUser("alice");
+    await db.query("update public.products set stock = 999 where id = $1", [prod]);        // a visitor's update changes nothing
+    expect(await productStock(prod)).toBe(5);
+    await asUser("admin");
+    await fails(db.query("update public.products set stock = -1 where id = $1", [prod]), "stock");
+  });
+});
+
+describe("036 pre-order period", () => {
+  const place = (lines, ref) => db.query("select public.place_order($1::jsonb,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r",
+    [JSON.stringify(lines), "S Person", "alice@example.com", "09171234567", "1 Pre St.", "Makati City, Metro Manila (NCR)", "1210", null, "S P.", ref, `${ids.alice}/${randomUUID()}.jpg`]).then((r) => r.rows[0].r);
+  const mk = async (preOrder, startsDays, endsDays) => {
+    await asUser("admin");
+    return (await db.query("insert into public.products (artist, title, price, pre_order, pre_order_starts_on, pre_order_ends_on) values ('Maker', 'Pre', 100, $1, case when $2::int is null then null else public.manila_today() + $2::int end, case when $3::int is null then null else public.manila_today() + $3::int end) returning id",
+      [preOrder, startsDays, endsDays])).rows[0].id;
+  };
+  it("sells inside the period, up to and including the last day, and refuses a day after it", async () => {
+    const open = await mk(true, -2, 0), ended = await mk(true, -5, -1);
+    await asUser("alice");
+    await place([{ product_id: open, quantity: 1 }], "PO-1");                                  // today is the last day: still open
+    await asUser("alice");
+    await fails(place([{ product_id: ended, quantity: 1 }], "PO-2"), "PREORDER_ENDED");
+  });
+  it("refuses before the start date", async () => {
+    const soon = await mk(true, 3, 10);
+    await asUser("alice");
+    await fails(place([{ product_id: soon, quantity: 1 }], "PO-3"), "PREORDER_NOT_STARTED");
+  });
+  it("empty dates mean no limit, and dates are ignored once it is not a pre-order any more", async () => {
+    const nolimit = await mk(true, null, null), normal = await mk(false, -5, -1);
+    await asUser("alice");
+    await place([{ product_id: nolimit, quantity: 1 }], "PO-4");
+    await asUser("alice");
+    await place([{ product_id: normal, quantity: 1 }], "PO-5");
+  });
+  it("one ended pre-order refuses the whole order, and the end cannot come before the start", async () => {
+    const open = await mk(true, null, 5), ended = await mk(true, -5, -1);
+    await asUser("alice");
+    await fails(place([{ product_id: open, quantity: 1 }, { product_id: ended, quantity: 1 }], "PO-6"), "PREORDER_ENDED");
+    await asUser("admin");
+    await fails(db.query("insert into public.products (artist, title, price, pre_order, pre_order_starts_on, pre_order_ends_on) values ('M', 'Bad', 1, true, '2030-02-01', '2030-01-01')"), "pre_order_period");
+  });
+  it("evaluates the day in Philippine time", async () => {
+    await asSuper();
+    const r = (await db.query("select public.manila_today() = (now() at time zone 'Asia/Manila')::date as same")).rows[0];
+    expect(r.same).toBe(true);
+  });
+  it("only an admin can set the dates", async () => {
+    const prod = await mk(true, null, 5);
+    await asUser("alice");
+    await db.query("update public.products set pre_order_ends_on = public.manila_today() - 1 where id = $1", [prod]);
+    await place([{ product_id: prod, quantity: 1 }], "PO-7");                                 // still sells: the visitor's update changed nothing
   });
 });

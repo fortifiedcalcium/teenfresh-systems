@@ -2,11 +2,12 @@
 import { supabase } from "~/lib/supabaseClient";
 import { INFO_SECTIONS, productImageUrl } from "~/lib/products";
 import { peso } from "~/lib/payment";
-import { allSoldOut, inStock, normalizeLayers, stockNote, variationLabel } from "~/lib/variations";
+import { inStock, normalizeLayers, stockNote, variationLabel } from "~/lib/variations";
 import { MAX_QTY } from "~/lib/orders";
 import { findByRef, productPath } from "~/lib/slug";
 import { lineKey } from "~/lib/cartLine";
-import { badgeFor } from "~/lib/productBadge";
+import { badgeFor, isSoldOut, priceFor } from "~/lib/productBadge";
+import { preorderBuyable, preorderNotice, preorderState } from "~/lib/preorder";
 
 definePageMeta({ middleware: ["shop"] });
 const unitPrice = (p) => Number(p.price);
@@ -58,7 +59,7 @@ const src = computed(() => (p.value ? productImageUrl(p.value) : null));
 // layers (like Color, then Storage): the shopper picks a value in each, and the matching combination is what they buy
 const layers = computed(() => normalizeLayers(p.value?.variation_layers || []));
 const layered = computed(() => layers.value.length > 0 && variations.value.some((v) => v.options));
-const soldOutAll = computed(() => allSoldOut(variations.value));                    // nothing is left in any version
+const soldOutAll = computed(() => isSoldOut(p.value || {}, variations.value));    // every version is at 0, or the product (with no versions) is at 0
 const sellable = computed(() => variations.value.filter(inStock));                  // the versions with stock (or not counted): the only ones that can be bought
 const fits = (v) => layers.value.every((l) => picks.value[l.name] === undefined || v.options?.[l.name] === picks.value[l.name]);
 const matching = computed(() => (layered.value ? sellable.value.filter(fits) : sellable.value));       // the combinations still possible with what is picked so far
@@ -78,9 +79,13 @@ function pick(layer, value) {
 }
 const missing = computed(() => layers.value.filter((l) => picks.value[l.name] === undefined).map((l) => l.name));
 const unit = computed(() => (chosen.value?.price != null ? Number(chosen.value.price) : unitPrice(p.value)));
-const prices = computed(() => (layered.value ? matching.value : variations.value).map((v) => (v.price != null ? Number(v.price) : unitPrice(p.value))));
-const varies = computed(() => prices.value.length > 0 && Math.min(...prices.value) !== Math.max(...prices.value));
-const maxQty = computed(() => (chosen.value && chosen.value.stock != null ? Math.max(1, Math.min(MAX_QTY, chosen.value.stock)) : MAX_QTY));       // no more than what is left
+// before a version is picked: the lowest price among the versions still in stock (all of them when everything is sold out)
+const shownPrice = computed(() => priceFor(p.value.price, layered.value && matching.value.length ? matching.value : variations.value));
+const left = computed(() => (chosen.value ? chosen.value.stock : variations.value.length === 0 ? p.value.stock : null));        // what is left of what is being bought, null = not counted
+const maxQty = computed(() => (left.value != null ? Math.max(1, Math.min(MAX_QTY, left.value)) : MAX_QTY));                    // no more than what is left
+const preorderDay = (iso: string) => new Date(`${iso}T00:00:00+08:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "Asia/Manila" });
+const poState = computed(() => preorderState(p.value));
+const canBuy = computed(() => !soldOutAll.value && preorderBuyable(p.value));
 const total = computed(() => unit.value * Math.min(qty.value, maxQty.value));
 const infoSections = computed(() => INFO_SECTIONS.filter(([k]) => p.value[k] || (k === "info_description" && (p.value.info_images || []).length > 0)));
 
@@ -94,10 +99,12 @@ useSeo({
     const x = product.value;
     if (!x) return null;
     const list = variations.value;
-    const prices = list.length ? list.map((v) => (v.price != null ? Number(v.price) : Number(x.price))) : [Number(x.price)];
+    const open = list.filter(inStock);                                      // the prices on offer are those still in stock (all of them when none is)
+    const prices = (open.length ? open : list).map((v) => (v.price != null ? Number(v.price) : Number(x.price)));
+    if (!prices.length) prices.push(Number(x.price));
     const lo = Math.min(...prices), hi = Math.max(...prices);
-    const available = !allSoldOut(list);
-    const common = { priceCurrency: "PHP", availability: available ? (x.pre_order ? "https://schema.org/PreOrder" : "https://schema.org/InStock") : "https://schema.org/SoldOut", url: `${site}${productPath(x)}` };
+    const available = !isSoldOut(x, list) && preorderBuyable(x);
+    const common = { priceCurrency: "PHP", availability: !available ? "https://schema.org/SoldOut" : preorderState(x) === "open" ? "https://schema.org/PreOrder" : "https://schema.org/InStock", url: `${site}${productPath(x)}` };
     return {
       "@context": "https://schema.org", "@type": "Product", name: x.title, brand: { "@type": "Brand", name: x.artist }, image: src.value ? [src.value] : undefined,
       description: plain(x.info_description) || undefined,
@@ -109,8 +116,8 @@ useSeo({
 // a product with versions needs one picked before it can go in the cart
 function needPick() { if (variations.value.length && !selectedId.value) { pickError.value = true; group.value?.querySelector("input:not(:disabled)")?.focus(); return true; } return false; }
 function addToCart() { add(p.value.id, selectedId.value || null); const n = Math.min(qty.value, maxQty.value); if (n > 1) setQty(lineKey({ id: p.value.id, vid: selectedId.value || null }), n); }   // add() puts one in; setQty tops it up to the chosen amount
-function onAdd() { if (needPick()) return; addToCart(); toast(`${p.value.title}${chosen.value ? ` (${variationLabel(chosen.value)})` : ""} added to your cart`, "success"); }
-function onBuy() { if (needPick()) return; addToCart(); navigateTo("/checkout"); }
+function onAdd() { if (!canBuy.value || needPick()) return; addToCart(); toast(`${p.value.title}${chosen.value ? ` (${variationLabel(chosen.value)})` : ""} added to your cart`, "success"); }
+function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigateTo("/checkout"); }
 </script>
 
 <template>
@@ -139,11 +146,12 @@ function onBuy() { if (needPick()) return; addToCart(); navigateTo("/checkout");
 
         <p class="pd-price">
           <span v-if="p.discount_percent > 0" class="text-danger"><span class="sr-only">Discount </span>{{ p.discount_percent }}%</span>
-          <span><template v-if="!chosen && varies"><span class="text-base font-semibold">From </span>{{ peso(Math.min(...prices)) }}</template><template v-else>{{ peso(unit) }}</template></span>
+          <span><template v-if="!chosen && variations.length"><span v-if="shownPrice.from" class="text-base font-semibold">From </span>{{ peso(shownPrice.amount) }}</template><template v-else>{{ peso(unit) }}</template></span>
         </p>
 
         <div v-if="p.pre_order" class="pd-status">
-          <p class="pd-status-main">Pre-order<span aria-hidden="true"> ∙ </span><span class="font-normal">This is a pre-order product.</span></p>
+          <p v-if="poState === 'open'" class="pd-status-main">Pre-order<span aria-hidden="true"> ∙ </span><span class="font-normal">This is a pre-order product{{ p.pre_order_ends_on ? `, open until ${preorderDay(p.pre_order_ends_on)}` : "" }}.</span></p>
+          <p v-else role="status" class="pd-status-main">{{ preorderNotice(p) }}<span aria-hidden="true"> ∙ </span><span class="font-normal">{{ poState === "ended" ? "It can no longer be ordered." : "It cannot be ordered yet." }}</span></p>
         </div>
 
         <div v-if="variations.length > 0" ref="group" class="space-y-3" :aria-describedby="pickError ? 'pick-err' : undefined">
@@ -169,8 +177,8 @@ function onBuy() { if (needPick()) return; addToCart(); navigateTo("/checkout");
           </fieldset>
           <p v-if="pickError" id="pick-err" role="alert" class="field-msg"><span class="error-icon error-icon--sm" aria-hidden="true">!</span>{{ layered && missing.length ? `Choose ${missing.join(" and ")} first.` : "Choose a version first." }}</p>
         </div>
-        <p v-if="soldOutAll" role="status" class="rounded-lg border border-danger bg-brand-ivory px-3 py-2 font-bold text-danger">Sold out. Every version is sold out for now.</p>
-        <p v-if="chosen && stockNote(chosen)" role="status" class="text-sm font-bold">{{ stockNote(chosen) }}</p>
+        <p v-if="soldOutAll" role="status" class="rounded-lg border border-danger bg-brand-ivory px-3 py-2 font-bold text-danger">{{ variations.length ? "Sold out. Every version is sold out for now." : "Sold out for now." }}</p>
+        <p v-if="stockNote({ stock: left })" role="status" class="text-sm font-bold">{{ stockNote({ stock: left }) }}</p>
         <div class="pd-option">
           <p id="opt-label" class="pd-label">Select option</p>
           <div class="pd-option-row" role="group" aria-labelledby="opt-label">
@@ -186,8 +194,8 @@ function onBuy() { if (needPick()) return; addToCart(); navigateTo("/checkout");
         <p class="pd-total"><span>Total</span><strong class="tabular-nums">{{ peso(total) }}</strong></p>
 
         <div class="pd-actions">
-          <BaseButton variant="secondary" :disabled="soldOutAll" @click="onAdd"><IconCart />Add to cart</BaseButton>
-          <BaseButton variant="accent" :disabled="soldOutAll" @click="onBuy">Buy now</BaseButton>
+          <BaseButton variant="secondary" :disabled="!canBuy" @click="onAdd"><IconCart />Add to cart</BaseButton>
+          <BaseButton variant="accent" :disabled="!canBuy" @click="onBuy">Buy now</BaseButton>
         </div>
       </div>
     </div>

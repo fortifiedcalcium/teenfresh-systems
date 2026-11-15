@@ -1,14 +1,14 @@
 {
   "name": "event-registration",
   "private": true,
-  "version": "2.3.0",
+  "version": "2.4.0",
   "type": "module",
   "scripts": {
     "dev": "nuxt dev --port 5199",
     "check:contrast": "node scripts/check-contrast.js",
     "build": "node scripts/check-contrast.js && NITRO_PRESET=cloudflare-pages nuxt build",
     "preview": "npx wrangler pages dev dist",
-    "lint": "eslint components composables layouts lib middleware pages plugins app.vue nuxt.config.js",
+    "lint": "eslint components composables layouts lib middleware pages plugins app.vue nuxt.config.ts",
     "test:e2e": "playwright test",
     "lighthouse": "lhci collect && lhci assert",
     "test": "vitest run",

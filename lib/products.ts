@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import { BUCKET, IMAGE_TYPES, validateImageFile } from "./eventImages";
+import { validatePreorderDates } from "./preorder";
 import { COMBOS_MAX, finalVariations, normalizeLayers, validateLayers, validateStock } from "./variations";
 
 /** The shop's filter chips: "All" and "Pre-Order" are built in; the rest are the categories an admin manages (table product_categories). */
@@ -64,6 +65,8 @@ export function validateProduct(f) {
   const layers = normalizeLayers(f.layers);
   const vmsg = layers.length ? validateLayers(layers) || validateVariations(finalVariations(f), COMBOS_MAX) : validateVariations(f.variations || []);       // layers make the combinations; without them it is the simple list
   if (vmsg) e.variations = vmsg;
+  if (finalVariations(f).length === 0) { const s = validateStock(f.stock, "this product"); if (s) e.stock = s; }
+  if (f.pre_order) { const m = validatePreorderDates(String(f.pre_order_starts_on || ""), String(f.pre_order_ends_on || "")); if (m) e.pre_order_dates = m; }
   for (const [k, label] of INFO_SECTIONS) if ((f[k] || "").length > INFO_MAX) e[k] = `${label} can be ${INFO_MAX} characters at most`;
   return e;
 }
@@ -74,7 +77,9 @@ export function productRow(f) {
     ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, (f[k] || "").trim() || null])),
     variation_layers: normalizeLayers(f.layers),
     ...(String(f.slug || "").trim() ? { slug: String(f.slug).trim() } : {}),   // blank keeps the current address (or derives one from the title)
-    pre_order: f.pre_order, is_new: f.is_new, categories: f.categories, image_alt: f.image_alt.trim() || null, active: f.active, updated_at: new Date().toISOString(),
+    // a product with versions counts stock on each version; one without keeps its own count (empty = not counted)
+    stock: finalVariations(f).length > 0 || String(f.stock ?? "").trim() === "" ? null : Number(f.stock),
+    pre_order: f.pre_order, pre_order_starts_on: f.pre_order && f.pre_order_starts_on ? f.pre_order_starts_on : null, pre_order_ends_on: f.pre_order && f.pre_order_ends_on ? f.pre_order_ends_on : null, is_new: f.is_new, categories: f.categories, image_alt: f.image_alt.trim() || null, active: f.active, updated_at: new Date().toISOString(),
   };
 }
 

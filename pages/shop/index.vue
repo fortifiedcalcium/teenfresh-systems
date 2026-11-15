@@ -4,7 +4,8 @@ import { chipsFor, productImageUrl, productMatches } from "~/lib/products";
 import { peso } from "~/lib/payment";
 import { productPath } from "~/lib/slug";
 import { groupVariations } from "~/lib/variations";
-import { badgeFor, fromPrice } from "~/lib/productBadge";
+import { badgeFor, priceFor } from "~/lib/productBadge";
+import { preorderNotice } from "~/lib/preorder";
 import type { ProductRow, VariationRow } from "~/types/shop";
 
 definePageMeta({ middleware: ["shop"] });
@@ -37,8 +38,9 @@ watch(data, (d) => {
 }, { immediate: true });
 onMounted(async () => { if (hydrating && !data.value?.ok) { retried = true; await refresh(); } });
 
-// "All" always shows; a category chip appears only once it has more than one product
-const chips = computed(() => chipsFor(categories.value).filter((c: string) => c === "All" || (products.value || []).filter((p) => productMatches(p, c)).length > 1));
+// Every category the admin made gets a chip (plus All and Pre-Order), even one with a single product or none yet: picking it says how many there are.
+// (A rule added on 2026-11-13 hid a chip unless its category had two or more products; it made the chips vanish from a small shop.)
+const chips = computed(() => chipsFor(categories.value));
 const shown = computed(() => (products.value || []).filter((p) => productMatches(p, chip.value)));
 function pick(c: string) {
   chip.value = c;
@@ -63,8 +65,8 @@ const opts = (p: ProductRow) => versions.value[p.id] || [];
     <ul v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       <li v-for="(p, i) in shown" :key="p.id">
         <ProductCard :title="p.title" :artist="p.artist" :to="productPath(p)" :image="productImageUrl(p)" :image-alt="p.image_alt || ''" :tint="i"
-          :price-label="`${fromPrice(p.price, opts(p)) != null ? 'From ' : ''}${peso(fromPrice(p.price, opts(p)) ?? p.price)}`" :discount="p.discount_percent > 0 ? p.discount_percent : undefined"
-          :badge="badgeFor(p, opts(p))?.label" :badge-tone="badgeFor(p, opts(p))?.tone" />
+          :price-label="`${priceFor(p.price, opts(p)).from ? 'From ' : ''}${peso(priceFor(p.price, opts(p)).amount)}`" :discount="p.discount_percent > 0 ? p.discount_percent : undefined"
+          :badge="badgeFor(p, opts(p))?.label" :badge-tone="badgeFor(p, opts(p))?.tone" :notice="preorderNotice(p)" />
       </li>
     </ul>
   </section>
