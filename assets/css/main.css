@@ -1,0 +1,163 @@
+@import "./tokens.css";
+@import "./fonts.css";
+@import "./admin-nav.css";
+@import "./ticket.css";
+@import "./shop.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-size: 100%; scroll-padding-top: 6rem; /* 2.4.11: sticky headers never hide the focused element */ }
+  body { @apply bg-brand-blush font-sans text-base text-ink antialiased; line-height: 1.5; }
+  h1, h2, h3, h4 { @apply font-black text-ink; }   /* titles use the Black weight (900) */
+  /* 1.4.1: links are always underlined, never distinguished by colour alone */
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item) { @apply text-link underline underline-offset-2; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item):hover { text-decoration-thickness: 2px; }
+  /* 2.4.7: one visible focus indicator for everything interactive: 3px ink, 2px offset */
+  :focus { outline: none; }
+  :focus-visible, [tabindex="-1"]:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  /* Both light and dark surfaces: a white inner ring keeps the ink outline visible on the ink sidebar/buttons */
+  .on-ink :focus-visible { outline-color: var(--brand-ivory); }
+  [tabindex="-1"]:focus { outline: none; }
+  main:focus, h1:focus { outline: none; }
+  summary { cursor: pointer; }
+  code { @apply rounded bg-brand-sky px-1 text-ink; }
+  ::placeholder { color: var(--ink-muted); opacity: 1; }
+  table { border-collapse: collapse; }
+}
+
+@layer components {
+  .sr-only-focusable:not(:focus):not(:focus-within) { @apply sr-only; }
+  .skip-link { @apply absolute left-2 top-2 z-[100] rounded-lg border-2 border-ink bg-brand-cream px-4 py-2 font-semibold text-ink no-underline; transform: translateY(-200%); }
+  .skip-link:focus { transform: none; }
+
+  .btn { @apply inline-flex min-h-target min-w-target items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-bold no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60; }
+  /* brand-blue fill + ink label = 5.2:1; ink border keeps the shape visible (3:1) */
+  /* heading, tab, detail-row and stat icons: decorative, take the link colour (a 3:1 non-text colour) or the text colour */
+  h1 > svg:first-child, h2 > svg:first-child { width: 1.1em; height: 1.1em; @apply text-link; }
+  dt > svg { width: 1rem; height: 1rem; @apply text-link; }
+  [role="tab"] svg { width: 1.125rem; height: 1.125rem; }
+  .btn-primary svg, .btn-secondary svg, .btn-danger svg { width: 1.125rem; height: 1.125rem; }
+  .btn-primary { @apply btn border-ink bg-brand-blue text-ink hover:bg-ink hover:text-brand-ivory active:bg-ink active:text-brand-ivory; }
+  .btn-secondary { @apply btn border-ink bg-brand-ivory text-ink hover:bg-brand-sky; }
+  .btn-danger { @apply btn border-danger bg-danger text-white hover:bg-ink hover:border-ink; }
+  .btn-primary:disabled:hover, .btn-primary[aria-disabled="true"]:hover { @apply bg-brand-blue text-ink; }
+
+  .input { @apply block min-h-target w-full rounded-lg border border-link bg-white px-3 py-2 text-base text-ink; }
+  .input[aria-invalid="true"] { border: 2px solid var(--error-red); }
+  .label { @apply mb-1 block text-sm font-semibold text-ink; }
+  .hint { @apply mt-1 text-xs text-ink-muted; }
+  /* A field with a problem: a red bar and a soft red background, so it is easy to spot while scrolling a long form. */
+  .field-error { @apply rounded-lg py-2 pl-3 pr-2; background: var(--error-bg); border-left: 4px solid var(--error-red); }
+
+  /* The notification bell: a count on the button, and a list that opens under it. */
+  .notif-badge { position: absolute; top: -0.4rem; right: -0.4rem; min-width: 1.25rem; padding: 0 0.3rem; border-radius: 9999px; background: var(--error-red); color: var(--white); border: 2px solid var(--brand-cream); font-size: 0.7rem; font-weight: 800; line-height: 1.1rem; text-align: center; }
+  .notif-panel { position: fixed; z-index: 90; max-height: min(70vh, 28rem); overflow-y: auto; border-radius: 0.75rem; border: 2px solid var(--ink); background: var(--white); box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 30%, transparent); }
+  .notif-title { margin: 0; padding: 0.75rem 1rem; border-bottom: 1px solid var(--brand-sky); font-size: 1rem; font-weight: 800; }
+  .notif-item { display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; padding: 0.6rem 1rem; color: var(--ink); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  .notif-item:hover { background: var(--brand-sky); }
+  .notif-sub { margin: 0; padding: 0.6rem 1rem 0.25rem; border-top: 1px solid var(--brand-sky); font-size: 0.8rem; font-weight: 700; color: var(--ink-muted); }
+  .notif-item--seen { font-weight: 500; color: var(--ink-muted); }
+  .notif-item--todo { flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+  .notif-sound { display: flex; align-items: center; gap: 0.6rem; min-height: 2.75rem; padding: 0.4rem 1rem; border-top: 1px solid var(--brand-sky); font-size: 0.85rem; cursor: pointer; }
+  .notif-count { display: inline-flex; min-width: 1.75rem; justify-content: center; border-radius: 9999px; background: var(--brand-coral); color: var(--ink); padding: 0.1rem 0.4rem; font-weight: 800; }
+
+  /* A screen over the whole page while an email is being sent, so nobody clicks away mid-send. */
+  .busy-overlay { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; background: color-mix(in srgb, var(--ink) 70%, transparent); }
+  .busy-card { max-width: 24rem; border-radius: 0.75rem; border: 2px solid var(--ink); background: var(--white); padding: 1.5rem 1.75rem; text-align: center; box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 35%, transparent); }
+
+  /* The error icon: a filled red circle with a white "!" (put it in an aria-hidden span; the words carry the meaning). */
+  .error-icon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: var(--error-red); color: var(--white); font-size: 0.95rem; font-weight: 800; line-height: 1; }
+  .error-icon--sm { width: 1.125rem; height: 1.125rem; font-size: 0.75rem; margin-top: 0.1rem; }
+  /* The message under an invalid field. */
+  .field-msg { display: flex; align-items: flex-start; gap: 0.4rem; margin-top: 0.25rem; font-size: 0.875rem; font-weight: 600; color: var(--error-red); }
+
+  /* The error summary at the top of a form: a light card with a thick red left edge, so it stands out from the pink page. */
+  .error-summary { display: flex; align-items: flex-start; gap: 0.75rem; padding: 1.125rem 1.25rem; border-radius: 8px; background: var(--error-bg); color: var(--error-text); font-size: 0.9375rem;
+    border: 1px solid var(--error-red); border-left: 4px solid var(--error-red); box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 18%, transparent); }
+  .error-summary__title { margin: 0; font-size: 1.0625rem; font-weight: 800; line-height: 1.35; color: var(--error-heading); }
+  .error-summary__list { margin: 0.5rem 0 0; padding-left: 1.25rem; list-style: disc; }
+  .error-summary__list li + li { margin-top: 0.375rem; }
+  .error-summary__link { color: var(--error-link); font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; border-radius: 2px; }
+  .error-summary__link:hover { text-decoration-thickness: 3px; }
+  .error-summary__link:focus-visible { outline: 2px solid var(--error-link); outline-offset: 2px; }
+  /* When a field gets focus (from the error summary), keep it clear of the sticky header. */
+  input, select, textarea, .field-error { scroll-margin-top: 7rem; }
+  .card { @apply rounded-xl border border-link bg-white; }
+
+  /* Badges always carry an icon AND text. The icon is CSS content with an empty alt so it is not read twice. */
+  .badge { @apply inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-transparent px-2.5 py-0.5 text-xs font-bold; }
+  /* the ✓ ✕ ● marks are not in Matahari: draw them with the system font, at a steady size, instead of a tiny fallback glyph */
+  .badge::before, .alert::before { font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif; font-size: 1em; line-height: 1; }
+  .badge::before { content: "●" / ""; }
+  .badge-ok { @apply bg-brand-mint text-success; } .badge-ok::before { content: "✓" / ""; }
+  .badge-warn { @apply bg-brand-cream text-warning-ink; } .badge-warn::before { content: "!" / ""; font-weight: 800; }
+  .badge-bad { @apply bg-brand-blush text-danger; } .badge-bad::before { content: "✕" / ""; }
+  .badge-info { @apply bg-brand-sky text-ink; } .badge-info::before { content: "i" / ""; font-style: italic; }
+  .badge-has-icon::before { content: none; }
+  .badge-has-icon svg { width: 0.95rem; height: 0.95rem; }
+  .badge-neutral { @apply bg-brand-ivory text-ink border-link; } .badge-neutral::before { content: "–" / ""; }
+
+  .alert { @apply flex gap-3 rounded-lg border-l-4 border-y border-r p-3 text-sm; }
+  .alert::before { font-weight: 800; flex-shrink: 0; }
+  .alert-bad::before { content: "✕" / ""; } .alert-ok::before { content: "✓" / ""; } .alert-warn::before { content: "!" / ""; } .alert-info::before { content: "i" / ""; font-style: italic; }
+  .alert-bad { @apply border-danger bg-brand-blush text-danger; }
+  .alert-ok { @apply border-success bg-brand-mint text-success; }
+  .alert-warn { @apply border-warning-ink bg-brand-cream text-warning-ink; }
+  .alert-info { @apply border-link bg-brand-sky text-ink; }
+
+  .th { @apply px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-ink-muted; }
+  .td { @apply px-3 py-2 text-sm text-ink; }
+  .social-row { @apply flex flex-wrap items-center justify-center gap-x-6 gap-y-1 sm:justify-start; }
+  .social-icons { @apply flex items-center gap-0 xs:gap-3; }                      /* 44 px targets: glyphs end up 16 px apart on desktop */
+  .social-link { @apply inline-flex h-11 min-h-target w-11 min-w-target items-center justify-center rounded-lg no-underline; color: var(--social-pink); transition: color 0.2s ease, transform 0.2s ease; }
+  .social-link svg { @apply h-7 w-7 xs:h-10 xs:w-10; }                             /* 28 px under 480 px, 40 px from 480 px */
+  .social-handle { @apply text-lg font-bold lowercase xs:text-2xl; color: var(--social-pink); }
+  .social-link:hover { color: var(--social-pink-hover); }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) { .social-link:hover { transform: scale(1.1); } }
+  .nav-link { @apply inline-flex min-h-target items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-ink no-underline hover:bg-brand-sky; }
+  .nav-link[aria-current="page"] { @apply bg-ink text-brand-ivory hover:bg-ink; }
+  .chip { @apply min-h-target rounded-full border border-link bg-brand-sky px-3 py-1 text-xs font-semibold text-ink hover:bg-brand-cream; }
+  .overlay { background: color-mix(in srgb, var(--ink) 65%, transparent); }
+  /* the receipt / image pickers: a real (visually hidden) file input, with the label acting as its button */
+  .file-input:focus-visible + label { outline: 3px solid var(--ink); outline-offset: 2px; }
+  /* admin-edited rich text (the Terms): Tailwind's reset removes list styles, so restore them here */
+  .safe-html > * + * { margin-top: 0.75rem; }
+  .safe-html ol { list-style: decimal; padding-left: 1.5rem; } .safe-html ul { list-style: disc; padding-left: 1.5rem; }
+  .safe-html li + li { margin-top: 0.75rem; } .safe-html a { text-decoration: underline; }
+  /* the event facts (EventCard, EventHeader): icon + one text block, top-aligned, same 12 px between rows */
+  .info-list { @apply grid gap-3 text-sm text-ink-muted; }
+  .info-row { @apply flex items-start gap-2.5; }
+  .info-icon { @apply shrink-0; width: 1.125rem; height: 1.125rem; margin-top: calc((1.5em - 1.125rem) / 2); }   /* centred on the FIRST line only */
+  .info-icon svg { width: 100%; height: 100%; }
+  .info-text { @apply m-0 min-w-0; line-height: 1.5; overflow-wrap: anywhere; }
+  .info-text strong { @apply font-bold; }
+  .nowrap { white-space: nowrap; }
+  .info-note { @apply block text-ink-muted; font-size: 0.9375rem; }
+  .check { @apply h-6 w-6 shrink-0 rounded border border-link accent-[var(--link)]; }
+}
+
+/* Reduced motion (2.3.3): no animation or smooth scrolling */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Windows High Contrast / forced colours: state must not depend on background colour alone */
+@media (forced-colors: active) {
+  .badge, .alert, .card, .btn, .input { border: 2px solid CanvasText; }
+  /* error summary and invalid fields: keep the border and the shapes, never rely on the background colour */
+  .error-summary { border: 2px solid CanvasText; border-left-width: 8px; box-shadow: none; }
+  .error-summary__link { color: LinkText; }
+  .error-icon { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  .notif-badge { forced-color-adjust: none; background: CanvasText; color: Canvas; border-color: Canvas; }
+  .notif-panel { border: 3px solid CanvasText; }
+  .busy-overlay { background: Canvas; opacity: 0.9; } .busy-card { border: 3px solid CanvasText; }
+  .field-error { border-left: 6px solid CanvasText; }
+  .field-msg { color: CanvasText; }
+  .input[aria-invalid="true"] { border: 4px double CanvasText; }
+  .progress-fill { background: Highlight !important; forced-color-adjust: none; }
+  .progress-track { border: 1px solid CanvasText; }
+  .nav-link[aria-current="page"] { outline: 3px solid Highlight; }
+  .chart-bar { forced-color-adjust: none; background: Highlight !important; }
+}

@@ -1,9 +1,9 @@
 /** @type {import('tailwindcss').Config} */
-// Colours map to the CSS variables in src/styles/tokens.css, the only place hex values live.
+// Colours map to the CSS variables in assets/css/tokens.css, the only place hex values live.
 const v = (name) => `var(--${name})`;
 
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx}"],
+  content: ["./components/**/*.vue", "./layouts/**/*.vue", "./pages/**/*.vue", "./app.vue", "./lib/**/*.js", "./composables/**/*.js"],
   theme: {
     // Default Tailwind breakpoints plus xs (480). Keep in sync with src/lib/breakpoints.js and src/styles/breakpoints.md.
     screens: { xs: "480px", sm: "640px", md: "768px", lg: "1024px", xl: "1280px", "2xl": "1536px" },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import ExcelJS from "exceljs";
-import { buildMultiWorkbook, buildWorkbook, toXlsxBuffer } from "../src/lib/excel.js";
+import { buildMultiWorkbook, buildWorkbook, toXlsxBuffer } from "../lib/excel.js";
 
 const read = async (head, rows, opts) => {
   const wb = new ExcelJS.Workbook();

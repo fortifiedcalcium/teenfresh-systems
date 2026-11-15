@@ -7,9 +7,9 @@
 
 | Command | What it does |
 |---|---|
-| `npm run check:contrast` | Verifies every colour pairing in `src/styles/tokens.css`, asserts the forbidden pairings still fail, and scans `src/` for forbidden combinations, brand colours used as text, and stray hex values. **Runs automatically before `npm run build`, so a bad colour fails the build.** |
-| `npm test` | Contrast tests, schema/RLS tests, email tests, and **vitest-axe on every shared component and every page** (zero violations). |
-| `npm run lint` | ESLint with `eslint-plugin-jsx-a11y` (strict). |
+| `npm run check:contrast` | Verifies every colour pairing in `assets/css/tokens.css`, asserts the forbidden pairings still fail, and scans the Vue and CSS sources for forbidden combinations, brand colours used as text, and stray hex values. **Runs automatically before `npm run build`, so a bad colour fails the build.** |
+| `npm test` | Contrast tests, schema/RLS tests, email tests and the pricing, validation and notification logic. (The old jsdom + vitest-axe component tests were React-specific and were removed in the Nuxt migration; the Playwright run below covers every route and dialog with axe in a real browser.) |
+| `npm run lint` | ESLint (see `eslint.config.mjs`). |
 | `npm run test:e2e` | Playwright + `@axe-core/playwright` in real Chromium: all 15 routes plus dialogs, scan results, the registration error/review/success states (tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`, `best-practice`), and behaviour checks (skip link, focus ring, route focus, 320px reflow, target size, reduced motion, forced colours, prefers-contrast, 200% zoom, 16px text). Desktop and a 320px phone viewport. The Supabase API is mocked, so no backend is needed. |
 | `npm run lighthouse` | Lighthouse CI, accessibility score must be 95 or higher on /, /login, /register, /forgot-password (needs `CHROME_PATH`; Playwright's Chromium works). Reports are **not** uploaded anywhere. |
 
@@ -17,7 +17,7 @@ Last run: all of the above pass; Lighthouse accessibility = **100** on the four 
 
 ## Colour tokens
 
-Brand colours (Teenfresh guidelines) are **surfaces only**: backgrounds, fills and bands. Text, borders, icons and focus rings use the accessible companion tokens. All of them live in `src/styles/tokens.css`; nothing else in `src/` may contain a hex value.
+Brand colours (Teenfresh guidelines) are **surfaces only**: backgrounds, fills and bands. Text, borders, icons and focus rings use the accessible companion tokens. All of them live in `assets/css/tokens.css`; nothing else in the app sources may contain a hex value.
 
 | Token | Hex | Role |
 |---|---|---|
@@ -112,8 +112,8 @@ The ratios match the ones in the brand add-on (checked by `tests/contrast.test.j
 
 | Area | Implementation |
 |---|---|
-| Landmarks, one `h1` per page, skip link | `AttendeeLayout`, `AdminLayout`, `AuthShell`, `SkipLink` in `src/a11y.jsx` |
-| Unique `<title>`, focus to `h1` on route change, announcement | `RouteA11y` in `src/a11y.jsx` |
+| Landmarks, one `h1` per page, skip link | `layouts/default.vue`, `layouts/admin.vue`, `components/AuthShell.vue`, `components/SkipLink.vue` |
+| Unique `<title>`, focus to `h1` on route change, announcement | `plugins/route-a11y.client.js` |
 | Live regions (status vs alert) | `LiveRegionProvider`, `Toast`, `Alert`, scanner region |
 | Forms: labels, "(required)", `aria-required`, hints, errors, summary, autocomplete | `Field`, `ErrorSummary`, `PasswordInput` |
 | Accessible authentication (3.3.8) | No CAPTCHA, paste allowed, show/hide password, Google sign-in |
@@ -122,7 +122,7 @@ The ratios match the ones in the brand add-on (checked by `tests/contrast.test.j
 | Tables | `DataTable`: caption, `scope`, `aria-sort`, labelled scroll region, pagination `nav`, result count in a live region, unique row-action names |
 | Focus (2.4.7, 2.4.11) | 3px `ink` outline, 2px offset, `scroll-padding-top` for sticky headers |
 | Target size (2.5.8) | 44 x 44 px minimum on buttons, links in nav, inputs |
-| Motion, contrast, forced colours | `prefers-reduced-motion`, `prefers-contrast: more`, `forced-colors` rules in `src/index.css` |
+| Motion, contrast, forced colours | `prefers-reduced-motion`, `prefers-contrast: more`, `forced-colors` rules in `assets/css/main.css` |
 | Session ending (2.2.1) | Supabase refreshes tokens automatically (there is no timeout). If a session ends unexpectedly the sign-in page says so. |
 | Realtime updates | Throttled to one screen-reader announcement per 10 seconds |
 | Terms | Real `button` with `aria-expanded` (account pages); on the form the full text is shown, rendered through a whitelist sanitizer; the agreement is a native checkbox in a labelled `fieldset` |
@@ -134,11 +134,11 @@ The ratios match the ones in the brand add-on (checked by `tests/contrast.test.j
 
 ## Deviations from the add-on (WCAG wins, as it asked)
 
-1. **Shared components:** `Badge`, `Alert`, `Field`, `ErrorSummary`, `PasswordInput`, `Toast`, `Modal`, `DataTable`, `LiveRegion` are React components. **Button, Input, Select, Checkbox and Card are Tailwind component classes** (`.btn-primary`, `.input`, `.check`, `.card` in `src/index.css`), not wrapper components. Accessibility is still built in once, but there is no `<Button>` element to import.
+1. **Shared components:** `Badge`, `Alert`, `Field`, `ErrorSummary`, `PasswordInput`, `Toast`, `Modal`, `DataTable`, `LiveRegion` are Vue components. **Button, Input, Select, Checkbox and Card are Tailwind component classes** (`.btn-primary`, `.input`, `.check`, `.card` in `assets/css/main.css`), not wrapper components. Accessibility is still built in once, but there is no `<Button>` element to import.
 2. **Text size:** body and most UI text are 16px. The smallest text (chart labels, captions, table headers) is **14px**, not 16px. Say so if you need a hard 16px floor.
 3. **Google "G" logo** uses Google's own multicolour hex values (a third-party trademark); it is the single allow-listed exception to "no hex outside tokens.css".
 4. **Email** keeps the Gmail-like format from the main brief (Arial, dark text on white, inline CSS). Links use the `link` colour (`#1c5a85`, 7.4:1 on white). The body text (`#222222`) and the quote border (`#dadce0`) are the brief's Gmail-like values, not brand tokens, because email needs inline hex.
-5. **Event images** are placeholders until an admin uploads them (Admin > Events > Media). `public/banners/ivemon.png` is a placeholder I generated for the older demo event. The Teenfresh logo is the real artwork from `src/logo/`: it is decorative inside links (the link carries the name, e.g. "Teenfresh Events, home") and has alt text "Teenfresh" elsewhere. Text baked into your final banner needs its own contrast check.
+5. **Event images** are placeholders until an admin uploads them (Admin > Events > Media). `public/banners/ivemon.png` is a placeholder I generated for the older demo event. The Teenfresh logo is the real artwork from `assets/logo/`: it is decorative inside links (the link carries the name, e.g. "Teenfresh Events, home") and has alt text "Teenfresh" elsewhere. Text baked into your final banner needs its own contrast check.
 6. **Tooltips:** the hover `title` tooltip on the attendee email badge was removed (it cannot be dismissed, 1.4.13); the error text is in the detail dialog.
 7. **Dark mode** is not provided.
 

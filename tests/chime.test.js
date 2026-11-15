@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { playChime, setSoundEnabled, soundEnabled, unlockChime } from "../src/lib/chime.js";
+import { playChime, setSoundEnabled, soundEnabled, unlockChime } from "../lib/chime.js";
 
 // A tiny stand-in for the browser's audio: it records the notes that start.
 const notes = [];
@@ -24,7 +24,7 @@ describe("notification chime", () => {
     expect(soundEnabled()).toBe(true);
   });
   it("stays silent until the person has clicked or pressed a key once, then plays two notes", async () => {
-    const mod = await import("../src/lib/chime.js");
+    const mod = await import("../lib/chime.js");
     const stop = mod.unlockChime();
     expect(mod.playChime()).toBe(false);                      // the browser has not allowed sound yet
     expect(notes).toEqual([]);
@@ -36,13 +36,13 @@ describe("notification chime", () => {
     stop();
   });
   it("plays nothing when sound is switched off, and never throws when the browser has no audio", async () => {
-    const mod = await import("../src/lib/chime.js");
+    const mod = await import("../lib/chime.js");
     mod.unlockChime(); window.dispatchEvent(new Event("keydown")); await Promise.resolve();
     mod.setSoundEnabled(false);
     expect(mod.playChime()).toBe(false);
     expect(notes).toEqual([]);
     delete window.AudioContext; vi.resetModules();
-    const none = await import("../src/lib/chime.js");
+    const none = await import("../lib/chime.js");
     expect(() => none.playChime()).not.toThrow();
     expect(none.playChime()).toBe(false);
   });
@@ -57,7 +57,7 @@ describe("notification chime", () => {
     expect(soundEnabled("admin")).toBe(false);
   });
   it("plays for the audience whose switch is on", async () => {
-    const mod = await import("../src/lib/chime.js");
+    const mod = await import("../lib/chime.js");
     mod.unlockChime(); window.dispatchEvent(new Event("pointerdown")); await Promise.resolve();
     mod.setSoundEnabled(false, "admin");
     expect(mod.playChime("admin")).toBe(false);

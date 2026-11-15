@@ -12,19 +12,20 @@ export default defineConfig({
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /csp/ },
     { name: "phone-320", use: { ...devices["Pixel 5"], viewport: { width: 320, height: 640 } }, grep: /reflow|target size/, testIgnore: /csp/ },
-    // The security headers (firebase.json) are tested against the real production build, because the dev server uses inline scripts.
+    // The security headers (public/_headers) are tested against the real production build, because the dev server uses inline scripts.
     { name: "csp", testMatch: /csp\.spec\.js/, use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${CSP_PORT}`, permissions: ["camera"], launchOptions: { args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] } } },
   ],
   webServer: [
     {
       // The app talks to a fake Supabase (see e2e/fixtures.js), so no backend is needed to run these tests.
-      command: `npx vite --port ${PORT} --strictPort`,
+      command: `npx nuxt dev --port ${PORT}`,
       port: PORT,
       reuseExistingServer: !process.env.CI,
       env: { VITE_SUPABASE_URL: "http://localhost:54321", VITE_SUPABASE_ANON_KEY: "test-anon-key" },
     },
     {
-      command: `npx vite build --outDir dist-csp --emptyOutDir && npx vite preview --outDir dist-csp --port ${CSP_PORT} --strictPort`,
+      // the production build is made first by `npm run test:e2e` (pretest:e2e); here it is only served
+      command: `npx serve dist-csp/public -s -l ${CSP_PORT}`,
       port: CSP_PORT,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

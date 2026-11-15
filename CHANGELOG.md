@@ -4,9 +4,14 @@ All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
 `1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar.
 
-## [Unreleased]
+## [2.0.0] - 2026-11-15
 
-Small changes made after 1.4.1. They are listed here and will be released with the next major version (no tag yet).
+The front end moves from React to Vue 3 + Nuxt 3, and hosting moves from Firebase Hosting to Cloudflare Pages (see Changed). Smaller changes made after 1.4.1 are listed below.
+
+### Changed
+- **The front end is now Vue 3 + Nuxt 3** (single-page mode, `ssr: false`) instead of React + Vite. Every page, form, dialog and admin tool was ported one for one; the look (Tailwind, the Teenfresh tokens, the Matahari fonts), the URLs, the Supabase database, Edge Functions and migrations are unchanged, and the Playwright + axe run passes against the new app. The plain-JavaScript logic moved from `src/lib/` to `lib/` untouched. Forms use plain refs and zod (react-hook-form is gone), the QR code is drawn by `qrcode-generator` (qrcode.react is gone), and the React context providers became composables (`useAuth`, `useCart`, `useToast`, `useAnnounce`).
+- **Hosting moved from Firebase Hosting to Cloudflare Pages.** `firebase.json` and `.firebaserc` are replaced by `public/_headers` (the same security headers, with Nuxt's one inline settings script allowed by hash at build time) and `public/_redirects` (single-page fallback). `npm run deploy` now publishes with `wrangler pages deploy`. **After the first deploy, add the new address to Supabase > Authentication > URL Configuration.**
+- The React component tests (jsdom + vitest-axe) were removed with React; the unit tests for the plain logic stay, and the browser run covers the screens.
 
 ### Added
 - **Admin: Order emails (`/admin/order-emails`).** Edit the subject, heading and message of each shop order email (received, paid, shipped, cancelled), with a live plain-text preview built by the same code that sends the email. Placeholders `{{Name}}`, `{{Order Number}}` and `{{Total}}` are filled in per shopper; a mistyped one is caught before saving. A blank line starts a new paragraph, and typed text is always escaped, so it cannot add markup. The items, totals and delivery address are added under the text automatically. **Restore default wording** brings the original text back. **Run `supabase/migrations/013_order_email_templates.sql`, then redeploy the function: `supabase functions deploy send-order-email`.**

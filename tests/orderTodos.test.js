@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allTodos, requiredCount, todosFor } from "../src/lib/orderTodos.js";
+import { allTodos, requiredCount, todosFor } from "../lib/orderTodos.js";
 
 const base = { id: "o1", order_number: "TF-000001", status: "pending", shipping_status: "none", balance_status: "none", preferred_courier: "LBC" };
 

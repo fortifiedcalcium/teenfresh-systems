@@ -1,9 +1,12 @@
 # Teenfresh Events System
 
-React 18 + Vite + Tailwind front end, Supabase (Auth, Postgres, RLS, Realtime, Edge Functions) back end. Attendees fill in a 4-step form and pay by GCash with a receipt upload; an admin verifies the payment, which issues the ticket (QR code) and sends the confirmation email; admins scan tickets at the door and track attendance.
+Vue 3 + Nuxt 3 (single-page mode) + Tailwind front end, Supabase (Auth, Postgres, RLS, Realtime, Edge Functions) back end. Attendees fill in a 4-step form and pay by GCash with a receipt upload; an admin verifies the payment, which issues the ticket (QR code) and sends the confirmation email; admins scan tickets at the door and track attendance.
 
 ```
-src/                     React app (attendee site + /admin)
+pages/ layouts/ components/    Vue app (attendee site + /admin): file-based routes, layouts, components
+composables/ plugins/ middleware/   shared state (auth, cart, toasts), live data hooks, route guards
+lib/                     plain JavaScript (pricing, validation, Excel, Supabase client): no Vue in here, so it is unit-tested directly
+assets/                  styles (tokens.css, Tailwind) and the Matahari fonts and logos
 supabase/migrations/schema.sql                  tables, RLS, triggers, RPCs, seed (IVEMON: BRILLIANT FORCE event)
 supabase/migrations/002_registration_payments.sql   payments, receipts, image slots, storage buckets, ODD PLATINUM seed (run second)
 supabase/migrations/003_kits.sql                    kit options and price per kit, balance-based shared payments (run third)
@@ -58,8 +61,8 @@ The app targets **WCAG 2.2 AA** with the Teenfresh palette (brand colours as sur
 ```bash
 cp .env.example .env      # fill VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 npm install
-npm run dev               # http://localhost:5173
-npm test                  # schema/RLS (real Postgres via PGlite), email merge, contrast, vitest-axe on all pages
+npm run dev               # http://localhost:5199
+npm test                  # schema/RLS (real Postgres via PGlite), email merge, contrast, pricing and validation logic
 ```
 Camera scanning needs **HTTPS or localhost**; phones need the deployed HTTPS site.
 
@@ -69,7 +72,7 @@ Camera scanning needs **HTTPS or localhost**; phones need the deployed HTTPS sit
 
 1. Create a second Supabase project (for example `teen-fresh-dev`) on the free plan.
 2. `node scripts/build-dev-sql.mjs`, then paste all of `supabase/dev-setup.sql` into that project's **SQL Editor** and run it once. Never run it on the live project.
-3. Create `.env.development` with the dev project's `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Vite uses it for `npm run dev` only; `npm run build` and `npm run deploy` keep using `.env` (live).
+3. Create `.env.development` with the dev project's `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Nuxt uses it for `npm run dev` only; `npm run build` and `npm run deploy` keep using `.env` (live).
 4. In the dev project: **Authentication → URL Configuration**: Site URL `http://localhost:5173`, Redirect URL `http://localhost:5173/**`. For Google sign-in, enable the Google provider there and add the dev project's `https://<dev-ref>.supabase.co/auth/v1/callback` to the Google OAuth client's authorised redirect URIs.
 5. Make yourself admin in the dev project (step 4 below, in its SQL Editor).
 6. The Supabase CLI is linked to the live project. For the dev project always pass `--project-ref <dev-ref>` (for example `supabase functions deploy send-order-email --project-ref <dev-ref> --yes`), and set its own function secrets, or use a throwaway mail key so tests never email real people.
@@ -104,17 +107,17 @@ supabase functions deploy send-order-email
 - **Gmail/SMTP instead:** `MAIL_PROVIDER=smtp SMTP_HOST=smtp.gmail.com SMTP_PORT=465 SMTP_USER=you@gmail.com SMTP_PASS=<app password>` (Gmail free accounts allow roughly 100 to 500 emails/day).
 - `PUBLIC_SITE_URL` turns relative image paths (`/banners/ivemon.png`, `/email/logo.png`) into absolute URLs, which email clients require. Without it, images will not load in emails.
 
-## 6. Deploy to Firebase Hosting
-The site is hosted on Firebase Hosting (project and site `teenfresh-events`, address https://teenfresh-events.web.app). The app reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from your `.env` when it is built, so there is nothing to set in a dashboard.
+## 6. Deploy to Cloudflare Pages
+The site is a static single-page app, hosted on Cloudflare Pages (project `teenfresh-events`). The app reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` when it is built, so set them in the Pages project (Settings > Variables and Secrets > *Build*) or in your local `.env` for a manual deploy.
 ```bash
-firebase login                 # once
-npm run deploy                 # builds (the contrast check runs first) and publishes to teenfresh-events
+npx wrangler login             # once
+npm run deploy                 # builds (the contrast check runs first) and publishes .output/public to Cloudflare Pages
 ```
-`firebase.json` serves `dist/`, sends every route to `index.html` (single-page app) and sets the security headers. Deploys are manual; to deploy on every push to GitHub, run `firebase init hosting:github` once (it adds a GitHub Actions workflow). A custom domain (for example `events.yourdomain.com`) is added under Firebase console > Hosting > Add custom domain.
+`public/_redirects` sends every route to `index.html` (single-page app) and `public/_headers` sets the security headers. To deploy on every push instead, connect the GitHub repository under Cloudflare dashboard > Workers & Pages > Create > Pages > Connect to Git, with build command `npm run build` and output directory `.output/public`. A custom domain (for example `events.yourdomain.com`) is added under the project's Custom domains tab. **Also add the new site address to Supabase > Authentication > URL Configuration** (Site URL and Redirect URLs, including `/auth/callback` and `/reset-password`), or sign-in and password-reset links will point to the old address.
 
 ## Security headers
-`firebase.json` sends a strict Content-Security-Policy (scripts only from the site itself, no inline or eval scripts, connections only to your Supabase project, no framing), plus `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, a `Permissions-Policy` that allows only this site to use the camera (for the QR scanner), HTTPS-only (HSTS), and long caching for the fingerprinted `assets/` (HTML is always revalidated so a new deploy shows up at once).
-`npm run test:e2e` runs the production build with these exact headers enforced in a browser (`e2e/csp.spec.js`) and fails on any violation, including the camera scanner, the receipt viewer and the email preview. If you add a new external service (an analytics script, another image host, a payment widget), add its domain to the right directive in `firebase.json` first, or the browser will block it.
+`public/_headers` sends a strict Content-Security-Policy (scripts only from the site itself, no eval and no inline scripts except Nuxt's own small settings script, which the build allows by its sha256 hash (`scripts/csp-hashes.mjs`), connections only to your Supabase project, no framing), plus `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, a `Permissions-Policy` that allows only this site to use the camera (for the QR scanner), HTTPS-only (HSTS), and long caching for the fingerprinted `_nuxt/` files (HTML is always revalidated so a new deploy shows up at once).
+`npm run test:e2e` runs the production build with these exact headers enforced in a browser (`e2e/csp.spec.js`) and fails on any violation, including the camera scanner, the receipt viewer and the email preview. If you add a new external service (an analytics script, another image host, a payment widget), add its domain to the right directive in `public/_headers` first, or the browser will block it.
 
 ## Kits, quantity and price per kit
 In **Admin > Events > edit > Kits** an event gets one or more kit options, each with a **name**, a **price per kit** and a short **description**. One form orders exactly one kit, so there is no quantity. In the registration form a **Kit** step lets the attendee choose a kit and shows the total (the kit's price); the payment step then asks for at least that amount.
@@ -145,7 +148,7 @@ SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=... node script
 It needs the service-role key (Project Settings > API). Keep that key out of the browser, the repo, and chat.
 
 ## Before the real event
-- The Teenfresh logo is `src/logo/Logo 1.1.png`. The cropped copies used by the app (`src/logo/teenfresh-logo.png`), the email signature (`public/email/logo.png`) and the favicon (`public/favicon.png`) were generated from it; regenerate them if the logo changes. Replace `facebook.png`, `x.png` (email icons) with real artwork (same file names).
+- The Teenfresh logo is `assets/logo/Logo 1.1.png`. The cropped copies used by the app (`assets/logo/teenfresh-logo.png`), the email signature (`public/email/logo.png`) and the favicon (`public/favicon.png`) were generated from it; regenerate them if the logo changes. Replace `facebook.png`, `x.png` (email icons) with real artwork (same file names).
 - **Admin > Events > ODD PLATINUM**: the seeded dates are the ones from the reference form (4 Oct 2026, deadline 30 Sep 2026) and are **in the past**, so the form shows "Registration closed". Set real dates (or run the commented `update` at the bottom of `002_registration_payments.sql` to test), the real **GCash number** (seeded as `09XXXXXXXXX`) and the masked account name, the capacity, and upload the images (**Media** tab).
 - **Admin > Email**: review the four templates, send a test of each to yourself.
 

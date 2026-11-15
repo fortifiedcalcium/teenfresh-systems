@@ -12,3 +12,7 @@ dist-csp
 .firebase
 .DS_Store
 supabase/dev-setup.sql
+.nuxt
+.output
+.nuxt-csp
+dist-csp

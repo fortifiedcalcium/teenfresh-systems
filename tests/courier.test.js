@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_COURIERS, OTHER_COURIER, courierValue, splitCourier, validateCourierName } from "../src/lib/orders.js";
+import { DEFAULT_COURIERS, OTHER_COURIER, courierValue, splitCourier, validateCourierName } from "../lib/orders.js";
 
 describe("courierValue", () => {
   it("accepts a listed courier", () => expect(courierValue(DEFAULT_COURIERS[0], "")).toEqual({ value: DEFAULT_COURIERS[0] }));

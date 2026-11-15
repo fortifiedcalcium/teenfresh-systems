@@ -56,6 +56,7 @@ test.describe("tabs, routes and the active state", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
   test("the five tabs go to the mapped routes, in visual order", async ({ page, as }) => {
     await as("admin"); await page.goto("/admin");
+    await expect(bar(page).getByRole("link")).toHaveCount(5);          // the app loads the session before it draws the admin frame
     const names = await bar(page).getByRole("link").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label") || e.textContent.trim().replace(/\d+ payments? pending verification|\d+$/, "").trim()));
     expect(names).toEqual(["Home", "Search", "Scan QR code", "History", "Profile"]);
     const go = async (name, url) => { await bar(page).getByRole("link", { name }).click(); await expect(page).toHaveURL(new RegExp(url)); };
