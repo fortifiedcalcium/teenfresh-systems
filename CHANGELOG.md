@@ -2,9 +2,11 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia.
 
-## [Unreleased]
+## [2.1.0] - 2026-11-15
+
+The redesign, readable addresses, server rendering and the TypeScript conversion. **Run `supabase/migrations/032_slugs.sql`** (already applied on the live project).
 
 ### Changed
 - **Redesign: soft pastel + ticket stub.** A rounded pill navbar, fully rounded buttons, white 24px cards with soft shadows, event cards styled as concert tickets (coloured header, notches, dashed perforation, optional barcode), product cards with one small status badge (Sold out, Low stock, New, Pre-order) and "From" prices, a ticket-stub cart, soft checkout panels, redesigned sign-in pages, and a calmer admin area (white sidebar and top bar, pastel stat cards, rounded tables). New shared components: `BaseButton`, `StatusChip`, `PillNav`, `TicketCard`, `ProductCard`, `CartStub`; review them at `/styleguide`. The accent pink is `#B83A58` with white text (5.55:1). Payment is still GCash only.
