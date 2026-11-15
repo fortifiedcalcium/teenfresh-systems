@@ -60,3 +60,19 @@ fieldset.card-soft > legend + * { clear: both; }
 .event-facts dt { font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
 .event-facts dd { margin: 0.125rem 0 0; font-size: 0.9375rem; font-weight: 700; overflow-wrap: anywhere; }
 .event-facts__note { display: block; font-size: 0.75rem; font-weight: 400; color: var(--ink-muted); }
+
+/* Home hero: scales from 360px to 1920px with no horizontal scroll. Padding, type and minimum height follow the viewport width; the text and the
+   ticket sit side by side from 1024px and stack below it. min-w-0 lets the grid children shrink instead of pushing the page wider. */
+.home-hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: grid; align-items: center; gap: clamp(1.25rem, 1rem + 2.5vw, 3rem);
+  min-height: clamp(22rem, 12rem + 28vw, 38rem);
+  padding: clamp(1.25rem, 0.5rem + 3.4vw, 3.5rem);
+  border-radius: clamp(1.5rem, 1rem + 1.5vw, 2rem);
+  background-color: var(--cream);
+  background-size: cover; background-position: center;
+}
+.home-hero > * { min-width: 0; }
+.home-hero__title { font-size: clamp(2rem, 1.2rem + 3.4vw, 3.75rem); line-height: 1.12; overflow-wrap: anywhere; }
+.home-hero__lead { font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem); }
+@media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }

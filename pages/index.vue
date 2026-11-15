@@ -85,11 +85,11 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
 <template>
   <div class="space-y-12">
     <!-- the hero: the featured event's tagline, two buttons, and the event as a ticket -->
-    <section class="grid items-center gap-8 rounded-[2rem] bg-brand-cream p-6 sm:p-10 lg:grid-cols-2" aria-labelledby="home-h">
+    <section class="home-hero" aria-labelledby="home-h">
       <div class="space-y-5">
         <p class="text-sm font-extrabold uppercase tracking-widest text-ink-muted">Teenfresh Events</p>
-        <h1 id="home-h" class="text-4xl leading-tight sm:text-5xl">{{ headline }}</h1>
-        <p class="max-w-prose text-lg text-ink-muted">Pick an event and reserve your slot. Pay by GCash and your ticket arrives by email once the payment is checked.</p>
+        <h1 id="home-h" class="home-hero__title">{{ headline }}</h1>
+        <p class="home-hero__lead max-w-prose text-ink-muted">Pick an event and reserve your slot. Pay by GCash and your ticket arrives by email once the payment is checked.</p>
         <div class="flex flex-wrap gap-3">
           <BaseButton :to="others.length ? '#events' : '#featured-event'" variant="accent"><IconCalendar />See events</BaseButton>
           <BaseButton v-if="SHOP_ENABLED" to="/shop" variant="secondary"><IconBag />Browse shop</BaseButton>
