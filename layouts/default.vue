@@ -64,15 +64,14 @@ onBeforeUnmount(() => stopUnlock());
       </ul>
     </nav>
     <footer class="mt-8 rounded-t-[2rem] bg-brand-cream pb-24 pt-6 md:pb-6">
-      <div class="mx-auto flex max-w-6xl flex-wrap px-4 items-center justify-center gap-x-6 gap-y-3 sm:justify-start">
-        <img :src="logo" alt="Teenfresh" width="188" height="40" class="h-9 w-auto">
+      <div class="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 text-center sm:flex-row sm:justify-between sm:text-left">
         <nav aria-label="Social media" class="social-row">
           <ul class="social-icons">
             <li v-for="s in SOCIALS" :key="s.name"><a :href="s.href" class="social-link" :aria-label="s.name" :title="s.name" target="_blank" rel="noopener noreferrer"><component :is="s.icon" :size="40" /></a></li>
           </ul>
           <p class="social-handle">@teenfreshph</p>
         </nav>
-        <a :href="SUPPORT ? `mailto:${SUPPORT}?subject=Accessibility%20issue` : 'https://x.com/TeenfreshPH'" class="text-sm sm:ml-auto">Report an accessibility issue</a>
+        <a :href="SUPPORT ? `mailto:${SUPPORT}?subject=Accessibility%20issue` : 'https://x.com/TeenfreshPH'" class="text-sm">Report an accessibility issue</a>
       </div>
     </footer>
   </div>
