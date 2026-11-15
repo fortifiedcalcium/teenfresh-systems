@@ -36,6 +36,7 @@ test.describe("visual snapshots", () => {
       await page.goto("/");
       const card = page.locator("article").first();
       await expect(card.locator(".info-row").first()).toBeVisible();
+      await page.evaluate(() => document.querySelectorAll("header.sticky").forEach((h) => { h.style.position = "static"; }));   // the sticky header must not cover the part being photographed
       await fontsReady(page);
       await expect(card).toHaveScreenshot(`event-card-${width}.png`, { maxDiffPixelRatio: 0.01 });
     });

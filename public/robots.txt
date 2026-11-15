@@ -1,0 +1,12 @@
+User-agent: *
+Disallow: /admin
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+Disallow: /my-
+Disallow: /login
+Disallow: /register
+Disallow: /auth
+Disallow: /styleguide
+
+Sitemap: https://teenfresh.pages.dev/sitemap.xml

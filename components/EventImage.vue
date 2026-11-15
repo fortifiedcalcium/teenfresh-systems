@@ -12,7 +12,7 @@ const toast = useToast();
 const failed = ref(false);
 const open = ref(false);
 const busy = ref(false);
-const inputId = `img-${Math.random().toString(36).slice(2, 8)}`;
+const inputId = `img-${useId()}`;
 const spec = computed(() => SLOTS[props.slotKey]);
 const url = computed(() => imageUrl(props.image));
 watch(url, () => { failed.value = false; });

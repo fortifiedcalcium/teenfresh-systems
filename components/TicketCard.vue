@@ -5,7 +5,7 @@ import type { Tone } from "~/types/ui";
 const props = withDefaults(defineProps<{ title: string; subtitle?: string; to?: string; image?: string | null; imageAlt?: string; band?: number; statusLabel?: string; statusTone?: Tone; barcode?: string }>(), { band: 0, statusTone: "ok" });
 const BANDS = ["bg-brand-sky", "bg-brand-blush", "bg-brand-mint", "bg-brand-cream"];
 const bandClass = computed(() => BANDS[props.band % BANDS.length]);
-const titleId = `tc-${Math.random().toString(36).slice(2, 8)}`;
+const titleId = `tc-${useId()}`;
 </script>
 
 <template>

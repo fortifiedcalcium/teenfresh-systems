@@ -14,20 +14,30 @@ const error = ref("");
 const versions = ref<Record<string, VariationRow[]>>({});             // each product's versions, by product id
 const chip = ref("All");
 const announce = useAnnounce();
-let alive = true;
-onBeforeUnmount(() => { alive = false; });
 
-onMounted(() => {
-  supabase.from("products").select("*").eq("active", true).order("created_at", { ascending: false }).then(({ data, error: err }: { data: ProductRow[] | null; error: unknown }) => {
-    if (!alive) return;
-    if (err) { error.value = "We could not load the products. Check your connection and refresh the page."; products.value = []; return; }
-    products.value = data || [];
-  });
-  supabase.from("product_variations").select("*").eq("active", true).order("position").then(({ data }: { data: VariationRow[] | null }) => { if (alive) versions.value = groupVariations(data || []); });
-});
+async function fetchShop() {
+  const [p, v, c] = await Promise.all([
+    supabase.from("products").select("*").eq("active", true).order("created_at", { ascending: false }),
+    supabase.from("product_variations").select("*").eq("active", true).order("position"),
+    supabase.from("product_categories").select("name").order("id"),
+  ]);
+  return { ok: !p.error, products: (p.data || []) as ProductRow[], versions: groupVariations((v.data || []) as VariationRow[]) as Record<string, VariationRow[]>, categories: ((c.data || []) as { name: string }[]).map((r) => r.name) };
+}
+// Loaded on the server, so the products are already in the page that search engines and link previews read. If the server could not reach the
+// database, the browser asks again once the page is up.
+const hydrating = useNuxtApp().isHydrating;
+const { data, refresh } = await useAsyncData("shop-products", fetchShop);
+const categories = ref<string[] | null>(null);
+let retried = false;
+watch(data, (d) => {
+  if (!d) return;
+  versions.value = d.versions; categories.value = d.categories;
+  if (d.ok) { products.value = d.products; error.value = ""; return; }
+  if (import.meta.client && (!hydrating || retried)) { error.value = "We could not load the products. Check your connection and refresh the page."; products.value = []; }
+}, { immediate: true });
+onMounted(async () => { if (hydrating && !data.value?.ok) { retried = true; await refresh(); } });
 
 // "All" always shows; a category chip appears only once it has more than one product
-const categories = useProductCategories();
 const chips = computed(() => chipsFor(categories.value).filter((c: string) => c === "All" || (products.value || []).filter((p) => productMatches(p, c)).length > 1));
 const shown = computed(() => (products.value || []).filter((p) => productMatches(p, chip.value)));
 function pick(c: string) {

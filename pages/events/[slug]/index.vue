@@ -16,23 +16,46 @@ const images = ref<Record<string, ImageRow>>({});
 const kits = ref<KitRow[]>([]);
 let channel: ReturnType<typeof supabase.channel> | null = null;
 
-async function load() {
-  const { data } = await supabase.from("events").select("*").order("event_date");
-  const found = findByRef((data || []) as EventRow[], String(route.params.slug));
-  event.value = found ?? null;
-  if (!found) return;
-  if (found.slug && found.slug !== route.params.slug) { await navigateTo(eventPath(found), { replace: true }); return; }   // an old id address moves to the slug
+async function fetchEvent(slug: string) {
+  const { data, error } = await supabase.from("events").select("*").order("event_date");
+  if (error) return { ok: false as const };
+  const found = findByRef((data || []) as EventRow[], slug) ?? null;
+  if (!found) return { ok: true as const, event: null };
   const [av, imgs, kt] = await Promise.all([
     supabase.from("event_availability").select("registered").eq("event_id", found.id).maybeSingle(),
     fetchEventImages(found.id),
     supabase.from("event_kits").select("*").eq("event_id", found.id).eq("active", true).order("sort_order").order("created_at"),
   ]);
-  registered.value = av.data?.registered ?? 0; images.value = imgs as Record<string, ImageRow>; kits.value = (kt.data || []) as KitRow[];
-  channel = supabase.channel("event-" + found.id)
-    .on("postgres_changes", { event: "*", schema: "public", table: "event_counts", filter: `event_id=eq.${found.id}` }, (p: { new?: { registered?: number } }) => { registered.value = p.new?.registered ?? 0; })
-    .subscribe();
+  return { ok: true as const, event: found, registered: (av.data?.registered ?? 0) as number, images: imgs as Record<string, ImageRow>, kits: (kt.data || []) as KitRow[] };
 }
-onMounted(load);
+// Loaded on the server, so the event is already in the page that search engines and link previews read. If the server could not reach the
+// database, the browser asks again once the page is up.
+const hydrating = useNuxtApp().isHydrating;
+const { data, refresh } = await useAsyncData(`event-${route.params.slug}`, () => fetchEvent(String(route.params.slug)));
+let retried = false;
+function apply(d: typeof data.value) {
+  if (!d) return;
+  if (!d.ok) { if (import.meta.client && (!hydrating || retried)) event.value = null; return; }
+  event.value = d.event;
+  if (d.event) { registered.value = d.registered ?? 0; images.value = d.images ?? {}; kits.value = d.kits ?? []; }
+}
+watch(data, apply, { immediate: true });
+// an old id address moves to the slug (a permanent redirect, so search engines follow it)
+const e0 = data.value && data.value.ok ? data.value.event : null;
+if (e0?.slug && e0.slug !== route.params.slug) await navigateTo(eventPath(e0), { replace: true, redirectCode: 301 });
+
+// an event that does not exist is a real 404 for search engines (the page still shows a friendly message)
+if (import.meta.server && data.value?.ok && !data.value.event) setResponseStatus(useRequestEvent()!, 404);
+
+async function load() { retried = true; await refresh(); }
+onMounted(async () => {
+  if (hydrating && !data.value?.ok) await load();
+  const found = event.value;
+  if (!found) return;
+  channel = supabase.channel("event-" + found.id)
+    .on("postgres_changes", { event: "*", schema: "public", table: "event_counts", filter: `event_id=eq.${found.id}` } as any, (p: { new?: { registered?: number } }) => { registered.value = p.new?.registered ?? 0; })
+    .subscribe();
+});
 onBeforeUnmount(() => { if (channel) supabase.removeChannel(channel); });
 
 const st = computed(() => (event.value ? eventStatus(event.value, registered.value) : null));

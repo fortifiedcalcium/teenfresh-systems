@@ -4,6 +4,18 @@ All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
 `1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar.
 
+## [Unreleased]
+
+### Changed
+- **Redesign: soft pastel + ticket stub.** A rounded pill navbar, fully rounded buttons, white 24px cards with soft shadows, event cards styled as concert tickets (coloured header, notches, dashed perforation, optional barcode), product cards with one small status badge (Sold out, Low stock, New, Pre-order) and "From" prices, a ticket-stub cart, soft checkout panels, redesigned sign-in pages, and a calmer admin area (white sidebar and top bar, pastel stat cards, rounded tables). New shared components: `BaseButton`, `StatusChip`, `PillNav`, `TicketCard`, `ProductCard`, `CartStub`; review them at `/styleguide`. The accent pink is `#B83A58` with white text (5.55:1). Payment is still GCash only.
+- **Readable addresses.** Events and products get a `slug` (migration `032_slugs.sql`): `/events/<slug>`, `/events/<slug>/register`, `/shop/<slug>`. Old id addresses still work and redirect permanently. There is now a public event page (`/events/<slug>`) with the facts, slots, poster, terms and a Register button.
+- **Server rendering and SEO** for the public pages, with a unique title, description, Open Graph tags and canonical link per page, Event and Product JSON-LD, real 404s, `sitemap.xml` and `robots.txt`. **Hosting now runs a Cloudflare worker** (see the README): the Content-Security-Policy moved from `public/_headers` to `server/plugins/security.ts` (still no `unsafe-inline` for scripts), and `npm run deploy` publishes the `dist` folder.
+- **TypeScript and Pinia.** The app is TypeScript (`npm run typecheck`), and the cart and sign-in state are Pinia stores (`stores/`); `useAuth()` and `useCart()` keep their API.
+- Tests: the picture-comparison tests run against the production build (the dev server moved things by a pixel or two); new tests for the shop, cart, checkout, SEO tags and the server-rendered HTML; unit tests for slugs and badges.
+
+### Fixed
+- The admin Shop products page stayed on "Loading products" and the shop lost its sold-out and "From" price info (a missing import); adding more than one of a product threw an error (a missing import); several icons (sign-in page titles, dashboard stats, Export buttons) were never drawn. Found by the new browser tests and the type checker.
+
 ## [2.0.0] - 2026-11-15
 
 The front end moves from React to Vue 3 + Nuxt 3, and hosting moves from Firebase Hosting to Cloudflare Pages (see Changed). Smaller changes made after 1.4.1 are listed below.

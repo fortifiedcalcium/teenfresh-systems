@@ -202,6 +202,8 @@ test.describe("WCAG behaviours", () => {
   test("navigating moves focus to the new page's h1 and sets the title", async ({ page, as }) => {
     await as(null);
     await page.goto("/");
+    await page.waitForLoadState("networkidle");                                    // the dev server can reload the page once while it warms up
+    await page.locator("html[data-hydrated]").waitFor({ state: "attached" });      // the server-rendered page is interactive
     await page.getByRole("link", { name: "Sign in" }).first().click();
     await expect(page.getByRole("heading", { level: 1, name: "Sign in" })).toBeFocused();
     await expect(page).toHaveTitle("Sign in · Teenfresh Events");

@@ -23,26 +23,34 @@ const picks = ref({});            // the value picked in each layer, like { Colo
 const pickError = ref(false);
 const group = ref(null);
 
-watch(() => route.params.slug, async (slug, _old, onCleanup) => {
-  let alive = true;
-  onCleanup(() => { alive = false; });
-  product.value = undefined; error.value = ""; qty.value = 1; variations.value = []; choice.value = ""; picks.value = {}; pickError.value = false;
+async function fetchProduct(slug: string) {
   // the address holds the product's slug (or, from an old link, its id)
   const { data, error: err } = await supabase.from("products").select("*").eq("active", true).order("created_at", { ascending: false });
-  if (!alive) return;
-  if (err) { error.value = "We could not load this product. Check your connection and refresh the page."; product.value = null; return; }
+  if (err) return { ok: false };
   const all = data || [];
-  const me = findByRef(all, String(slug)) || null;
-  if (me?.slug && me.slug !== slug) { await navigateTo(productPath(me), { replace: true }); return; }   // an old id address moves to the slug
-  product.value = me;
-  related.value = me ? all.filter((x) => x.id !== me.id && (x.artist === me.artist || (x.categories || []).some((c) => (me.categories || []).includes(c)))).slice(0, 4) : [];
-  if (!me) return;
+  const me = findByRef(all, slug) || null;
+  if (!me) return { ok: true, product: null, related: [], variations: [] };
   const v = await supabase.from("product_variations").select("*").eq("product_id", me.id).eq("active", true).order("position");
-  if (!alive) return;
-  const list = v.data || [];
-  variations.value = list;
-  if (list.length === 1) { choice.value = list[0].id; if (list[0].options) picks.value = { ...list[0].options }; }                          // only one version: no need to ask
-}, { immediate: true });
+  const related = all.filter((x) => x.id !== me.id && (x.artist === me.artist || (x.categories || []).some((c) => (me.categories || []).includes(c)))).slice(0, 4);
+  return { ok: true, product: me, related, variations: v.data || [] };
+}
+// Loaded on the server, so the product is already in the page that search engines and link previews read. If the server could not reach the
+// database, the browser asks again once the page is up.
+const hydrating = useNuxtApp().isHydrating;
+const { data: loaded, refresh } = await useAsyncData(`product-${route.params.slug}`, () => fetchProduct(String(route.params.slug)));
+let retried = false;
+function apply(d) {
+  if (!d) return;
+  if (!d.ok) { if (import.meta.client && (!hydrating || retried)) { error.value = "We could not load this product. Check your connection and refresh the page."; product.value = null; } return; }
+  product.value = d.product; related.value = d.related; variations.value = d.variations;
+  if (d.variations.length === 1) { choice.value = d.variations[0].id; if (d.variations[0].options) picks.value = { ...d.variations[0].options }; }   // only one version: no need to ask
+}
+apply(loaded.value);
+// an old id address moves to the slug (a permanent redirect, so search engines follow it)
+if (loaded.value?.product?.slug && loaded.value.product.slug !== route.params.slug) await navigateTo(productPath(loaded.value.product), { replace: true, redirectCode: 301 });
+// a product that does not exist is a real 404 for search engines (the page still shows a friendly message)
+if (import.meta.server && loaded.value?.ok && !loaded.value.product) setResponseStatus(useRequestEvent(), 404);
+onMounted(async () => { if (hydrating && !loaded.value?.ok) { retried = true; await refresh(); apply(loaded.value); } });
 
 const p = computed(() => product.value);
 const badge = computed(() => (product.value ? badgeFor(product.value, variations.value) : null));

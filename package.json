@@ -6,16 +6,16 @@
   "scripts": {
     "dev": "nuxt dev --port 5199",
     "check:contrast": "node scripts/check-contrast.js",
-    "build": "node scripts/check-contrast.js && nuxt generate && node scripts/csp-hashes.mjs .output/public",
-    "preview": "npx serve .output/public -s",
+    "build": "node scripts/check-contrast.js && NITRO_PRESET=cloudflare-pages nuxt build",
+    "preview": "npx wrangler pages dev dist",
     "lint": "eslint components composables layouts lib middleware pages plugins app.vue nuxt.config.js",
     "test:e2e": "playwright test",
     "lighthouse": "lhci collect && lhci assert",
     "test": "vitest run",
-    "deploy": "npm run build && wrangler pages deploy .output/public --project-name teenfresh-events",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name teenfresh --branch main",
     "postinstall": "nuxt prepare",
     "pretest:e2e": "VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_ANON_KEY=test-anon-key npm run build:csp",
-    "build:csp": "NUXT_BUILD_DIR=.nuxt-csp NUXT_OUTPUT_DIR=dist-csp nuxt generate && node scripts/csp-hashes.mjs dist-csp/public",
+    "build:csp": "NUXT_BUILD_DIR=.nuxt-csp NUXT_OUTPUT_DIR=dist-csp nuxt build",
     "typecheck": "nuxt prepare && vue-tsc --noEmit"
   },
   "dependencies": {

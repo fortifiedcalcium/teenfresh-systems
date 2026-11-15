@@ -8,5 +8,6 @@ const clean = computed(() => sanitize(props.html));
 
 <template>
   <!-- The HTML is sanitized above, so injecting it is safe. -->
-  <div class="safe-html" v-html="clean" />
+  <!-- the sanitizer needs a browser DOM, so this is drawn in the browser only (never on the server) -->
+  <ClientOnly><div class="safe-html" v-html="clean" /></ClientOnly>
 </template>

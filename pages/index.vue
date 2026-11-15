@@ -14,19 +14,36 @@ let lastAnnounce = 0;
 let alive = true;
 let channel: ReturnType<typeof supabase.channel> | null = null;
 
-onMounted(async () => {
+async function fetchHome() {
   const [ev, av, im, kt] = await Promise.all([
     supabase.from("events").select("*").order("event_date"),
     supabase.from("event_availability").select("event_id,registered"),
     supabase.from("event_images").select("*").eq("slot", "banner"),
     supabase.from("event_kits").select("event_id,unit_price").eq("active", true),
   ]);
+  return {
+    ok: !(ev.error || av.error),
+    events: (ev.data || []) as EventRow[],
+    counts: Object.fromEntries(((av.data || []) as { event_id: string; registered: number }[]).map((r) => [r.event_id, r.registered])) as Record<string, number>,
+    banners: Object.fromEntries((im.data || []).map((r: ImageRow) => [r.event_id, r])) as Record<string, ImageRow>,
+    kits: (kt.data || []).reduce((m: Record<string, Pick<KitRow, "unit_price">[]>, k: { event_id: string; unit_price: number }) => ({ ...m, [k.event_id]: [...(m[k.event_id] || []), k] }), {}) as Record<string, Pick<KitRow, "unit_price">[]>,
+  };
+}
+// Loaded on the server, so the events are already in the page that search engines and link previews read. If the server could not reach the
+// database, the browser asks again once the page is up.
+const hydrating = useNuxtApp().isHydrating;
+const { data, refresh } = await useAsyncData("home-events", fetchHome);
+let retried = false;
+watch(data, (d) => {
+  if (!d) return;
+  kits.value = d.kits; banners.value = d.banners;
+  if (d.ok) { counts.value = d.counts; events.value = d.events; error.value = ""; return; }
+  if (import.meta.client && (!hydrating || retried)) { error.value = "We could not load the events. Check your connection and refresh the page."; events.value = []; }
+}, { immediate: true });
+
+onMounted(async () => {
+  if (hydrating && !data.value?.ok) { retried = true; await refresh(); }
   if (!alive) return;
-  kits.value = (kt.data || []).reduce((m: Record<string, Pick<KitRow, "unit_price">[]>, k: { event_id: string; unit_price: number }) => ({ ...m, [k.event_id]: [...(m[k.event_id] || []), k] }), {});
-  banners.value = Object.fromEntries((im.data || []).map((r: ImageRow) => [r.event_id, r]));
-  if (ev.error || av.error) { error.value = "We could not load the events. Check your connection and refresh the page."; events.value = []; return; }
-  counts.value = Object.fromEntries((av.data as any[]).map((r: { event_id: string; registered: number }) => [r.event_id, r.registered]));
-  events.value = ev.data;
 
   // Live availability: event_counts is a public counter table (no attendee data) streamed by Realtime.
   // Screen-reader announcements are throttled to one per 10 s so a busy event does not flood the user.

@@ -3,7 +3,7 @@ import type { PropType } from "vue";
 // The Terms (events.terms_html, sanitized) behind a real button with aria-expanded.
 const props = defineProps({ event: Object as PropType<Record<string, any>>, defaultOpen: Boolean });
 const open = ref(props.defaultOpen);
-const id = `terms-${Math.random().toString(36).slice(2, 8)}`;
+const id = `terms-${useId()}`;
 </script>
 
 <template>
