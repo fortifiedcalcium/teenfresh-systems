@@ -1,5 +1,10 @@
 <script setup>
 import { isConfigured } from "~/lib/supabaseClient.js";
+import { titleFor } from "~/lib/titles.js";
+
+// A unique title for every route (2.4.2). A page that names itself (an event, a product) overrides it through useSeo.
+const route = useRoute();
+useHead(() => ({ title: `${titleFor(route.path)} · Teenfresh Events` }));
 </script>
 
 <template>

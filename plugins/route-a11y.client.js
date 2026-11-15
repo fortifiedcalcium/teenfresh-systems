@@ -1,15 +1,16 @@
 import { titleFor } from "~/lib/titles.js";
 
-// On every route change: set a unique <title>, move focus to the page's h1 (or <main>) and announce the page.
-// Skipped on first load so the browser keeps its normal behaviour.
+// On every route change: move focus to the page's h1 (or <main>) and announce the page.
+// The unique <title> comes from app.vue (by route) or from the page itself (useSeo). Skipped on first load so the browser keeps its normal behaviour.
 export default defineNuxtPlugin((nuxtApp) => {
   const router = useRouter();
   const announce = useAnnounce();
+  const seoTitle = useState("seo-title", () => "");   // a page that names itself (an event, a product) sets this through useSeo
+  router.beforeEach(() => { seoTitle.value = ""; });   // before every navigation: the next page sets it again if it names itself
   let prev = null; // last pathname handled; null until the first load
   let timer = null;
   const handle = (pathname) => {
-    const title = titleFor(pathname);
-    document.title = `${title} · Teenfresh Events`;
+    const title = seoTitle.value || titleFor(pathname);
     if (prev === null || prev === pathname) { prev = pathname; return; }
     prev = pathname;
     clearInterval(timer);

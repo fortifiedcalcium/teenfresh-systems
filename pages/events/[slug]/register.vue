@@ -5,6 +5,7 @@ import { stepSchemaFor } from "~/lib/validation.js";
 import { zodErrors } from "~/lib/zodErrors.js";
 import { contactLinkList } from "~/lib/contactLinks.js";
 import { eventStatus } from "~/lib/availability.js";
+import { findByRef, registerPath } from "~/lib/slug";
 import { fetchEventImages } from "~/lib/eventImages.js";
 import { normalizeFacebook, normalizePhone, normalizeReference, normalizeX, orderTotal, parseAmount, peso, receiptPath, reusablePayments, balanceLeft, validateReceiptFile, formatBytes } from "~/lib/payment.js";
 
@@ -20,7 +21,11 @@ const saveDraft = (id, values, step) => { try { sessionStorage.setItem(draftKey(
 const clearDraft = (id) => { try { sessionStorage.removeItem(draftKey(id)); } catch { /* ignore */ } };
 
 const route = useRoute();
-const id = route.params.id;
+// The address holds the event's slug (or, from an old link, its id): find the event, and move an id address over to the slug.
+const { data: eventRefs } = await supabase.from("events").select("id,slug");
+const found = findByRef(eventRefs || [], String(route.params.slug));
+const id = found?.id ?? String(route.params.slug);
+if (found?.slug && found.slug !== route.params.slug) await navigateTo(registerPath(found), { replace: true });
 const { user, profile } = useAuth();
 const toast = useToast();
 const announce = useAnnounce();
@@ -29,6 +34,7 @@ const registered = ref(0);
 const images = ref({});
 const payments = ref([]);
 const kits = ref([]);
+useSeo({ title: "Register", noindex: true });
 const draft = loadDraft(id);
 const stepKey = ref(draft?.step || "info");
 const v = reactive({ ...DEFAULTS, email: user.value?.email || "", ...(draft?.values || {}) });

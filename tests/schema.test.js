@@ -103,6 +103,7 @@ beforeAll(async () => {
   await db.exec(read("029_product_variations.sql"));
   await db.exec(read("030_variation_layers.sql"));
   await db.exec(read("031_variation_stock.sql"));
+  await db.exec(read("032_slugs.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1332,5 +1333,24 @@ describe("013 order email templates", () => {
     await fails(ins("order_shipped", "  "), "subject_check");
     await fails(ins("order_unknown"), "kind_check");
     await fails(ins("order_paid"), "duplicate key");
+  });
+});
+
+describe("slugs (migration 032)", () => {
+  it("gives every event and product a unique, URL-safe slug, and fills a missing one from the title", async () => {
+    const { rows: ev } = await db.query("select slug from events");
+    expect(ev.length).toBeGreaterThan(0);
+    for (const r of ev) expect(r.slug).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+    expect(new Set(ev.map((r) => r.slug)).size).toBe(ev.length);
+    const a = await db.query("insert into events (title, event_date, capacity, ticket_prefix) values ('Fan Meet: Dec 12!', now() + interval '30 days', 10, 'FANMEET') returning slug");
+    expect(a.rows[0].slug).toBe("fan-meet-dec-12");
+    const b = await db.query("insert into events (title, event_date, capacity, ticket_prefix) values ('Fan Meet: Dec 12!', now() + interval '30 days', 10, 'FANMEET2') returning slug");
+    expect(b.rows[0].slug).toBe("fan-meet-dec-12-2");
+  });
+  it("cleans up a slug an admin types, and keeps it unique", async () => {
+    const r = await db.query("update events set slug = '  Fan Meet: Dec 12! ' where ticket_prefix = 'FANMEET2' returning slug");
+    expect(r.rows[0].slug).toBe("fan-meet-dec-12-2");   // already taken by the first one, so it gets a number
+    const p = await db.query("insert into products (artist, title, price) values ('IVE', 'Light Stick (Ver. 2)', 1200) returning slug");
+    expect(p.rows[0].slug).toBe("light-stick-ver-2");
   });
 });

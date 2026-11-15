@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: ["@nuxt/eslint", "@pinia/nuxt", "@nuxtjs/tailwindcss"],
   eslint: { config: { stylistic: false } },
+  runtimeConfig: { public: { siteUrl: process.env.NUXT_PUBLIC_SITE_URL || "https://teenfresh.pages.dev" } },
   components: [{ path: "~/components", pathPrefix: false }],   // <AdminSidebar /> comes from components/admin/AdminSidebar.vue
   css: ["~/assets/css/main.css"],
   tailwindcss: { cssPath: false, configPath: "tailwind.config.js" },   // main.css has its own @tailwind lines

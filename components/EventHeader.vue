@@ -3,14 +3,14 @@ import { fmtDate, fmtDeadline, fmtTimeRange, mapsUrl } from "~/lib/availability.
 import { peso } from "~/lib/payment.js";
 
 // The event's key facts as real text (never only inside a poster image).
-const props = defineProps({ event: { type: Object, required: true }, st: Object, kits: { type: Array, default: () => [] } });
+const props = defineProps({ event: { type: Object, required: true }, st: Object, kits: { type: Array, default: () => [] }, asH1: Boolean, requiredNote: { type: Boolean, default: true } });
 const fee = computed(() => Number(props.event.registration_fee));
 const paid = computed(() => fee.value > 0 || props.kits.length > 0);
 </script>
 
 <template>
   <header class="card p-4">
-    <h2 class="text-2xl">{{ event.title }}</h2>
+    <component :is="asH1 ? 'h1' : 'h2'" class="text-2xl">{{ event.title }}</component>
     <p v-if="event.subtitle" class="text-ink-muted">{{ event.subtitle }}</p>
     <InfoList class="mt-3 text-ink sm:grid-cols-2 sm:gap-x-6">
       <InfoRow label="Date:"><template #icon><IconCalendar /></template>{{ fmtDate(event.event_date) }}</InfoRow>
@@ -29,6 +29,6 @@ const paid = computed(() => fee.value > 0 || props.kits.length > 0);
       <strong v-if="paid" class="text-lg">1 Form = 1 Entry</strong>
       <Badge v-if="st?.canRegister && st.slotsLeft > 0" tone="warn">LIMITED SLOTS ONLY! {{ st.slotsLeft }} left</Badge>
     </p>
-    <p class="mt-3 text-sm text-ink-muted">* Indicates required question</p>
+    <p v-if="requiredNote" class="mt-3 text-sm text-ink-muted">* Indicates required question</p>
   </header>
 </template>

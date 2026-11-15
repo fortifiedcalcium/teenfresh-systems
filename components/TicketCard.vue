@@ -11,7 +11,7 @@ const titleId = `tc-${Math.random().toString(36).slice(2, 8)}`;
 <template>
   <article class="tcard flex h-full flex-col" :aria-labelledby="titleId">
     <div :class="['tcard__head', bandClass, 'overflow-hidden']">
-      <img v-if="image" :src="image" :alt="imageAlt || ''" loading="lazy" decoding="async" class="aspect-video w-full object-cover">
+      <slot name="media"><img v-if="image" :src="image" :alt="imageAlt || ''" loading="lazy" decoding="async" class="aspect-video w-full object-cover"></slot>
       <div class="flex items-start justify-between gap-3 p-5 pb-6">
         <div class="min-w-0">
           <h2 :id="titleId" :title="title" class="line-clamp-2 text-lg font-black leading-snug">{{ title }}</h2>
