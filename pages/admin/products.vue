@@ -3,7 +3,7 @@ import { supabase } from "~/lib/supabaseClient.js";
 import { VARIATIONS_MAX, CATEGORY_MAX, INFO_IMAGES_MAX, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateCategoryName, validateProduct } from "~/lib/products.js";
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "~/lib/eventImages.js";
 import { peso } from "~/lib/payment.js";
-import { COMBOS_MAX, LAYERS_MAX, LAYER_VALUES_MAX, buildCombos, finalVariations, normalizeLayers, validateLayers } from "~/lib/variations.js";
+import { COMBOS_MAX, LAYERS_MAX, LAYER_VALUES_MAX, buildCombos, finalVariations, groupVariations, normalizeLayers, validateLayers } from "~/lib/variations.js";
 import { blankProduct, productToForm } from "~/lib/productForm.js";
 
 // Admin: add, edit, hide and delete the products on the public Shop page.

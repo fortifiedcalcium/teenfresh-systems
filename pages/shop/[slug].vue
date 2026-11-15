@@ -4,6 +4,8 @@ import { INFO_SECTIONS, productImageUrl } from "~/lib/products.js";
 import { peso } from "~/lib/payment.js";
 import { allSoldOut, inStock, normalizeLayers, stockNote, variationLabel } from "~/lib/variations.js";
 import { MAX_QTY } from "~/lib/orders.js";
+import { findByRef, productPath } from "~/lib/slug";
+import { badgeFor } from "~/lib/productBadge";
 
 definePageMeta({ middleware: ["shop"] });
 const unitPrice = (p) => Number(p.price);
@@ -20,27 +22,29 @@ const picks = ref({});            // the value picked in each layer, like { Colo
 const pickError = ref(false);
 const group = ref(null);
 
-watch(() => route.params.id, (id, _old, onCleanup) => {
+watch(() => route.params.slug, async (slug, _old, onCleanup) => {
   let alive = true;
   onCleanup(() => { alive = false; });
   product.value = undefined; error.value = ""; qty.value = 1; variations.value = []; choice.value = ""; picks.value = {}; pickError.value = false;
-  supabase.from("product_variations").select("*").eq("product_id", id).eq("active", true).order("position").then(({ data }) => {
-    if (!alive) return;
-    const list = data || [];
-    variations.value = list;
-    if (list.length === 1) { choice.value = list[0].id; if (list[0].options) picks.value = { ...list[0].options }; }                          // only one version: no need to ask
-  });
-  supabase.from("products").select("*").eq("active", true).order("created_at", { ascending: false }).then(({ data, error: err }) => {
-    if (!alive) return;
-    if (err) { error.value = "We could not load this product. Check your connection and refresh the page."; product.value = null; return; }
-    const all = data || [];
-    const me = all.find((p) => p.id === id) || null;
-    product.value = me;
-    related.value = me ? all.filter((p) => p.id !== id && (p.artist === me.artist || (p.categories || []).some((c) => (me.categories || []).includes(c)))).slice(0, 4) : [];
-  });
+  // the address holds the product's slug (or, from an old link, its id)
+  const { data, error: err } = await supabase.from("products").select("*").eq("active", true).order("created_at", { ascending: false });
+  if (!alive) return;
+  if (err) { error.value = "We could not load this product. Check your connection and refresh the page."; product.value = null; return; }
+  const all = data || [];
+  const me = findByRef(all, String(slug)) || null;
+  if (me?.slug && me.slug !== slug) { await navigateTo(productPath(me), { replace: true }); return; }   // an old id address moves to the slug
+  product.value = me;
+  related.value = me ? all.filter((x) => x.id !== me.id && (x.artist === me.artist || (x.categories || []).some((c) => (me.categories || []).includes(c)))).slice(0, 4) : [];
+  if (!me) return;
+  const v = await supabase.from("product_variations").select("*").eq("product_id", me.id).eq("active", true).order("position");
+  if (!alive) return;
+  const list = v.data || [];
+  variations.value = list;
+  if (list.length === 1) { choice.value = list[0].id; if (list[0].options) picks.value = { ...list[0].options }; }                          // only one version: no need to ask
 }, { immediate: true });
 
 const p = computed(() => product.value);
+const badge = computed(() => (product.value ? badgeFor(product.value, variations.value) : null));
 const src = computed(() => (p.value ? productImageUrl(p.value) : null));
 // layers (like Color, then Storage): the shopper picks a value in each, and the matching combination is what they buy
 const layers = computed(() => normalizeLayers(p.value?.variation_layers || []));
@@ -71,6 +75,28 @@ const maxQty = computed(() => (chosen.value && chosen.value.stock != null ? Math
 const total = computed(() => unit.value * Math.min(qty.value, maxQty.value));
 const infoSections = computed(() => INFO_SECTIONS.filter(([k]) => p.value[k] || (k === "info_description" && (p.value.info_images || []).length > 0)));
 
+const site = String(useRuntimeConfig().public.siteUrl || "").replace(/\/$/, "");
+const plain = (s) => String(s || "").replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+useSeo({
+  title: () => (product.value ? `${product.value.title} (${product.value.artist})` : "Product"),
+  description: () => (product.value ? plain(product.value.info_description).slice(0, 200) || `${product.value.title} by ${product.value.artist}. Official Teenfresh merch, paid by GCash.` : undefined),
+  image: src, path: () => (product.value ? productPath(product.value) : route.path), type: "product",
+  jsonLd: () => {
+    const x = product.value;
+    if (!x) return null;
+    const list = variations.value;
+    const prices = list.length ? list.map((v) => (v.price != null ? Number(v.price) : Number(x.price))) : [Number(x.price)];
+    const lo = Math.min(...prices), hi = Math.max(...prices);
+    const available = !allSoldOut(list);
+    const common = { priceCurrency: "PHP", availability: available ? (x.pre_order ? "https://schema.org/PreOrder" : "https://schema.org/InStock") : "https://schema.org/SoldOut", url: `${site}${productPath(x)}` };
+    return {
+      "@context": "https://schema.org", "@type": "Product", name: x.title, brand: { "@type": "Brand", name: x.artist }, image: src.value ? [src.value] : undefined,
+      description: plain(x.info_description) || undefined,
+      offers: lo === hi ? { "@type": "Offer", price: String(lo), ...common } : { "@type": "AggregateOffer", lowPrice: String(lo), highPrice: String(hi), offerCount: list.length, ...common },
+    };
+  },
+});
+
 // a product with versions needs one picked before it can go in the cart
 function needPick() { if (variations.value.length && !selectedId.value) { pickError.value = true; group.value?.querySelector("input:not(:disabled)")?.focus(); return true; } return false; }
 function addToCart() { add(p.value.id, selectedId.value || null); const n = Math.min(qty.value, maxQty.value); if (n > 1) setQty(lineKey({ id: p.value.id, vid: selectedId.value || null }), n); }   // add() puts one in; setQty tops it up to the chosen amount
@@ -83,11 +109,11 @@ function onBuy() { if (needPick()) return; addToCart(); navigateTo("/checkout");
   <section v-else-if="!product" class="rounded-2xl border border-link bg-white p-4 sm:p-6">
     <Alert v-if="error" tone="bad" class="mb-4">{{ error }}</Alert>
     <Empty>This product is not available.</Empty>
-    <p class="mt-4 text-center"><NuxtLink to="/shop" class="btn-secondary no-underline"><IconArrowLeft />Back to the shop</NuxtLink></p>
+    <p class="mt-4 text-center"><BaseButton to="/shop" variant="secondary"><IconArrowLeft />Back to the shop</BaseButton></p>
   </section>
-  <section v-else class="rounded-2xl border border-link bg-white p-4 sm:p-6" aria-labelledby="product-title">
+  <section v-else class="rounded-[2rem] bg-white p-4 shadow-[0_6px_20px_color-mix(in_srgb,var(--ink)_12%,transparent)] sm:p-6" aria-labelledby="product-title">
     <nav aria-label="Breadcrumb" class="mb-4">
-      <NuxtLink to="/shop" class="btn-secondary no-underline"><IconArrowLeft />Shop</NuxtLink>
+      <BaseButton to="/shop" variant="ghost" small><IconArrowLeft />Shop</BaseButton>
     </nav>
     <div class="pd-layout">
       <div class="pd-media">
@@ -99,7 +125,7 @@ function onBuy() { if (needPick()) return; addToCart(); navigateTo("/checkout");
         <p class="pd-artist">{{ p.artist }}</p>
         <div class="flex items-start gap-2">
           <h1 id="product-title" class="pd-title min-w-0 flex-1">{{ p.title }}</h1>
-          <span v-if="p.is_new" class="shop-new mt-1">NEW</span>
+          <span v-if="badge" class="mt-1"><StatusChip :tone="badge.tone">{{ badge.label }}</StatusChip></span>
         </div>
 
         <p class="pd-price">
@@ -151,8 +177,8 @@ function onBuy() { if (needPick()) return; addToCart(); navigateTo("/checkout");
         <p class="pd-total"><span>Total</span><strong class="tabular-nums">{{ peso(total) }}</strong></p>
 
         <div class="pd-actions">
-          <button type="button" class="btn-secondary" :disabled="soldOutAll" @click="onAdd"><IconCart />Add to cart</button>
-          <button type="button" class="btn-primary" :disabled="soldOutAll" @click="onBuy">Buy now</button>
+          <BaseButton variant="secondary" :disabled="soldOutAll" @click="onAdd"><IconCart />Add to cart</BaseButton>
+          <BaseButton variant="accent" :disabled="soldOutAll" @click="onBuy">Buy now</BaseButton>
         </div>
       </div>
     </div>
@@ -167,20 +193,8 @@ function onBuy() { if (needPick()) return; addToCart(); navigateTo("/checkout");
     </div>
     <section v-if="related.length" class="mt-8" aria-labelledby="related-title">
       <h2 id="related-title" class="mb-4 text-lg font-bold">Related products</h2>
-      <ul class="shop-grid">
-        <li v-for="r in related" :key="r.id">
-          <NuxtLink :to="`/shop/${r.id}`" class="shop-card block">
-            <div class="shop-thumb">
-              <img v-if="productImageUrl(r)" :src="productImageUrl(r)" :alt="r.image_alt || ''" loading="lazy" class="shop-art h-full w-full object-cover">
-              <div v-else class="flex h-full w-full items-center justify-center text-link" aria-hidden="true"><IconImage /></div>
-            </div>
-            <div class="flex flex-col gap-1 px-1 pb-2 pt-3">
-              <p class="text-sm text-ink-muted">{{ r.artist }}</p>
-              <p class="shop-title">{{ r.title }}</p>
-              <p class="text-lg font-bold tabular-nums">{{ peso(unitPrice(r)) }}</p>
-            </div>
-          </NuxtLink>
-        </li>
+      <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <li v-for="(r, i) in related" :key="r.id"><ProductCard :title="r.title" :artist="r.artist" :to="productPath(r)" :image="productImageUrl(r)" :image-alt="r.image_alt || ''" :tint="i" :price-label="peso(unitPrice(r))" /></li>
       </ul>
     </section>
   </section>

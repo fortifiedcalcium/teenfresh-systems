@@ -6,7 +6,7 @@ export default defineConfig({
   testDir: "e2e",
   timeout: 30_000,
   fullyParallel: true,
-  retries: process.env.CI ? 1 : 0,
+  retries: 1,   // the Nuxt dev server can reload a page once while it warms up on the first requests
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure" },
   projects: [

@@ -4,6 +4,7 @@ import { PNG } from "pngjs";
 
 const ROUTES = [
   ["guest", "/", "Upcoming events"], ["guest", "/login", "Sign in"], ["guest", "/register", "Create an account"],
+  ["guest", "/events/ivemon-odd-platinum", "IVEMON: ODD PLATINUM Cupsleeve Event"], ["guest", "/shop", "Teenfresh's products"], ["guest", "/shop/orbital", "ÖRBITAL"], ["guest", "/shop/light-stick", "Light stick"],
   ["guest", "/forgot-password", "Forgot your password?"], ["guest", "/reset-password", "Link expired"],
   ["user", "/events/e1/register", "Register"], ["user", "/events/e3/register", "Register"], ["user", "/my-registrations", "My registrations"], ["user", "/my-ticket/r1", "My ticket"],
   ["admin", "/admin", "Dashboard"], ["admin", "/admin/events", "Events"], ["admin", "/admin/payments", "Payments"], ["admin", "/admin/attendees", "Attendees"],
