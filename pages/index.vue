@@ -5,7 +5,8 @@ import { SHOP_ENABLED } from "~/lib/features";
 import { productImageUrl } from "~/lib/products";
 import { peso } from "~/lib/payment";
 import { productPath } from "~/lib/slug";
-import { badgeFor, fromPrice } from "~/lib/productBadge";
+import { badgeFor, priceFor } from "~/lib/productBadge";
+import { preorderNotice } from "~/lib/preorder";
 import { groupVariations } from "~/lib/variations";
 import { bannerAlt, bannerUrl, NO_HOME_SETTINGS, pickFeatured } from "~/lib/homeSettings";
 import type { HomeSettings } from "~/lib/homeSettings";
@@ -128,8 +129,8 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
       <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <li v-for="(p, i) in drop" :key="p.id">
           <ProductCard :title="p.title" :artist="p.artist" :to="productPath(p)" :image="productImageUrl(p)" :image-alt="p.image_alt || ''" :tint="i"
-            :price-label="`${fromPrice(p.price, optsOf(p)) != null ? 'From ' : ''}${peso(fromPrice(p.price, optsOf(p)) ?? p.price)}`" :discount="p.discount_percent > 0 ? p.discount_percent : undefined"
-            :badge="badgeFor(p, optsOf(p))?.label" :badge-tone="badgeFor(p, optsOf(p))?.tone" />
+            :price-label="`${priceFor(p.price, optsOf(p)).from ? 'From ' : ''}${peso(priceFor(p.price, optsOf(p)).amount)}`" :discount="p.discount_percent > 0 ? p.discount_percent : undefined"
+            :badge="badgeFor(p, optsOf(p))?.label" :badge-tone="badgeFor(p, optsOf(p))?.tone" :notice="preorderNotice(p)" />
         </li>
       </ul>
     </section>
