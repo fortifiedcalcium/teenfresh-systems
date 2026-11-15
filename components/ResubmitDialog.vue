@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { compressReceipt } from "~/lib/imageShrink";
 import type { PropType } from "vue";
 import { supabase } from "~/lib/supabaseClient";
 import { friendlyError } from "~/lib/api";
@@ -33,8 +34,9 @@ async function submit() {
   receiptError.value = validateReceiptFile(file.value) || "";
   if (Object.keys(fieldErrors.value).length || receiptError.value) { bumpFocus(); return; }
   busy.value = true; serverError.value = "";
-  const path = receiptPath(user.value.id, file.value);
-  const up = await supabase.storage.from("payment-receipts").upload(path, file.value, { contentType: file.value.type, upsert: false });
+  const upFile = await compressReceipt(file.value);   // a photo of a receipt is shrunk before it is sent (a PDF is not)
+  const path = receiptPath(user.value.id, upFile);
+  const up = await supabase.storage.from("payment-receipts").upload(path, upFile, { contentType: upFile.type, upsert: false });
   if (up.error) { busy.value = false; serverError.value = "We couldn't upload your receipt. Try again."; return; }
   const { error } = await supabase.rpc("resubmit_payment", { p_payment_id: pay.id, p_sender_name: f.sender_name, p_amount: parseAmount(f.amount_paid), p_reference: f.reference_number, p_receipt_path: path });
   busy.value = false;

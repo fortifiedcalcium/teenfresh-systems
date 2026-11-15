@@ -40,7 +40,8 @@ export function validateImageFile(file) {
 export async function uploadEventImage(event, slot, original, altText, previous) {
   const bad = validateImageFile(original);
   if (bad) throw new Error(bad);
-  const file = slot === "gcash_qr" ? original : await shrinkOrRefuse(original, SLOTS[slot]?.w || 1600);   // a QR code stays pixel-exact; the rest are shrunk to the slot's size
+  const qr = slot === "gcash_qr";
+  const file = await shrinkOrRefuse(original, qr ? 4096 : SLOTS[slot]?.w || 1600, { lossless: qr });   // a QR code is compressed without losing a pixel; the rest are shrunk to the slot's size
   const path = `${event.id}/${slot}-${crypto.randomUUID()}.${IMAGE_TYPES[file.type]}`;
   const up = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: false });
   if (up.error) throw new Error("Upload failed: " + up.error.message);

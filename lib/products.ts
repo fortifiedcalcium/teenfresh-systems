@@ -94,10 +94,10 @@ export function productRow(f) {
 }
 
 /** Uploads a product image and returns its storage path. */
-export async function uploadProductImage(original, { shrink = true } = {}) {
+export async function uploadProductImage(original, { lossless = false } = {}) {
   const bad = validateImageFile(original);
   if (bad) throw new Error(bad);
-  const file = shrink ? await shrinkOrRefuse(original, 1600) : original;
+  const file = lossless ? await shrinkOrRefuse(original, 4096, { lossless: true }) : await shrinkOrRefuse(original, 1600);   // a QR code is saved lossless, so every pixel stays
   const path = `products/${crypto.randomUUID()}.${IMAGE_TYPES[file.type]}`;
   const up = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: false });
   if (up.error) throw new Error("Upload failed: " + up.error.message);

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { compressReceipt } from "~/lib/imageShrink";
 import { supabase } from "~/lib/supabaseClient";
 import { friendlyError } from "~/lib/api";
 import { orderArgs, priceOrder, validateCheckout } from "~/lib/orders";
@@ -42,8 +43,9 @@ async function submit() {
   busy.value = true;
   let path = null;
   try {
-    path = receiptPath(user.value.id, file.value);
-    const up = await supabase.storage.from("payment-receipts").upload(path, file.value, { contentType: file.value.type, upsert: false });
+    const upFile = await compressReceipt(file.value);   // a photo of a receipt is shrunk before it is sent (a PDF is not)
+    path = receiptPath(user.value.id, upFile);
+    const up = await supabase.storage.from("payment-receipts").upload(path, upFile, { contentType: upFile.type, upsert: false });
     if (up.error) throw new Error("We couldn't upload your receipt. Check your connection and the file, then try again.");
     const { data, error } = await supabase.rpc("place_order", orderArgs(f, items.value, path));
     if (error) throw error;

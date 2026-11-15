@@ -12,7 +12,7 @@ export const STATIC_SECURITY_HEADERS: Record<string, string> = {
 
 export const cspFor = (scriptHashes: string[], supabaseOrigins = "https://*.supabase.co wss://*.supabase.co"): string => [
   "default-src 'self'",
-  `script-src 'self'${scriptHashes.map((h) => ` '${h}'`).join("")}`,
+  `script-src 'self' 'wasm-unsafe-eval'${scriptHashes.map((h) => ` '${h}'`).join("")}`,   // 'wasm-unsafe-eval' lets the picture compressor (WebAssembly) run; it does not allow eval() or inline scripts
   "style-src 'self'", "style-src-attr 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.supabase.co", "font-src 'self'",
   `connect-src 'self' ${supabaseOrigins}`,

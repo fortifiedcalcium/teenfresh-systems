@@ -20,7 +20,7 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   tailwindcss: { cssPath: false, configPath: "tailwind.config.js" },   // main.css has its own @tailwind lines
   // Same names as the React build, so an existing .env keeps working.
-  vite: { envPrefix: ["VITE_"], optimizeDeps: { entries: ["pages/**/*.vue", "layouts/**/*.vue", "components/**/*.vue", "composables/**/*.ts", "stores/**/*.ts", "plugins/**/*.ts", "lib/**/*.ts"], include: ["@supabase/supabase-js", "dompurify", "zod", "qrcode-generator", "html5-qrcode", "exceljs"] } },   // pre-bundled, so the dev server does not reload the page the first time a screen needs one
+  vite: { envPrefix: ["VITE_"], optimizeDeps: { exclude: ["@jsquash/webp"], entries: ["pages/**/*.vue", "layouts/**/*.vue", "components/**/*.vue", "composables/**/*.ts", "stores/**/*.ts", "plugins/**/*.ts", "lib/**/*.ts"], include: ["@supabase/supabase-js", "dompurify", "zod", "qrcode-generator", "html5-qrcode", "exceljs"] } },   // pre-bundled, so the dev server does not reload the page the first time a screen needs one
   app: {
     head: {
       htmlAttrs: { lang: "en" },
