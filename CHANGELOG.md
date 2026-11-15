@@ -2,7 +2,26 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period.
+
+## [2.4.0] - 2026-11-15
+
+Needs three new migrations, run in this order in the Supabase SQL Editor: `034_home_settings.sql`, `035_product_stock.sql`, `036_preorder_period.sql`. The site keeps working before they run (no banner, no stock or pre-order dates), but saving a product in admin needs 035 and 036.
+
+### Added
+- **Editable home banner.** Admin has a new **Home page** screen: add, change or remove a banner background picture (JPG, PNG or WebP, up to 10 MB, with a preview), describe it for screen readers or mark it decorative, and choose which event is featured in the banner (or leave it on automatic). Without a picture the plain cream background stays. A cream overlay sits between the picture and the content, and its contrast against a black and a white picture is part of `npm run check:contrast`.
+- **Stock on the item.** A product with no variations has its own stock (empty = not counted, 0 = sold out); a product with variations counts stock on each variation. `place_order()` checks and takes the stock per variation, or from the product, in one step, and cancelling or deleting a live order puts it back. A product is Sold out only when all its variations are at 0.
+- **Pre-order period.** A pre-order can have a start date and a last day to order, read in Philippine time. While it is open the Pre-order badge shows; after it ends the thumbnail says "Pre-order period ended" and Add to cart / Buy now are switched off (`place_order()` refuses it too, with `PREORDER_ENDED`; before the start, `PREORDER_NOT_STARTED`).
+
+### Changed
+- **Home banner is fluid.** Padding, headline size and minimum height follow the screen width from 360px to 1920px with no sideways scroll; the text and the ticket sit side by side from 1024px and stack below.
+- **Price shown.** The shop card, product page and product data show the lowest price among the variations still in stock ("From ₱x"); when everything is sold out, the lowest price with the Sold out badge.
+- **Footer** no longer repeats the logo; the social icons and handle sit left and the accessibility link right.
+- **Featured ticket photo** is shown whole instead of cropped to 16:9, so a poster's top text is not cut off.
+
+### Fixed
+- **Category chips.** Every category now has a chip again. A rule added on 2026-11-13 hid a chip unless its category had two or more products, so a small shop showed none.
+- `npm run lint` pointed at `nuxt.config.js` (now `.ts`) and never ran; it works again.
 
 ## [2.3.0] - 2026-11-15
 

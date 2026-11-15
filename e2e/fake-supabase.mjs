@@ -3,7 +3,7 @@
 import http from "node:http";
 import { TABLES } from "./data.js";
 
-const PUBLIC = new Set(["events", "event_images", "event_kits", "event_availability", "products", "product_variations", "product_categories"]);
+const PUBLIC = new Set(["events", "event_images", "event_kits", "event_availability", "products", "product_variations", "product_categories", "home_settings"]);
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, "http://x");
   const headers = { "access-control-allow-origin": "*", "content-type": "application/json" };

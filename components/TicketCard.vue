@@ -2,7 +2,8 @@
 import type { Tone } from "~/types/ui";
 
 // An event as a concert ticket: the photo, a pastel header (coral, mint or blue, by `band`) with the title and status, notches and a dashed
-// perforation, then the details, a decorative barcode strip and the action.
+// perforation, then the details, a decorative barcode strip and the action. The featured ticket (`priority`) shows its photo whole, so a poster's
+// top text is never cropped; the others keep the even 16:9 crop so a grid of cards lines up.
 const props = withDefaults(defineProps<{ title: string; subtitle?: string; to?: string; image?: string | null; imageAlt?: string; band?: number; statusLabel?: string; statusTone?: Tone; barcode?: string; priority?: boolean }>(), { band: 0, statusTone: "ok" });
 // Only ink text goes on coral and blue (the contrast check forbids the muted ink there)
 const BANDS = ["bg-brand-coral", "bg-brand-mint", "bg-brand-blue"];
@@ -13,7 +14,7 @@ const titleId = `tc-${useId()}`;
 <template>
   <article class="tcard flex h-full flex-col" :aria-labelledby="titleId">
     <div class="tcard__head overflow-hidden bg-white">
-      <slot name="media"><img v-if="image" :src="image" :alt="imageAlt || ''" :loading="priority ? 'eager' : 'lazy'" :fetchpriority="priority ? 'high' : undefined" decoding="async" class="aspect-video w-full object-cover"></slot>
+      <slot name="media"><img v-if="image" :src="image" :alt="imageAlt || ''" :loading="priority ? 'eager' : 'lazy'" :fetchpriority="priority ? 'high' : undefined" decoding="async" width="1600" height="900" :class="priority ? 'h-auto max-h-[36rem] w-full object-contain' : 'aspect-video w-full object-cover'"></slot>
       <div :class="['flex flex-col-reverse items-start gap-2 p-5 pb-6 text-ink sm:flex-row sm:justify-between sm:gap-3', bandClass]">
         <div class="min-w-0">
           <h2 :id="titleId" :title="title" class="line-clamp-2 text-lg font-black leading-snug">{{ title }}</h2>
