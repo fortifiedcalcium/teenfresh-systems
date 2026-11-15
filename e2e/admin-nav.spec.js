@@ -98,6 +98,7 @@ test.describe("the scan button", () => {
     return { fabTop: f.top, fabBottom: f.bottom, barTop: l.top, barBottom: l.bottom, d: f.width };
   });
   test("raised (about half above the bar) on every page except the Scanner, where it is docked inside the bar", async ({ page, as }) => {
+    test.setTimeout(90_000);                                                       // it loads ten admin pages in a row
     await as("admin");
     for (const path of ROUTES.filter((p) => p !== "/admin/scanner")) {
       await page.goto(path); await page.waitForLoadState("networkidle");

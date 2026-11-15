@@ -4,6 +4,14 @@ All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
 `1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia.
 
+## [Unreleased]
+
+### Changed
+- **Navigation.** One slim pill row on a desktop (logo left; Events, Shop, Cart and an **Account** menu right). My orders, My registrations, Notifications, Admin and Sign out moved into the Account menu (it opens by keyboard, closes with Escape and returns focus). On a phone there is a **bottom bar** (Events, Shop, Cart, Account or Sign in) with 44px targets; the Account menu opens upwards.
+- **Home page.** A hero with the featured event's subtitle as the headline, two buttons (See events, Browse shop) and the featured event as a ticket card; the other events follow under "More events"; a **Shop the drop** section shows the four newest products. The featured event is the next one people can still register for.
+- **Event ticket card.** The photo, then a pastel header (coral, mint or blue per event) with the title and status chip, a compact two-column grid (Date, Time, Fee or Kits, Slots left), the slots bar, a decorative barcode strip above the Register button.
+- Tests: the picture comparison tests and the new navigation tests (menu, bottom bar, focus rings, 44px targets, axe) cover the new look; the old icon-row tests were replaced by facts-grid tests.
+
 ## [2.1.0] - 2026-11-15
 
 The redesign, readable addresses, server rendering and the TypeScript conversion. **Run `supabase/migrations/032_slugs.sql`** (already applied on the live project).

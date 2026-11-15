@@ -3,7 +3,7 @@ import jsQR from "jsqr";
 import { PNG } from "pngjs";
 
 const ROUTES = [
-  ["guest", "/", "Upcoming events"], ["guest", "/login", "Sign in"], ["guest", "/register", "Create an account"],
+  ["guest", "/", "IVE's Kim Gaeul Cupsleeve Event hosted by Teenfresh"], ["guest", "/login", "Sign in"], ["guest", "/register", "Create an account"],
   ["guest", "/events/ivemon-odd-platinum", "IVEMON: ODD PLATINUM Cupsleeve Event"], ["guest", "/shop", "Teenfresh's products"], ["guest", "/shop/orbital", "ÖRBITAL"], ["guest", "/shop/light-stick", "Light stick"],
   ["guest", "/forgot-password", "Forgot your password?"], ["guest", "/reset-password", "Link expired"],
   ["user", "/events/e1/register", "Register"], ["user", "/events/e3/register", "Register"], ["user", "/my-registrations", "My registrations"], ["user", "/my-ticket/r1", "My ticket"],
@@ -24,13 +24,14 @@ test.describe("axe: wcag2a / wcag2aa / wcag21aa / wcag22aa on every route", () =
     });
   }
 
-  test("event cards are all the same size, even across rows and with different content", async ({ page, as }) => {
+  test("the events below the hero are all the same size, with different content", async ({ page, as }) => {
     await as(null);
-    await page.setViewportSize({ width: 800, height: 900 }); // two columns: two rows, the second holds the closed event
+    await page.setViewportSize({ width: 800, height: 900 }); // two columns
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "Upcoming events" })).toBeVisible();
-    const cards = page.getByRole("article");
-    await expect(cards).toHaveCount(3);
+    await expect(page.getByRole("heading", { level: 1, name: "IVE's Kim Gaeul Cupsleeve Event hosted by Teenfresh" })).toBeVisible();
+    await expect(page.locator("#featured-event article, #events article")).toHaveCount(3);   // the featured event in the hero, and two more below it
+    const cards = page.locator("#events article");
+    await expect(cards).toHaveCount(2);                                            // a sold-out event and a closed one
     await page.waitForLoadState("networkidle");
     const sizes = await cards.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }));
     expect(new Set(sizes.map((s) => s[1])).size, JSON.stringify(sizes)).toBe(1);

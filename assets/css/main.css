@@ -13,8 +13,8 @@
   body { @apply bg-brand-blush font-sans text-base text-ink antialiased; line-height: 1.5; }
   h1, h2, h3, h4 { @apply font-black text-ink; }   /* titles use the Black weight (900) */
   /* 1.4.1: links are always underlined, never distinguished by colour alone */
-  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.bbtn):not(.pill-link):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item) { @apply text-link underline underline-offset-2; }
-  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.bbtn):not(.pill-link):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item):hover { text-decoration-thickness: 2px; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.bbtn):not(.pill-link):not(.public-nav-item):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item) { @apply text-link underline underline-offset-2; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.bbtn):not(.pill-link):not(.public-nav-item):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item):hover { text-decoration-thickness: 2px; }
   /* 2.4.7: one visible focus indicator for everything interactive: 3px ink, 2px offset */
   :focus { outline: none; }
   :focus-visible, [tabindex="-1"]:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
