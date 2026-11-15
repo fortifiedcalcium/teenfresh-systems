@@ -25,6 +25,7 @@ export default {
       white: v("white"),
       ink: { DEFAULT: v("ink"), muted: v("ink-muted") },
       link: v("link"),
+      accent: { DEFAULT: v("accent"), hover: v("accent-hover") },
       danger: v("danger"),
       success: v("success"),
       "warning-ink": v("warning-ink"),

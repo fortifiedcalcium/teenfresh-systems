@@ -30,7 +30,7 @@ async function resend() {
   <p v-else-if="!reg" class="text-center text-ink-muted">Ticket not found. <NuxtLink class="text-link underline" to="/my-registrations">My registrations</NuxtLink></p>
   <div v-else class="mx-auto max-w-xl space-y-4">
     <h1 class="flex items-center gap-2 text-2xl"><IconTicket />My ticket</h1>
-    <TicketCard :registration="reg" :event="event" />
+    <RegistrationTicket :registration="reg" :event="event" />
     <div v-if="reg.status === 'confirmed' && reg.ticket_number" class="card space-y-3 p-4 text-sm">
       <h2 class="text-lg font-black">Can't attend? Transfer your slot</h2>
       <p class="text-ink">Your confirmation email is your ticket. To transfer your slot, forward that email to the new owner. We are not responsible for unauthorized leaks of your ticket. Keep it confidential.</p>

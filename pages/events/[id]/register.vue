@@ -175,7 +175,7 @@ const emailText = computed(() => (emailState.value === "sending" ? "Sending your
       <p v-if="doneStatus" class="mt-2">Your ticket number is <strong class="font-mono">{{ done.ticket_number }}</strong>. Keep the QR code below and the confirmation email we are sending to {{ done.email }}.</p>
       <p v-else class="mt-2">Your payment will be verified, and a confirmation email will be sent within 48 to 72 hours. Kindly keep it confidential as it is your personal ticket for entry.</p>
     </div>
-    <TicketCard v-if="doneStatus" :registration="{ name: done.name, x_username: done.x_username, ticket_number: done.ticket_number, status: 'confirmed' }" :event="event" />
+    <RegistrationTicket v-if="doneStatus" :registration="{ name: done.name, x_username: done.x_username, ticket_number: done.ticket_number, status: 'confirmed' }" :event="event" />
     <p v-if="doneStatus" role="status" class="text-center text-sm text-ink-muted">{{ emailText }}</p>
     <div class="flex flex-wrap justify-center gap-2">
       <button type="button" class="btn-primary" @click="another"><IconPlus />Submit another form</button>

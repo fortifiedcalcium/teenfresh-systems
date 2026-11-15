@@ -30,6 +30,8 @@
   --error-heading: #7a1212;  /* banner heading (7:1 or more on --error-bg) */
   --error-text:    #1f1f1f;  /* banner list text */
   --error-link:    #8a1c1c;  /* links in the banner, always underlined */
+  --accent: #b83a58;       /* accent pink: a FILL with white text (5.55:1); as text only on cream/ivory/white, not on blush */
+  --accent-hover: #9c2a47;
   --social-pink: #b83a58;  /* footer social icons and handle: a rose that keeps 4.5:1 on the cream footer */
   --social-pink-hover: #9c2a47;  /* their hover colour (darker) */
 

@@ -40,6 +40,6 @@ function pick(c) {
     <Alert v-if="error" tone="bad" class="mb-4">{{ error }}</Alert>
     <Loading v-if="products === null" label="Loading products…" class="p-12" />
     <Empty v-else-if="shown.length === 0">{{ chip === "All" ? "No products yet. Check back soon!" : `No products in ${chip} yet.` }}</Empty>
-    <ul v-else class="shop-grid"><ProductCard v-for="p in shown" :key="p.id" :p="p" :options="versions[p.id] || []" /></ul>
+    <ul v-else class="shop-grid"><ProductCardLegacy v-for="p in shown" :key="p.id" :p="p" :options="versions[p.id] || []" /></ul>
   </section>
 </template>

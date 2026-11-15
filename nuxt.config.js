@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-01-01",
   ssr: false,
   devtools: { enabled: false },
-  modules: ["@nuxt/eslint", "@nuxtjs/tailwindcss"],
+  modules: ["@nuxt/eslint", "@pinia/nuxt", "@nuxtjs/tailwindcss"],
   eslint: { config: { stylistic: false } },
   components: [{ path: "~/components", pathPrefix: false }],   // <AdminSidebar /> comes from components/admin/AdminSidebar.vue
   css: ["~/assets/css/main.css"],
