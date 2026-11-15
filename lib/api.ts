@@ -87,6 +87,8 @@ const ERRORS = {
   ORDER_NOT_PENDING: "The items of this order are already paid.",
   SHIPPING_NOT_PENDING: "There is no shipping receipt being checked for this order.",
   OUT_OF_STOCK: "Sorry, something in your cart just sold out, or has fewer left than you asked for. Review your cart and try again.",
+  PREORDER_ENDED: "The pre-order period for something in your cart has ended. Remove it from your cart and try again.",
+  PREORDER_NOT_STARTED: "Something in your cart is not open for pre-order yet. Remove it from your cart and try again.",
   VARIATION_REQUIRED: "Choose a version for each product in your cart that has one, then try again.",
   PAYMENT_NOT_SET_UP: "Checkout is not open yet because payment details are not set up. Please try again later.",
 };
