@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // Track = sky, fill = link (3:1+ non-text contrast). Not the only cue: the card always prints "X of Y slots left".
 const props = defineProps({ registered: { type: Number, required: true }, capacity: { type: Number, required: true }, label: { type: String, default: "Slots taken" } });
 const taken = computed(() => Math.min(props.registered, props.capacity));

@@ -1,9 +1,9 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { friendlyError } from "~/lib/api.js";
-import { feedback } from "~/lib/beep.js";
-import { fmtDateTime } from "~/lib/availability.js";
-import { kitLabel } from "~/lib/payment.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { friendlyError } from "~/lib/api";
+import { feedback } from "~/lib/beep";
+import { fmtDateTime } from "~/lib/availability";
+import { kitLabel } from "~/lib/payment";
 
 // Result panels: surface colour + icon + big text. Sound and vibration are extras, never the only cue (1.4.1).
 const PANEL = {
@@ -93,8 +93,8 @@ const p = computed(() => result.value && PANEL[result.value.result]);
         <p v-if="result.result === 'duplicate'" class="mt-2 text-lg font-bold">First scanned {{ fmtDateTime(result.checked_in_at) }}{{ result.checked_in_by_name ? ` by ${result.checked_in_by_name}` : "" }}</p>
         <fieldset class="mx-auto mt-4 flex max-w-md flex-wrap justify-center gap-x-6 rounded-xl border-2 border-current bg-white p-3 text-left text-base text-ink">
           <legend class="px-2 text-sm font-black">After check-in</legend>
-          <label class="flex min-h-target items-center gap-2"><input type="checkbox" class="check" :checked="flags.receipt" @change="updateFlag('receipt', $event.target.checked)"> Receipt verified (₱200 or more)</label>
-          <label class="flex min-h-target items-center gap-2"><input type="checkbox" class="check" :checked="flags.kit" @change="updateFlag('kit', $event.target.checked)"> Kit claimed</label>
+          <label class="flex min-h-target items-center gap-2"><input type="checkbox" class="check" :checked="flags.receipt" @change="updateFlag('receipt', ($event.target as HTMLInputElement).checked)"> Receipt verified (₱200 or more)</label>
+          <label class="flex min-h-target items-center gap-2"><input type="checkbox" class="check" :checked="flags.kit" @change="updateFlag('kit', ($event.target as HTMLInputElement).checked)"> Kit claimed</label>
         </fieldset>
       </div>
       <button type="button" class="btn-secondary mt-4" @click="result = null"><IconClose />Dismiss result</button>

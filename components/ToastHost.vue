@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 const items = useToastItems();
 const dismiss = (id) => { items.value = items.value.filter((t) => t.id !== id); };
 // White card, ink text, 4px status bar + icon. Each toast is its own live region.

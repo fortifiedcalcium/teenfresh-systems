@@ -1,7 +1,7 @@
-<script setup>
-import { sanitize } from "~/lib/sanitize.js";
+<script setup lang="ts">
+import { sanitize } from "~/lib/sanitize";
 
-const exec = (cmd, arg) => document.execCommand?.(cmd, false, arg);
+const exec = (cmd: string, arg?: string) => document.execCommand?.(cmd, false, arg);
 
 // A built-in visual editor for the Terms: type, select text and press Bold / lists / Link. No HTML to write.
 // What it produces is passed through the same whitelist sanitizer as the attendee page and the email. v-model is the HTML.

@@ -1,0 +1,46 @@
+/* Soft pastel + ticket stub. Colours come from tokens.css only (the contrast check scans this file too). */
+
+/* Rounded pill navbar */
+.pill-nav { @apply mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-2 gap-y-1 border border-brand-sky bg-white px-3 py-2; border-radius: 2rem;   /* a pill on one row, a soft rounded bar when it wraps on a phone */ box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 14%, transparent); }
+.pill-link { @apply inline-flex min-h-target min-w-[2.75rem] items-center justify-center gap-2 rounded-full px-2 py-2 sm:px-4 text-sm font-bold text-ink no-underline transition-colors hover:bg-brand-sky; }
+.pill-link[aria-current="page"] { @apply bg-ink text-brand-ivory hover:bg-ink; }
+
+/* Event ticket card: two stacked parts, each with two half-circle notches where they meet (the perforation). The shadow sits on the wrapper because a mask would clip it. */
+.tcard { filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--ink) 16%, transparent)); }
+.tcard__head, .tcard__body { @apply bg-white; }
+.tcard__head { -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000) , radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); mask-composite: intersect; border-radius: 1.5rem 1.5rem 0 0; }
+.tcard__body { -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000); mask-composite: intersect; border-radius: 0 0 1.5rem 1.5rem; }
+.tcard { --tcard-notch: 12px; }
+.tcard__perf { margin: 0 calc(var(--tcard-notch) + 8px); border-top: 2px dashed var(--brand-sky); }
+
+/* Product card */
+.pcard { @apply flex h-full flex-col overflow-hidden bg-white; border-radius: 24px; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
+.pcard__photo { @apply relative block aspect-square w-full overflow-hidden; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) { .pcard { transition: transform .2s ease; } .pcard:hover { transform: translateY(-2px); } }
+
+/* Cart stub: a ticket stub with a perforated left edge */
+.cstub { @apply relative bg-white; border-radius: 24px; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
+.cstub__edge { position: absolute; top: 1rem; bottom: 1rem; left: 0; border-left: 2px dashed var(--brand-sky); }
+.cstub__edge::before, .cstub__edge::after { content: ""; position: absolute; left: -13px; width: 24px; height: 24px; border-radius: 9999px; background: var(--brand-blush); }
+.cstub__edge::before { top: -1.75rem; } .cstub__edge::after { bottom: -1.75rem; }
+
+/* Fully rounded buttons */
+.bbtn { @apply inline-flex min-h-target min-w-target items-center justify-center gap-2 rounded-full border-2 px-5 py-2 text-sm font-bold no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60; }
+.bbtn--primary { @apply border-ink bg-brand-blue text-ink hover:bg-ink hover:text-brand-ivory; }
+.bbtn--secondary { @apply border-ink bg-brand-ivory text-ink hover:bg-brand-sky; }
+.bbtn--accent { @apply border-accent bg-accent text-white hover:border-accent-hover hover:bg-accent-hover; }
+.bbtn--danger { @apply border-danger bg-danger text-white hover:border-ink hover:bg-ink; }
+.bbtn--ghost { @apply border-transparent bg-transparent text-ink hover:bg-brand-sky; }
+.bbtn--sm { @apply px-4 py-1 text-xs; }
+.bbtn--block { @apply w-full; }
+
+/* A soft white panel: 24px radius, a gentle shadow, no hard border (cart, checkout) */
+.card-soft { @apply bg-white; border-radius: 1.5rem; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
+fieldset.card-soft { @apply border-0; }
+/* a fieldset legend inside a soft panel is the panel's heading, not a label sitting on the border */
+fieldset.card-soft > legend { float: left; width: 100%; padding: 0; margin-bottom: 0.25rem; }
+fieldset.card-soft > legend + * { clear: both; }
+
+/* a fieldset legend inside a soft panel is the panel's heading, not a label sitting on the border */
+fieldset.card-soft > legend { float: left; width: 100%; padding: 0; margin-bottom: 0.25rem; }
+fieldset.card-soft > legend + * { clear: both; }

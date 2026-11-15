@@ -1,9 +1,10 @@
-<script setup>
-import { formatBytes, RECEIPT_ACCEPT, validateReceiptFile } from "~/lib/payment.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { formatBytes, RECEIPT_ACCEPT, validateReceiptFile } from "~/lib/payment";
 
 // Receipt picker. Works with the keyboard (the native file input is focusable and the label is its button);
 // drag and drop is an extra, never the only way. Announces the chosen file and any problem. v-model is the File (or null).
-const props = defineProps({ id: { type: String, required: true }, label: { type: String, default: "Attach payment receipt" }, modelValue: { type: Object, default: null }, error: String, required: { type: Boolean, default: true } });
+const props = defineProps({ id: { type: String, required: true }, label: { type: String, default: "Attach payment receipt" }, modelValue: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, default: null }, error: String, required: { type: Boolean, default: true } });
 const emit = defineEmits(["update:modelValue"]);
 const announce = useAnnounce();
 const input = ref(null);
@@ -14,7 +15,7 @@ const localError = ref("");
 
 watch(() => props.modelValue, (file, _old, onCleanup) => {
   if (!file || !file.type.startsWith("image/")) { preview.value = null; return; }
-  const url = URL.createObjectURL(file);
+  const url = URL.createObjectURL(file as Blob);
   preview.value = url;
   onCleanup(() => URL.revokeObjectURL(url));
 }, { immediate: true });

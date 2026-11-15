@@ -1,12 +1,13 @@
-<script setup>
-import { MEDIA } from "~/lib/breakpoints.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { MEDIA } from "~/lib/breakpoints";
 
 // Sortable, paginated table. columns: [{ key, label, sortValue?(row), className?, sortable? }].
 // A cell shows row[key] unless the parent fills the slot `cell-<key>` ({ row }). The actions column is the one with `sortable: false` and no label.
 // `caption` names the table for screen readers (required). Sort buttons use aria-sort; the pagination is a labelled nav.
 const props = defineProps({
-  caption: { type: String, required: true }, columns: { type: Array, required: true }, rows: { type: Array, default: () => [] }, rowKey: { type: String, default: "id" },
-  loading: Boolean, cards: Boolean, empty: { type: String, default: "Nothing to show." }, pageSize: { type: Number, default: 25 }, initialSort: Object,
+  caption: { type: String, required: true }, columns: { type: Array as PropType<any[]> as PropType<any[]>, required: true }, rows: { type: Array as PropType<any[]> as PropType<any[]>, default: () => [] }, rowKey: { type: String, default: "id" },
+  loading: Boolean, cards: Boolean, empty: { type: String, default: "Nothing to show." }, pageSize: { type: Number, default: 25 }, initialSort: Object as PropType<Record<string, any>>,
 });
 const sort = ref(props.initialSort || null); // { key, dir }
 const page = ref(0);
@@ -76,7 +77,7 @@ const liveText = computed(() => `${sorted.value.length} ${sorted.value.length ==
     <template v-else>
       <div v-if="compact || (tablet && allCols)" class="mb-2 flex justify-end"><button type="button" class="btn-secondary" :aria-pressed="allCols" @click="allCols = !allCols">{{ allCols ? "Fewer columns" : "Columns: show all" }}</button></div>
       <!-- 1.4.10: the table scrolls inside a labelled, keyboard-focusable region instead of the whole page scrolling -->
-      <div role="region" :aria-label="`${caption} (scrollable)`" tabindex="0" class="relative overflow-x-auto rounded-lg border border-link bg-white">
+      <div role="region" :aria-label="`${caption} (scrollable)`" tabindex="0" class="relative overflow-x-auto rounded-2xl border border-brand-sky bg-white shadow-[0_2px_10px_color-mix(in_srgb,var(--ink)_8%,transparent)]">
         <table class="min-w-full divide-y divide-brand-sky">
           <caption class="sr-only">{{ caption }}{{ sortLabel }}</caption>
           <thead class="bg-brand-ivory">

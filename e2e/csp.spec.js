@@ -1,19 +1,19 @@
 import fs from "node:fs";
 import { test as base, expect } from "./fixtures.js";
 
-// Runs the REAL production build with the REAL headers from public/_headers (what Cloudflare Pages serves) enforced, and fails on any CSP violation.
-// (The only change: https://*.supabase.co becomes the local fake Supabase, so the mocked API is reachable.)
-// Parse Cloudflare's _headers file: a path line, then indented "Name: value" lines. The build adds the inline-script hashes to the copy in the output folder.
-const raw = fs.readFileSync(new URL("../dist-csp/public/_headers", import.meta.url), "utf8");
+// Runs the REAL production build (the Node server, which sends the same headers as the Cloudflare worker) with its REAL headers enforced, and fails on any
+// CSP violation. (The only change: https://*.supabase.co becomes the local fake Supabase, so the mocked API is reachable.)
+const BASE = "http://localhost:5198";
+let HEADERS = {};
+let CSP = "";
+const header = (k) => HEADERS[k.toLowerCase()];
+// the cache rules for static files live in Cloudflare's _headers file: a path line, then indented "Name: value" lines
 const rules = [];
-for (const line of raw.split("\n")) {
+for (const line of fs.readFileSync(new URL("../public/_headers", import.meta.url), "utf8").split("\n")) {
   if (!line.trim() || line.trim().startsWith("#")) continue;
   if (/^\S/.test(line)) rules.push({ source: line.trim(), headers: [] });
   else { const i = line.indexOf(":"); rules.at(-1).headers.push({ key: line.slice(0, i).trim(), value: line.slice(i + 1).trim() }); }
 }
-const all = rules.find((r) => r.source === "/*").headers;
-const header = (k) => all.find((h) => h.key.toLowerCase() === k.toLowerCase()).value;
-const CSP = header("Content-Security-Policy").replaceAll("https://*.supabase.co", "http://localhost:54321").replaceAll("wss://*.supabase.co", "ws://localhost:54321").replace("; upgrade-insecure-requests", "");
 
 const test = base.extend({
   violations: async ({ page }, use) => {
@@ -33,8 +33,14 @@ const test = base.extend({
   },
 });
 
+test.beforeAll(async () => {
+  const res = await fetch(BASE + "/");
+  HEADERS = Object.fromEntries(res.headers);
+  CSP = (HEADERS["content-security-policy"] || "").replaceAll("https://*.supabase.co", "http://localhost:54321").replaceAll("wss://*.supabase.co", "ws://localhost:54321").replace("; upgrade-insecure-requests", "");
+});
+
 test.describe("security headers", () => {
-  test("_headers sets the headers, and the policy has no unsafe-eval, no unsafe-inline scripts and no wildcard sources", () => {
+  test("the server sends the headers, and the policy has no unsafe-eval, no unsafe-inline scripts and no wildcard sources", async () => {
     expect(CSP).toMatch(/script-src 'self'( 'sha256-[^']+')*;/);   // the build adds the hash of Nuxt's inline settings script
     for (const bad of ["'unsafe-eval'", "script-src 'self' 'unsafe-inline'", "default-src *", " * ", "data: https:"]) expect(header("Content-Security-Policy"), bad).not.toContain(bad);
     expect(header("Content-Security-Policy")).toContain("frame-ancestors 'none'");
@@ -48,8 +54,7 @@ test.describe("security headers", () => {
     expect(header("Cache-Control")).toBe("no-cache");                                          // HTML is always revalidated
     const assets = rules.find((r) => r.source === "/_nuxt/*");
     expect(assets.headers[0].value).toContain("immutable");                                   // fingerprinted files are cached for a year
-    // every route falls back to index.html (a single-page app)
-    expect(fs.readFileSync(new URL("../public/_redirects", import.meta.url), "utf8")).toContain("/*  /index.html  200");
+    for (const path of ["/login", "/admin/events", "/auth/callback"]) expect((await fetch(BASE + path)).status, path).toBe(200);   // every app route is served by the server (no /login -> /login/ redirect)
   });
 
   test("public pages work under the policy", async ({ page, as, violations }) => {

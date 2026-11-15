@@ -1,5 +1,5 @@
-<script setup>
-import { takeDestination } from "~/lib/destination.js";
+<script setup lang="ts">
+import { takeDestination } from "~/lib/destination";
 
 // Landing page for the email-verification link and the Google OAuth redirect.
 // The Supabase client exchanges the ?code= for a session by itself; we just wait for it.
@@ -20,7 +20,7 @@ onBeforeUnmount(() => clearTimeout(t));
     <template v-if="urlError || timedOut">
       <h1 class="flex items-center justify-center gap-2 text-xl"><IconAlert />Sign in did not complete</h1>
       <p role="alert" class="max-w-md text-danger">{{ urlError || "The sign-in took too long. Please try again." }}</p>
-      <NuxtLink class="btn-primary" to="/login"><IconLogIn />Back to sign in</NuxtLink>
+      <BaseButton to="/login" variant="accent"><IconLogIn />Back to sign in</BaseButton>
     </template>
     <Loading v-else label="Signing you in…" logo />
   </main>

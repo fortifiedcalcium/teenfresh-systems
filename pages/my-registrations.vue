@@ -1,7 +1,7 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { kitLabel, peso } from "~/lib/payment.js";
-import { fmtDateTime } from "~/lib/availability.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { kitLabel, peso } from "~/lib/payment";
+import { fmtDateTime } from "~/lib/availability";
 
 definePageMeta({ middleware: ["auth"] });
 const STATUS = {

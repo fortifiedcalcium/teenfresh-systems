@@ -1,6 +1,6 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { COURIER_MAX, validateCourierName } from "~/lib/orders.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { COURIER_MAX, validateCourierName } from "~/lib/orders";
 
 // Admin: the couriers shoppers and admins can pick from. Orders keep the name they were given, so deleting a courier never changes an old order.
 const toast = useToast();

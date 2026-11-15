@@ -1,9 +1,10 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { callFunction, fetchAll, resendMany } from "~/lib/api.js";
-import { fmtDateTime } from "~/lib/availability.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { callFunction, fetchAll, resendMany } from "~/lib/api";
+import { fmtDateTime } from "~/lib/availability";
 
-const props = defineProps({ event: { type: Object, required: true } });
+const props = defineProps({ event: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const toast = useToast();
 const rows = ref(null);
 const status = ref("");
@@ -11,7 +12,7 @@ const busy = ref(false);
 
 async function load() {
   const { data } = await supabase.from("email_logs").select("id,registration_id,recipient,kind,status,error,sent_at,registrations!left(event_id,ticket_number,name)").order("sent_at", { ascending: false }).limit(500);
-  rows.value = (data || []).filter((l) => !l.registrations || l.registrations.event_id === props.event.id);
+  rows.value = (data || []).filter((l) => !l.registrations || (l.registrations as any).event_id === props.event.id);
 }
 watch(() => props.event.id, () => { rows.value = null; load(); }, { immediate: true });
 

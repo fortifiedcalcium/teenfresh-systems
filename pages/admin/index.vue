@@ -1,8 +1,9 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { fetchAll } from "~/lib/api.js";
-import { fmtDateTime } from "~/lib/availability.js";
-import { peso } from "~/lib/payment.js";
+<script setup lang="ts">
+import { IconCheckCircle, IconClock, IconInbox, IconTicket, IconUserCheck, IconUsers, IconWallet, IconXCircle } from "~/lib/icons";
+import { supabase } from "~/lib/supabaseClient";
+import { fetchAll } from "~/lib/api";
+import { fmtDateTime } from "~/lib/availability";
+import { peso } from "~/lib/payment";
 
 const { event } = useAdminContext();
 const rows = ref(null);

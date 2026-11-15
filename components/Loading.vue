@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import logoImg from "~/assets/logo/teenfresh-logo.png";
 
 // Spinner + visible text; the text is the accessible name, so reduced-motion users still see "Loading…".

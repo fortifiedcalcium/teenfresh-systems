@@ -1,12 +1,13 @@
-<script setup>
-import { rememberDestination } from "~/lib/destination.js";
+<script setup lang="ts">
+import { IconMail, IconUserPlus } from "~/lib/icons";
+import { rememberDestination } from "~/lib/destination";
 
 definePageMeta({ layout: "blank" });
 const { signUp, signInWithGoogle } = useAuth();
 const route = useRoute();
 const from = computed(() => (typeof route.query.from === "string" && route.query.from.startsWith("/") ? route.query.from : "/"));
 const form = reactive({ fullName: "", email: "", password: "", confirm: "" });
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const [focusSignal, bumpFocus] = useErrorFocus();
 const error = ref("");
 const done = ref(false);
@@ -15,7 +16,7 @@ const loginTo = computed(() => ({ path: "/login", query: from.value === "/" ? {}
 
 async function onSubmit() {
   error.value = "";
-  const errs = {};
+  const errs: Record<string, string> = {};
   if (!form.fullName.trim()) errs.fullName = "Enter your full name";
   if (!form.email.trim()) errs.email = "Enter your email address";
   else if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = "Enter a valid email address, like name@example.com";
@@ -50,7 +51,7 @@ async function onSubmit() {
         <Field id="password" v-slot="a" label="Password" required :error="errors.password"><PasswordInput v-bind="a" v-model="form.password" autocomplete="new-password" aria-describedby="pw-rules" /></Field>
       </div>
       <Field id="confirm" v-slot="a" label="Confirm password" required :error="errors.confirm"><PasswordInput v-bind="a" v-model="form.confirm" autocomplete="new-password" /></Field>
-      <button class="btn-primary w-full" :disabled="busy"><IconUserPlus />{{ busy ? "Creating account…" : "Sign up" }}</button>
+      <BaseButton type="submit" variant="accent" block :loading="busy"><IconUserPlus />{{ busy ? "Creating account…" : "Sign up" }}</BaseButton>
       <p class="text-center text-sm text-ink-muted">or</p>
       <GoogleButton @click="() => { rememberDestination(from); signInWithGoogle(); }" />
       <p class="text-center text-sm">Already have an account? <NuxtLink :to="loginTo">Sign in</NuxtLink></p>

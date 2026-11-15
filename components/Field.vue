@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 // Visible label, "(required)" text, hint and error wired together for screen readers (3.3.2, 1.3.1, 3.3.1).
 // The default slot receives the attributes the control needs: <Field v-slot="a"><input v-bind="a" /></Field>
 const props = defineProps({ label: String, error: String, hint: String, id: { type: String, required: true }, required: Boolean });
-const attrs = computed(() => ({
+const attrs = computed<Record<string, any>>(() => ({
   id: props.id,
   "aria-invalid": props.error ? "true" : undefined,
   "aria-describedby": [props.error ? `${props.id}-err` : null, props.hint ? `${props.id}-hint` : null].filter(Boolean).join(" ") || undefined,

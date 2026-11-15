@@ -1,7 +1,7 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { fmtDateTime } from "~/lib/availability.js";
-import { AREAS, VERBS, describe } from "~/lib/changeLog.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { fmtDateTime } from "~/lib/availability";
+import { AREAS, VERBS, describe } from "~/lib/changeLog";
 
 const toast = useToast();
 const rows = ref(null);

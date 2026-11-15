@@ -1,8 +1,9 @@
-<script setup>
+<script setup lang="ts">
+import { IconMail } from "~/lib/icons";
 definePageMeta({ layout: "blank" });
 const { resetPassword } = useAuth();
 const email = ref("");
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const [focusSignal, bumpFocus] = useErrorFocus();
 const sent = ref(false);
 const error = ref("");
@@ -26,7 +27,7 @@ async function onSubmit() {
     <form v-else class="space-y-4" novalidate @submit.prevent="onSubmit">
       <ErrorSummary :errors="errors" :focus-signal="focusSignal" :extra="error" :labels="{ email: 'Email' }" />
       <Field id="email" v-slot="a" label="Email" required :error="errors.email"><input v-bind="a" v-model="email" type="email" autocomplete="email" class="input"></Field>
-      <button class="btn-primary w-full" :disabled="busy"><IconSend />{{ busy ? "Sending…" : "Send reset link" }}</button>
+      <BaseButton type="submit" variant="accent" block :loading="busy"><IconSend />{{ busy ? "Sending…" : "Send reset link" }}</BaseButton>
       <p class="text-center text-sm"><NuxtLink to="/login">Back to sign in</NuxtLink></p>
     </form>
   </AuthShell>

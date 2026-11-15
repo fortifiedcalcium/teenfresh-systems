@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import logo from "~/assets/logo/teenfresh-logo.png";
-import { SHOP_ENABLED } from "~/lib/features.js";
-import { playChime, unlockChime } from "~/lib/chime.js";
+import { SHOP_ENABLED } from "~/lib/features";
+import { playChime, unlockChime } from "~/lib/chime";
 
 const SUPPORT = import.meta.env.VITE_SUPPORT_EMAIL;
 // One handle on every network. The "@teenfreshph" text next to the icons is plain text, not a link.
@@ -29,29 +29,30 @@ onBeforeUnmount(() => stopUnlock());
 <template>
   <div class="flex min-h-screen flex-col">
     <SkipLink />
-    <header class="sticky top-0 z-30 border-b-2 border-ink bg-brand-cream">
-      <nav class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2" aria-label="Main">
+    <header class="sticky top-0 z-30 px-3 pt-3">
+      <nav class="pill-nav" aria-label="Main">
         <!-- a plain link: NuxtLink would mark it aria-current on the home page, and .nav-link paints the current page dark -->
-        <a href="/" class="nav-link -ml-3" aria-label="Teenfresh Events, home" @click.prevent="navigateTo('/')"><img :src="logo" alt="" width="188" height="40" class="h-10 w-auto"></a>
-        <div class="flex flex-wrap items-center gap-1">
-          <NuxtLink to="/" exact class="nav-link" title="Events"><IconCalendar /><span class="sr-only">Events</span></NuxtLink>
-          <NuxtLink v-if="SHOP_ENABLED" to="/shop" class="nav-link" title="Shop"><IconBag /><span class="sr-only">Shop</span></NuxtLink>
-          <NuxtLink v-if="SHOP_ENABLED" to="/cart" class="nav-link" title="Cart"><IconCart /><span class="sr-only">Cart</span><span v-if="count > 0" aria-hidden="true">({{ count }})</span><span v-if="count > 0" class="sr-only">, {{ count }} items</span></NuxtLink>
-          <NuxtLink v-if="SHOP_ENABLED && user" to="/my-orders" class="nav-link" title="My orders"><IconPackage /><span class="sr-only">My orders</span></NuxtLink>
+        <a href="/" class="pill-link -ml-1 px-3" aria-label="Teenfresh Events, home" @click.prevent="navigateTo('/')"><img :src="logo" alt="" width="188" height="40" class="h-8 w-auto sm:h-10"></a>
+        <div class="flex w-full flex-wrap items-center justify-between sm:w-auto sm:justify-end sm:gap-1">
+          <NuxtLink to="/" exact class="pill-link" title="Events"><IconCalendar /><span class="sr-only md:not-sr-only">Events</span></NuxtLink>
+          <NuxtLink v-if="SHOP_ENABLED" to="/shop" class="pill-link" title="Shop"><IconBag /><span class="sr-only md:not-sr-only">Shop</span></NuxtLink>
+          <NuxtLink v-if="SHOP_ENABLED" to="/cart" class="pill-link" title="Cart"><IconCart /><span class="sr-only md:not-sr-only">Cart</span><span v-if="count > 0" aria-hidden="true">({{ count }})</span><span v-if="count > 0" class="sr-only">, {{ count }} items</span></NuxtLink>
+          <NuxtLink v-if="SHOP_ENABLED && user" to="/my-orders" class="pill-link" title="My orders"><IconPackage /><span class="sr-only md:not-sr-only">My orders</span></NuxtLink>
           <TodoBell v-if="SHOP_ENABLED && user" :todos="todos" :unseen="unseen" @open="markAllSeen" />
-          <NuxtLink v-if="user" to="/my-registrations" class="nav-link" title="My registrations"><IconTicket /><span class="sr-only">My registrations</span></NuxtLink>
-          <NuxtLink v-if="isAdmin" to="/admin" class="nav-link" title="Admin"><IconDashboard /><span class="sr-only">Admin</span></NuxtLink>
-          <button v-if="user" type="button" class="btn-secondary ml-2" title="Sign out" @click="signOut"><IconLogOut /><span class="sr-only">Sign out</span></button>
+          <NuxtLink v-if="user" to="/my-registrations" class="pill-link" title="My registrations"><IconTicket /><span class="sr-only md:not-sr-only">My registrations</span></NuxtLink>
+          <NuxtLink v-if="isAdmin" to="/admin" class="pill-link" title="Admin"><IconDashboard /><span class="sr-only md:not-sr-only">Admin</span></NuxtLink>
+          <button v-if="user" type="button" class="pill-link border-2 border-ink md:ml-2" title="Sign out" @click="signOut"><IconLogOut /><span class="sr-only md:not-sr-only">Sign out</span></button>
           <template v-else>
-            <NuxtLink to="/login" class="nav-link" title="Sign in"><IconLogIn /><span class="sr-only">Sign in</span></NuxtLink>
-            <NuxtLink to="/register" class="btn-primary ml-1" title="Sign up"><IconUserPlus /><span class="sr-only">Sign up</span></NuxtLink>
+            <NuxtLink to="/login" class="pill-link" title="Sign in"><IconLogIn /><span class="sr-only md:not-sr-only">Sign in</span></NuxtLink>
+            <BaseButton to="/register" variant="accent" small class="ml-1" title="Sign up"><IconUserPlus /><span class="sr-only md:not-sr-only">Sign up</span></BaseButton>
           </template>
         </div>
       </nav>
     </header>
     <main id="main-content" tabindex="-1" class="mx-auto w-full max-w-6xl flex-1 px-4 py-6"><slot /></main>
-    <footer class="border-t-2 border-ink bg-brand-cream py-4">
-      <div class="mx-auto flex max-w-6xl flex-wrap px-4 items-center justify-center gap-x-6 gap-y-2 sm:justify-start">
+    <footer class="mt-8 rounded-t-[2rem] bg-brand-cream py-6">
+      <div class="mx-auto flex max-w-6xl flex-wrap px-4 items-center justify-center gap-x-6 gap-y-3 sm:justify-start">
+        <img :src="logo" alt="Teenfresh" width="188" height="40" class="h-9 w-auto">
         <nav aria-label="Social media" class="social-row">
           <ul class="social-icons">
             <li v-for="s in SOCIALS" :key="s.name"><a :href="s.href" class="social-link" :aria-label="s.name" :title="s.name" target="_blank" rel="noopener noreferrer"><component :is="s.icon" :size="40" /></a></li>

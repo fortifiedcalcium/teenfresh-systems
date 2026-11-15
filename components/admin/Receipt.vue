@@ -1,5 +1,5 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
 
 // A receipt from the private bucket through a short-lived signed URL.
 const props = defineProps({ path: { type: String, required: true }, label: { type: String, default: "Payment receipt" } });

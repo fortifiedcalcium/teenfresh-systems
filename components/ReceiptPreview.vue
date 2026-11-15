@@ -1,9 +1,10 @@
-<script setup>
-const props = defineProps({ file: { type: Object, required: true } });
+<script setup lang="ts">
+import type { PropType } from "vue";
+const props = defineProps({ file: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const url = ref(null);
 watch(() => props.file, (file, _o, onCleanup) => {
   if (!file.type.startsWith("image/")) { url.value = null; return; }
-  const u = URL.createObjectURL(file);
+  const u = URL.createObjectURL(file as Blob);
   url.value = u;
   onCleanup(() => URL.revokeObjectURL(u));
 }, { immediate: true });

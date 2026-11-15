@@ -1,12 +1,13 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { friendlyError } from "~/lib/api.js";
-import { makeStep3Schema } from "~/lib/validation.js";
-import { zodErrors } from "~/lib/zodErrors.js";
-import { parseAmount, peso, receiptPath, validateReceiptFile } from "~/lib/payment.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { friendlyError } from "~/lib/api";
+import { makeStep3Schema } from "~/lib/validation";
+import { zodErrors } from "~/lib/zodErrors";
+import { parseAmount, peso, receiptPath, validateReceiptFile } from "~/lib/payment";
 
 // Fix an underpaid or rejected payment: new receipt, reference number and (total) amount.
-const props = defineProps({ reg: { type: Object, required: true } });
+const props = defineProps({ reg: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const emit = defineEmits(["close", "done"]);
 const { user } = useAuth();
 const toast = useToast();
@@ -19,12 +20,12 @@ const missing = underpaid ? Math.max(Number(pay.amount_due ?? payTotal - paidSoF
 const minAmount = underpaid ? Math.max(missing, 0.01) : payTotal;
 const f = reactive({ reuse_payment_id: "", sender_name: pay.sender_name || "", amount_paid: underpaid ? missing.toFixed(2) : "", reference_number: "", notes: "" });
 const file = ref(null);
-const fieldErrors = ref({});
+const fieldErrors = ref<Record<string, string>>({});
 const receiptError = ref("");
 const serverError = ref("");
 const busy = ref(false);
 const [focusSignal, bumpFocus] = useErrorFocus();
-const errors = computed(() => ({ ...fieldErrors.value, ...(receiptError.value ? { receipt: receiptError.value } : {}) }));
+const errors = computed<Record<string, any>>(() => ({ ...fieldErrors.value, ...(receiptError.value ? { receipt: receiptError.value } : {}) }));
 const forms = props.reg.formsOnPayment;
 
 async function submit() {

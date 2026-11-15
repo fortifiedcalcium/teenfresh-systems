@@ -1,9 +1,10 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from "vue";
 // 3.3.1 / 3.3.3: a summary of every error at the top of the form, each item linking to its field.
 // It appears, and takes focus, only after a SUBMIT FAILS (the form bumps `focusSignal` from useErrorFocus): never because errors
 // changed while someone was typing, which stole focus and announced itself as an alert on every keystroke.
 // Give it a `key` that changes per step so each step starts with no summary. `errors` is { field: "message" }; `labels` maps field name -> visible label.
-const props = defineProps({ errors: { type: Object, default: () => ({}) }, labels: { type: Object, default: () => ({}) }, focusSignal: { type: Number, default: 0 }, fieldIds: { type: Object, default: () => ({}) }, extra: String });
+const props = defineProps({ errors: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, default: () => ({}) }, labels: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, default: () => ({}) }, focusSignal: { type: Number, default: 0 }, fieldIds: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, default: () => ({}) }, extra: String });
 const el = ref(null);
 const armed = ref(false);
 let seen = props.focusSignal;     // the signal value when this summary was created: not a failed submit

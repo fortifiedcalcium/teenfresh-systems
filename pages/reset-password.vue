@@ -1,15 +1,16 @@
-<script setup>
+<script setup lang="ts">
+import { IconAlert, IconKey } from "~/lib/icons";
 definePageMeta({ layout: "blank" });
 const { session, loading, updatePassword } = useAuth();
 const form = reactive({ password: "", confirm: "" });
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const [focusSignal, bumpFocus] = useErrorFocus();
 const error = ref("");
 const busy = ref(false);
 
 async function onSubmit() {
   error.value = "";
-  const errs = {};
+  const errs: Record<string, string> = {};
   if (!form.password) errs.password = "Choose a password";
   else if (form.password.length < 8) errs.password = "Use at least 8 characters";
   if (form.confirm !== form.password) errs.confirm = "The passwords do not match. Type the same password again";
@@ -36,7 +37,7 @@ async function onSubmit() {
         <Field id="password" v-slot="a" label="New password" required :error="errors.password"><PasswordInput v-bind="a" v-model="form.password" autocomplete="new-password" aria-describedby="pw-rules" /></Field>
       </div>
       <Field id="confirm" v-slot="a" label="Confirm new password" required :error="errors.confirm"><PasswordInput v-bind="a" v-model="form.confirm" autocomplete="new-password" /></Field>
-      <button class="btn-primary w-full" :disabled="busy"><IconKey />{{ busy ? "Saving…" : "Update password" }}</button>
+      <BaseButton type="submit" variant="accent" block :loading="busy"><IconKey />{{ busy ? "Saving…" : "Update password" }}</BaseButton>
     </form>
   </AuthShell>
 </template>

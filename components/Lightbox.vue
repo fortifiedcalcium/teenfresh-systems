@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // Accessible lightbox: focus is trapped, Esc closes, focus returns to the thumbnail (see Modal). Posters contain
 // small text, so there is always a download link as well.
 defineProps({ url: String, alt: String, title: String });

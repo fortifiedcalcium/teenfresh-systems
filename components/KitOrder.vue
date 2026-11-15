@@ -1,10 +1,11 @@
-<script setup>
-import { peso } from "~/lib/payment.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { peso } from "~/lib/payment";
 
 // Choose one kit (radio group) and see the total. One form orders one kit, so there is no quantity.
 // The total is announced when the choice changes. The database recalculates the price from the kit itself,
 // so nothing here can change what is charged. v-model is the chosen kit id.
-defineProps({ kits: { type: Array, required: true }, modelValue: { type: String, default: "" }, error: String, order: { type: Object, required: true } });
+defineProps({ kits: { type: Array as PropType<any[]> as PropType<any[]>, required: true }, modelValue: { type: String, default: "" }, error: String, order: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const emit = defineEmits(["update:modelValue"]);
 </script>
 

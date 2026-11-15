@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // tone: bad | warn | ok | info. Colour + icon + text; announced to screen readers.
 defineProps({ tone: { type: String, default: "info" }, live: { type: Boolean, default: true } });
 const ROLE = { bad: "alert", warn: "status", ok: "status", info: "status" };

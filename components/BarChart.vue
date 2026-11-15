@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from "vue";
 // Bar chart: bars are `link` or `brand-blue` + a 2px ink outline (3:1 non-text contrast), every bar prints its value,
 // and a real table below carries the same data for screen readers (1.1.1 / 1.4.11).
-const props = defineProps({ data: { type: Array, required: true }, title: String, fill: String });
+const props = defineProps({ data: { type: Array as PropType<any[]> as PropType<any[]>, required: true }, title: String, fill: String });
 const max = computed(() => Math.max(1, ...props.data.map((d) => d.value)));
 </script>
 

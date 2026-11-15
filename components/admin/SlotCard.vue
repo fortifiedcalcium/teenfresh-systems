@@ -1,9 +1,10 @@
-<script setup>
-import { imageUrl, removeEventImage, saveImageAlt, SLOTS, uploadEventImage } from "~/lib/eventImages.js";
-import { fmtDateTime } from "~/lib/availability.js";
-import { supabase } from "~/lib/supabaseClient.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { imageUrl, removeEventImage, saveImageAlt, SLOTS, uploadEventImage } from "~/lib/eventImages";
+import { fmtDateTime } from "~/lib/availability";
+import { supabase } from "~/lib/supabaseClient";
 
-const props = defineProps({ event: Object, slotKey: String, row: Object });
+const props = defineProps({ event: Object as PropType<Record<string, any>>, slotKey: String, row: Object as PropType<Record<string, any>> });
 const emit = defineEmits(["reload", "eventChanged"]);
 const spec = computed(() => SLOTS[props.slotKey]);
 const toast = useToast();
@@ -36,7 +37,7 @@ async function doRemove() { await run(() => removeEventImage(props.row), `${spec
       <div v-else class="flex items-center justify-center p-3 text-center text-sm font-semibold" :style="{ aspectRatio: spec.ratio }">{{ broken ? "The image could not be loaded" : spec.placeholder }}</div>
     </div>
     <label v-if="isBanner" class="flex items-start gap-2 text-sm font-semibold">
-      <input type="checkbox" class="check mt-0.5" :checked="soon" :disabled="busy" @change="setSoon($event.target.checked)">
+      <input type="checkbox" class="check mt-0.5" :checked="soon" :disabled="busy" @change="setSoon(($event.target as HTMLInputElement).checked)">
       <span>Show “Coming soon” instead of a banner image<span class="block font-normal text-ink-muted">Attendees see a Coming soon panel on the event card. Any uploaded image is kept and returns when this is off.</span></span>
     </label>
     <p class="text-sm">Recommended: {{ spec.recommended }}. JPG, PNG or WebP, 10 MB at most.<template v-if="row"> Last updated {{ fmtDateTime(row.updated_at) }}.</template></p>

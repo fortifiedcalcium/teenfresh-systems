@@ -4,6 +4,7 @@ import { PNG } from "pngjs";
 
 const ROUTES = [
   ["guest", "/", "Upcoming events"], ["guest", "/login", "Sign in"], ["guest", "/register", "Create an account"],
+  ["guest", "/events/ivemon-odd-platinum", "IVEMON: ODD PLATINUM Cupsleeve Event"], ["guest", "/shop", "Teenfresh's products"], ["guest", "/shop/orbital", "ÖRBITAL"], ["guest", "/shop/light-stick", "Light stick"],
   ["guest", "/forgot-password", "Forgot your password?"], ["guest", "/reset-password", "Link expired"],
   ["user", "/events/e1/register", "Register"], ["user", "/events/e3/register", "Register"], ["user", "/my-registrations", "My registrations"], ["user", "/my-ticket/r1", "My ticket"],
   ["admin", "/admin", "Dashboard"], ["admin", "/admin/events", "Events"], ["admin", "/admin/payments", "Payments"], ["admin", "/admin/attendees", "Attendees"],
@@ -201,6 +202,8 @@ test.describe("WCAG behaviours", () => {
   test("navigating moves focus to the new page's h1 and sets the title", async ({ page, as }) => {
     await as(null);
     await page.goto("/");
+    await page.waitForLoadState("networkidle");                                    // the dev server can reload the page once while it warms up
+    await page.locator("html[data-hydrated]").waitFor({ state: "attached" });      // the server-rendered page is interactive
     await page.getByRole("link", { name: "Sign in" }).first().click();
     await expect(page.getByRole("heading", { level: 1, name: "Sign in" })).toBeFocused();
     await expect(page).toHaveTitle("Sign in · Teenfresh Events");
@@ -235,8 +238,8 @@ test.describe("WCAG behaviours", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await as(null);
     await page.goto("/");
-    await page.locator("a.btn-primary, a.nav-link").first().waitFor();
-    const d = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("a.btn-primary, a.nav-link")).transitionDuration));
+    await page.locator("a.bbtn, a.pill-link").first().waitFor();
+    const d = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("a.bbtn, a.pill-link")).transitionDuration));
     expect(d).toBeLessThan(0.001);
   });
 

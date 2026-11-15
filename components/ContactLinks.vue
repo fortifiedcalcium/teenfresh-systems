@@ -1,8 +1,9 @@
-<script setup>
-import { contactLinkList } from "~/lib/contactLinks.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { contactLinkList } from "~/lib/contactLinks";
 
 // The event's contact links (Facebook, X, Instagram, TikTok, Gmail ...). Only http(s) and mailto links are shown.
-const props = defineProps({ links: { type: Array, default: () => [] } });
+const props = defineProps({ links: { type: Array as PropType<any[]> as PropType<any[]>, default: () => [] } });
 const list = computed(() => contactLinkList(props.links));
 const mail = (u) => u.startsWith("mailto:");
 </script>

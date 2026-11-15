@@ -1,12 +1,13 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from "vue";
 import { MERGE_FIELDS, renderEmail, SAMPLE_EXTRA, SAMPLE_REG } from "~/lib/merge.js";
-import { fetchEventImages, imageUrl } from "~/lib/eventImages.js";
-import { FORMATS, wrapSelection } from "~/lib/formatText.js";
+import { fetchEventImages, imageUrl } from "~/lib/eventImages";
+import { FORMATS, wrapSelection } from "~/lib/formatText";
 import { qrDataUrl } from "~/lib/qrImage.js";
 
 // HTML editor + merge-field chips + live preview. Used for both the saved template and the one-off bulk message. v-model:draft is { subject, html_body, text_body }.
-const props = defineProps({ event: { type: Object, required: true }, ensureQr: Boolean });
-const draft = defineModel("draft", { type: Object, required: true });
+const props = defineProps({ event: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true }, ensureQr: Boolean });
+const draft = defineModel("draft", { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true });
 const els = { html_body: ref(null), text_body: ref(null), subject: ref(null) };
 const focus = ref("html_body");
 const view = ref("html");
@@ -32,7 +33,7 @@ function format(kind) {
 }
 function onKey(e) {
   if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
-  const kind = Object.keys(FORMATS).find((k) => FORMATS[k].key === e.key.toLowerCase());
+  const kind = Object.keys(FORMATS).find((k) => (FORMATS as Record<string, any>)[k].key === e.key.toLowerCase());
   if (kind) { e.preventDefault(); format(kind); }
 }
 const set = (k) => (e) => { draft.value = { ...draft.value, [k]: e.target.value }; };
@@ -40,7 +41,7 @@ const set = (k) => (e) => { draft.value = { ...draft.value, [k]: e.target.value 
 watch(() => props.event.id, (id) => { fetchEventImages(id).then((imgs) => { const r = imgs.email_banner || imgs.banner; banner.value = r ? { url: imageUrl(r), alt: r.alt_text } : null; }); }, { immediate: true });
 // the preview uses the same merge code as the Edge Functions, with a sample attendee and sample payment details
 const qrUrl = computed(() => { try { return qrDataUrl(SAMPLE_REG.ticket_number); } catch { return null; } });
-const preview = computed(() => renderEmail(draft.value, { reg: SAMPLE_REG, event: props.event, qrUrl: qrUrl.value, ensureQr: props.ensureQr, site: window.location.origin, bannerUrl: banner.value?.url ?? props.event.banner_url, bannerAlt: banner.value?.alt, extra: SAMPLE_EXTRA }));
+const preview = computed(() => renderEmail(draft.value as any, { reg: SAMPLE_REG, event: props.event, qrUrl: qrUrl.value, ensureQr: props.ensureQr, site: window.location.origin, bannerUrl: banner.value?.url ?? props.event.banner_url, bannerAlt: banner.value?.alt, extra: SAMPLE_EXTRA }));
 const focusLabel = computed(() => focus.value.replace("_body", "").replace("html", "HTML body").replace("text", "text body"));
 </script>
 
@@ -57,7 +58,7 @@ const focusLabel = computed(() => focus.value.replace("_body", "").replace("html
       <div>
         <label class="label" for="html">HTML body</label>
         <div role="toolbar" aria-label="Text formatting for the HTML body" aria-controls="html" class="mb-1 flex flex-wrap gap-2">
-          <button v-for="(f, k) in FORMATS" :key="k" type="button" class="btn-secondary" :aria-label="f.key ? `${f.label} (Ctrl+${f.key.toUpperCase()})` : f.label" @click="format(k)">
+          <button v-for="(f, k) in (FORMATS as Record<string, any>)" :key="k" type="button" class="btn-secondary" :aria-label="f.key ? `${f.label} (Ctrl+${f.key.toUpperCase()})` : f.label" @click="format(k)">
             <span v-if="glyph[k]" aria-hidden="true" class="font-serif text-base leading-none"><b v-if="k === 'bold'">B</b><i v-else-if="k === 'italic'">I</i><u v-else>U</u></span>
             <template v-else><IconLink v-if="k === 'link'" /><IconParagraph v-else />{{ f.label }}</template>
           </button>

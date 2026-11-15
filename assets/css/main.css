@@ -3,6 +3,7 @@
 @import "./admin-nav.css";
 @import "./ticket.css";
 @import "./shop.css";
+@import "./redesign.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,8 +13,8 @@
   body { @apply bg-brand-blush font-sans text-base text-ink antialiased; line-height: 1.5; }
   h1, h2, h3, h4 { @apply font-black text-ink; }   /* titles use the Black weight (900) */
   /* 1.4.1: links are always underlined, never distinguished by colour alone */
-  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item) { @apply text-link underline underline-offset-2; }
-  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item):hover { text-decoration-thickness: 2px; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.bbtn):not(.pill-link):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item) { @apply text-link underline underline-offset-2; }
+  a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.bbtn):not(.pill-link):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item):hover { text-decoration-thickness: 2px; }
   /* 2.4.7: one visible focus indicator for everything interactive: 3px ink, 2px offset */
   :focus { outline: none; }
   :focus-visible, [tabindex="-1"]:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
@@ -137,6 +138,18 @@
   .info-note { @apply block text-ink-muted; font-size: 0.9375rem; }
   .check { @apply h-6 w-6 shrink-0 rounded border border-link accent-[var(--link)]; }
 }
+
+
+/* ---- Shared look for the rest of the app (admin included): fully rounded buttons and nav links, soft cards, calm tables ---- */
+.btn, .btn-primary, .btn-secondary, .btn-danger { border-radius: 9999px; }
+.nav-link, .chip { border-radius: 9999px; }
+.card { border-radius: 1rem; border-color: var(--border-soft); box-shadow: 0 2px 10px color-mix(in srgb, var(--ink) 8%, transparent); }
+.stat-card { border-radius: 1.25rem; border: 0; }
+.stat-card:nth-child(4n+1) { background: var(--brand-sky); } .stat-card:nth-child(4n+2) { background: var(--brand-mint); }
+.stat-card:nth-child(4n+3) { background: var(--brand-cream); } .stat-card:nth-child(4n+4) { background: var(--brand-ivory); }
+/* the dashboard's sidebar and top bar: a quiet white surface with a pastel edge instead of a heavy ink line */
+.admin-surface { background: white; border-color: var(--border-soft); }
+@media (prefers-contrast: more) { .card, .admin-surface { border-color: var(--ink); } }
 
 /* Reduced motion (2.3.3): no animation or smooth scrolling */
 @media (prefers-reduced-motion: reduce) {

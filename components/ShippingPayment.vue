@@ -1,26 +1,27 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { friendlyError } from "~/lib/api.js";
-import { isValidReference, normalizeReference, peso, receiptPath, validateReceiptFile } from "~/lib/payment.js";
-import { productImageUrl } from "~/lib/products.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { friendlyError } from "~/lib/api";
+import { isValidReference, normalizeReference, peso, receiptPath, validateReceiptFile } from "~/lib/payment";
+import { productImageUrl } from "~/lib/products";
 
 // The shipping fee an admin set for a confirmed order, and the form to pay it by GCash with a receipt.
 // Shown on the order page while order.shipping_status is "awaiting_payment".
-const props = defineProps({ order: { type: Object, required: true } });
+const props = defineProps({ order: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const emit = defineEmits(["sent"]);
 const { user } = useAuth();
 const settings = useShopSettings();
 const sender = ref("");
 const reference = ref("");
 const file = ref(null);
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const serverError = ref("");
 const busy = ref(false);
 const qr = computed(() => (settings.value?.gcash_qr_path ? productImageUrl({ image_path: settings.value.gcash_qr_path }) : null));
 
 async function submit() {
   serverError.value = "";
-  const errs = {};
+  const errs: Record<string, string> = {};
   if (!sender.value.trim()) errs.sender = "Enter the name on the GCash account you paid from";
   if (!isValidReference(reference.value)) errs.reference = "Enter the reference number exactly as GCash shows it";
   const fileProblem = validateReceiptFile(file.value);

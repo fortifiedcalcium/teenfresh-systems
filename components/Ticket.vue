@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // A vertical ticket: the main section on top (slot `image`, with the status `badge` slot as a chip on it, then the default slot) and the stub underneath (slot `stub`),
 // split by a dashed perforation with a round notch cut out of each side (see assets/css/ticket.css). Purely presentational.
 // `status`: confirmed | pending | attention | rejected | cancelled (a rejected ticket also gets a VOID stamp).

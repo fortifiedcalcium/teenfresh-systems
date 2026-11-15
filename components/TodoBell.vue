@@ -1,10 +1,11 @@
-<script setup>
-import { setSoundEnabled, soundEnabled } from "~/lib/chime.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { setSoundEnabled, soundEnabled } from "~/lib/chime";
 
 // The shopper's notification button: a bell with the number of NEW things waiting on them, and the list of everything they need to do, each linking
 // to its order. Opening the list counts as seeing it, so the number goes away until something new arrives. A new one also shows as a toast with a short chime
 // (see the attendee layout).
-const props = defineProps({ todos: Array, unseen: { type: Number, default: 0 } });
+const props = defineProps({ todos: Array as PropType<any[]>, unseen: { type: Number, default: 0 } });
 const emit = defineEmits(["open"]);
 const { open, toggle, close, btn, panel, pos, id } = usePopover("right");
 const sound = ref(soundEnabled("shopper"));

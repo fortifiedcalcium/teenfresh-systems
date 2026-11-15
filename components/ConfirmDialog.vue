@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // "Are you sure?" dialog for destructive or irreversible actions. Focus lands on Cancel first.
 defineProps({ title: String, confirmLabel: { type: String, default: "Confirm" }, tone: { type: String, default: "danger" }, busy: Boolean });
 const emit = defineEmits(["confirm", "cancel"]);

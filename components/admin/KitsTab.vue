@@ -1,16 +1,17 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { peso } from "~/lib/payment.js";
-import { validateKit } from "~/lib/kits.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { peso } from "~/lib/payment";
+import { validateKit } from "~/lib/kits";
 
 // Admin: the kit options of an event. Each has a name and a price per kit (one kit per form).
-const props = defineProps({ event: { type: Object, required: true } });
+const props = defineProps({ event: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const toast = useToast();
 const blank = () => ({ key: crypto.randomUUID(), id: null, name: "", description: "", unit_price: "", active: true });
 const toRow = (k) => ({ key: k.id, id: k.id, name: k.name, description: k.description || "", unit_price: String(k.unit_price), active: k.active });
 const rows = ref(null);
 const removed = ref([]);
-const errors = ref({});     // row key -> { field: message }
+const errors = ref<Record<string, any>>({});     // row key -> { field: message }
 const saving = ref(false);
 const [focusSignal, bumpFocus] = useErrorFocus();
 
@@ -39,7 +40,7 @@ async function save() {
   } catch (e) { toast(e.message || "Could not save the kits", "error"); }
   finally { saving.value = false; }
 }
-const summaryErrors = computed(() => Object.fromEntries((rows.value || []).flatMap((r, i) => Object.entries(errors.value[r.key] || {}).map(([f, message]) => [`kit${i}-${f}`, `Kit ${i + 1}: ${message}`]))));
+const summaryErrors = computed(() => Object.fromEntries((rows.value || []).flatMap((r, i) => Object.entries(errors.value[r.key] || {}).map(([f, message]) => [`kit${i}-${f}`, `Kit ${Number(i) + 1}: ${message}`]))));
 const fid = (i, name) => `kit${i}-${name}`;
 const hintFor = (r, e) => (r.unit_price && !e.unit_price && Number(r.unit_price) > 0 ? `${peso(r.unit_price)} each` : "Amount per kit, for example 100");
 </script>
@@ -53,7 +54,7 @@ const hintFor = (r, e) => (r.unit_price && !e.unit_price && Number(r.unit_price)
     <ul class="space-y-4">
       <li v-for="(r, i) in rows" :key="r.key">
         <fieldset class="card space-y-3 p-4">
-          <legend class="px-1 text-lg font-black">Kit {{ i + 1 }}{{ r.name ? `: ${r.name}` : "" }}</legend>
+          <legend class="px-1 text-lg font-black">Kit {{ Number(i) + 1 }}{{ r.name ? `: ${r.name}` : "" }}</legend>
           <div class="grid gap-3 md:grid-cols-2">
             <div>
               <label :for="fid(i, 'name')" class="label">Name (required)</label>
@@ -74,7 +75,7 @@ const hintFor = (r, e) => (r.unit_price && !e.unit_price && Number(r.unit_price)
           </div>
           <div class="flex flex-wrap items-center justify-between gap-3">
             <label class="flex min-h-target items-center gap-3 text-sm"><input v-model="r.active" type="checkbox" class="check"> Available on the registration form</label>
-            <button type="button" class="btn-secondary" @click="remove(r)"><IconTrash />Remove <span class="sr-only">kit {{ i + 1 }}{{ r.name ? `, ${r.name}` : "" }}</span></button>
+            <button type="button" class="btn-secondary" @click="remove(r)"><IconTrash />Remove <span class="sr-only">kit {{ Number(i) + 1 }}{{ r.name ? `, ${r.name}` : "" }}</span></button>
           </div>
         </fieldset>
       </li>

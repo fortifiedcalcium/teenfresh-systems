@@ -1,7 +1,8 @@
-<script setup>
-import { productImageUrl } from "~/lib/products.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { productImageUrl } from "~/lib/products";
 
-const props = defineProps({ p: { type: Object, required: true } });
+const props = defineProps({ p: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const src = computed(() => productImageUrl(props.p));
 </script>
 

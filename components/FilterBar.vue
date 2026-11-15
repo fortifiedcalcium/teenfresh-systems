@@ -1,5 +1,5 @@
-<script setup>
-import { MEDIA } from "~/lib/breakpoints.js";
+<script setup lang="ts">
+import { MEDIA } from "~/lib/breakpoints";
 
 // The search field (slot `search`) plus the filters (default slot). From 768px the filters sit inline next to the search; below that they collapse into a
 // bottom sheet behind a "Filter (n)" button (n = how many filters are active), and the search stays sticky under the top bar.

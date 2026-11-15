@@ -1,11 +1,12 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { fetchAll } from "~/lib/api.js";
-import { peso } from "~/lib/payment.js";
-import { fmtDateTime } from "~/lib/availability.js";
-import { exportReport } from "~/lib/excel.js";
-import { MEDIA } from "~/lib/breakpoints.js";
-import { PAY_TONE as TONE, PAY_LABEL as LABEL, expectedOf } from "~/lib/payments.js";
+<script setup lang="ts">
+import { IconDownload } from "~/lib/icons";
+import { supabase } from "~/lib/supabaseClient";
+import { fetchAll } from "~/lib/api";
+import { peso } from "~/lib/payment";
+import { fmtDateTime } from "~/lib/availability";
+import { exportReport } from "~/lib/excel";
+import { MEDIA } from "~/lib/breakpoints";
+import { PAY_TONE as TONE, PAY_LABEL as LABEL, expectedOf } from "~/lib/payments";
 
 const toast = useToast();
 const { event } = useAdminContext();

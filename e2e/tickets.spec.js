@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { test, expect, scan, formatViolations } from "./fixtures.js";
+import { test, expect, scan, formatViolations, fontsReady } from "./fixtures.js";
 import { PNG } from "pngjs";
 
 // My registrations as tickets: the notch is a real cut-out, the perforation lines up across a row, nothing overflows,
@@ -177,6 +177,8 @@ test.describe("ticket cards", () => {
     test(`visual snapshot at ${w}px (confirmed, pending, needs action, rejected, cancelled)`, async ({ page, as }) => {
       await open(page, as, { width: w, height: h });
       await page.mouse.move(0, 0);
+      await page.evaluate(() => document.querySelectorAll("header.sticky").forEach((h) => { h.style.position = "static"; }));   // the sticky header must not cover the part being photographed
+      await fontsReady(page);                                  // the picture must not be taken while Matahari is still loading
       await expect(page.locator(".ticket-grid")).toHaveScreenshot(`tickets-${w}.png`, { maxDiffPixelRatio: 0.01 });
     });
   }

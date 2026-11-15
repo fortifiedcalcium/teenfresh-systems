@@ -1,7 +1,8 @@
-<script setup>
-import { fetchEventImages, SLOT_KEYS } from "~/lib/eventImages.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { fetchEventImages, SLOT_KEYS } from "~/lib/eventImages";
 
-const props = defineProps({ event: { type: Object, required: true } });
+const props = defineProps({ event: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const emit = defineEmits(["eventChanged"]);
 const rows = ref(null);
 async function reload() { rows.value = await fetchEventImages(props.event.id); }

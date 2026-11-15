@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import qrcode from "qrcode-generator";
 import qrLogo from "~/assets/logo/qr-logo.png";
 
