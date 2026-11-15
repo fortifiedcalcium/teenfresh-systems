@@ -105,6 +105,7 @@ beforeAll(async () => {
   await db.exec(read("031_variation_stock.sql"));
   await db.exec(read("032_slugs.sql"));
   await db.exec(read("033_event_tagline.sql"));
+  await db.exec(read("034_home_settings.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1363,5 +1364,32 @@ describe("event tagline (migration 033)", () => {
     const none = await db.query("insert into events (title, event_date, capacity, ticket_prefix) values ('Tag B', now() + interval '30 days', 10, 'TAGB') returning tagline");
     expect(none.rows[0].tagline).toBeNull();
     await expect(db.query("insert into events (title, event_date, capacity, ticket_prefix, tagline) values ('Tag C', now() + interval '30 days', 10, 'TAGC', $1)", ["x".repeat(121)])).rejects.toThrow();
+  });
+});
+
+describe("home banner settings (migration 034)", () => {
+  it("everyone can read them, but only an admin can change them (a visitor's update changes nothing)", async () => {
+    await asUser(null);
+    expect((await db.query("select banner_path from public.home_settings")).rows).toHaveLength(1);
+    await asUser("alice");
+    await db.query("update public.home_settings set banner_path = 'home/x.jpg', banner_decorative = true where id");
+    await expect(db.query("insert into public.home_settings (id) values (false)")).rejects.toThrow();
+    expect((await row("select banner_path from public.home_settings")).banner_path).toBeNull();
+    await asUser("admin");
+    await db.query("update public.home_settings set banner_path = 'home/x.jpg', banner_alt = 'A crowd at the show' where id");
+    expect((await row("select banner_alt from public.home_settings")).banner_alt).toBe("A crowd at the show");
+  });
+  it("needs alt text for a picture unless it is marked decorative, and keeps one row only", async () => {
+    await asUser("admin");
+    await expect(db.query("update public.home_settings set banner_path = 'home/y.jpg', banner_alt = '  ', banner_decorative = false where id")).rejects.toThrow();
+    await db.query("update public.home_settings set banner_path = 'home/y.jpg', banner_alt = null, banner_decorative = true where id");
+    await expect(db.query("insert into public.home_settings (id) values (false)")).rejects.toThrow();
+  });
+  it("forgets a featured event that is deleted", async () => {
+    await asSuper();
+    const e = (await db.query("insert into events (title, event_date, capacity, ticket_prefix) values ('Feat', now() + interval '30 days', 10, 'FEAT') returning id")).rows[0];
+    await db.query("update public.home_settings set featured_event_id = $1 where id", [e.id]);
+    await db.query("delete from events where id = $1", [e.id]);
+    expect((await row("select featured_event_id from public.home_settings")).featured_event_id).toBeNull();
   });
 });

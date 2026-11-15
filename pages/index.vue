@@ -7,6 +7,8 @@ import { peso } from "~/lib/payment";
 import { productPath } from "~/lib/slug";
 import { badgeFor, fromPrice } from "~/lib/productBadge";
 import { groupVariations } from "~/lib/variations";
+import { bannerAlt, bannerUrl, NO_HOME_SETTINGS, pickFeatured } from "~/lib/homeSettings";
+import type { HomeSettings } from "~/lib/homeSettings";
 import type { EventRow, ImageRow, KitRow } from "~/types/db";
 import type { ProductRow, VariationRow } from "~/types/shop";
 
@@ -18,6 +20,7 @@ const banners = ref<Record<string, ImageRow>>({});  // event_id -> banner image 
 const kits = ref<Record<string, Pick<KitRow, "unit_price">[]>>({});     // event_id -> its active kits
 const drop = ref<ProductRow[]>([]);
 const dropVersions = ref<Record<string, VariationRow[]>>({});
+const home = ref<HomeSettings>(NO_HOME_SETTINGS);   // the admin-chosen banner picture and featured event
 const error = ref("");
 const announce = useAnnounce();
 let lastAnnounce = 0;
@@ -25,7 +28,7 @@ let alive = true;
 let channel: ReturnType<typeof supabase.channel> | null = null;
 
 async function fetchHome() {
-  const [ev, av, im, kt, pr, vr] = await Promise.all([
+  const [ev, av, im, kt, pr, vr, hs] = await Promise.all([
     supabase.from("events").select("*").order("event_date"),
     supabase.from("event_availability").select("event_id,registered"),
     supabase.from("event_images").select("*").eq("slot", "banner"),
@@ -33,8 +36,10 @@ async function fetchHome() {
     // "Shop the drop": the four newest products
     SHOP_ENABLED ? supabase.from("products").select("*").eq("active", true).order("created_at", { ascending: false }).limit(4) : Promise.resolve({ data: [] as ProductRow[] }),
     SHOP_ENABLED ? supabase.from("product_variations").select("*").eq("active", true).order("position") : Promise.resolve({ data: [] as VariationRow[] }),
+    supabase.from("home_settings").select("*").maybeSingle(),   // missing before migration 034: then there is no banner and the automatic pick
   ]);
   return {
+    home: ((hs.error ? null : hs.data) || NO_HOME_SETTINGS) as HomeSettings,
     drop: (pr.data || []) as ProductRow[],
     dropVersions: groupVariations((vr.data || []) as VariationRow[]) as Record<string, VariationRow[]>,
     ok: !(ev.error || av.error),
@@ -51,7 +56,7 @@ const { data, refresh } = await useAsyncData("home-events", fetchHome);
 let retried = false;
 watch(data, (d) => {
   if (!d) return;
-  kits.value = d.kits; banners.value = d.banners; drop.value = d.drop; dropVersions.value = d.dropVersions;
+  kits.value = d.kits; banners.value = d.banners; home.value = d.home; drop.value = d.drop; dropVersions.value = d.dropVersions;
   if (d.ok) { counts.value = d.counts; events.value = d.events; error.value = ""; return; }
   if (import.meta.client && (!hydrating || retried)) { error.value = "We could not load the events. Check your connection and refresh the page."; events.value = []; }
 }, { immediate: true });
@@ -74,8 +79,9 @@ onMounted(async () => {
     })
     .subscribe();
 });
-// The featured event is the next one people can still register for (or, if none, the first). It is shown in the hero; the others are listed below.
-const featured = computed(() => (events.value || []).find((e) => eventStatus(e, counts.value[e.id] ?? 0).canRegister) || (events.value || [])[0] || null);
+// The featured event is the one an admin chose, else the next one people can still register for (or, if none, the first). It is shown in the hero; the others are listed below.
+const featured = computed(() => pickFeatured(events.value || [], home.value.featured_event_id, (e) => eventStatus(e, counts.value[e.id] ?? 0).canRegister));
+const heroImage = computed(() => bannerUrl(home.value));
 const others = computed(() => (events.value || []).filter((e) => e.id !== featured.value?.id));
 const headline = computed(() => featured.value?.tagline || featured.value?.subtitle || featured.value?.title || "Upcoming events");
 const optsOf = (p: ProductRow) => dropVersions.value[p.id] || [];
@@ -85,7 +91,11 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
 <template>
   <div class="space-y-12">
     <!-- the hero: the featured event's tagline, two buttons, and the event as a ticket -->
-    <section class="home-hero" aria-labelledby="home-h">
+    <section :class="['home-hero', heroImage && 'home-hero--image']" aria-labelledby="home-h">
+      <template v-if="heroImage">
+        <img :src="heroImage" :alt="bannerAlt(home)" class="home-hero__bg" fetchpriority="high" decoding="async">
+        <div class="home-hero__overlay" aria-hidden="true" />
+      </template>
       <div class="space-y-5">
         <p class="text-sm font-extrabold uppercase tracking-widest text-ink-muted">Teenfresh Events</p>
         <h1 id="home-h" class="home-hero__title">{{ headline }}</h1>

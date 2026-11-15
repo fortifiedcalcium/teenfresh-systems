@@ -1,5 +1,5 @@
 import { SHOP_ENABLED } from "./features";
-import { IconChecklist, IconDashboard, IconScanLine, IconSearch, IconUser, IconCalendar, IconWallet, IconMail, IconShield, IconHistory, IconUsers, IconScan, IconBag } from "./icons";
+import { IconChecklist, IconDashboard, IconScanLine, IconSearch, IconUser, IconCalendar, IconWallet, IconMail, IconShield, IconHistory, IconUsers, IconScan, IconBag, IconImage } from "./icons";
 
 /** Which pathnames highlight which bottom-bar tab. Profile also covers the pages that have no tab of their own. */
 export const matchers = {
@@ -7,7 +7,7 @@ export const matchers = {
   search: (p) => p.startsWith("/admin/attendees"),
   scan: (p) => p.startsWith("/admin/scanner"),
   history: (p) => p.startsWith("/admin/tracker"),
-  profile: (p) => ["/admin/profile", "/admin/events", "/admin/products", "/admin/orders", "/admin/order-emails", "/admin/payments", "/admin/emails", "/admin/email", "/admin/users", "/admin/changelog"].some((x) => p === x || p.startsWith(x + "/")),
+  profile: (p) => ["/admin/profile", "/admin/events", "/admin/home", "/admin/products", "/admin/orders", "/admin/order-emails", "/admin/payments", "/admin/emails", "/admin/email", "/admin/users", "/admin/changelog"].some((x) => p === x || p.startsWith(x + "/")),
 };
 
 export const TABS: { key: string; label: string; to: string; icon: any; fab?: boolean }[] = [
@@ -24,6 +24,7 @@ const SHOP_PATHS = ["/admin/products"];
 const ALL_PAGES: [string, string, any, boolean?, string?][] = [
   ["/admin", "Dashboard", IconDashboard, true],
   ["/admin/events", "Events", IconCalendar],
+  ["/admin/home", "Home page", IconImage],
   ["/admin/products", "Shop products", IconBag],
   ["/admin/payments", "Payments", IconWallet, false, "pending"],
   ["/admin/attendees", "Attendees", IconUsers],
@@ -37,7 +38,7 @@ export const SIDEBAR = ALL_PAGES.filter(([to]: any[]) => SHOP_ENABLED || !SHOP_P
 
 /** Page titles for the mobile top bar, and where its back button goes. */
 export const TITLES = [
-  ["/admin/profile", "Profile"], ["/admin/events", "Events", "/admin/profile"], ["/admin/products", "Shop products", "/admin/profile"], ["/admin/payments", "Payments", "/admin/profile"],
+  ["/admin/profile", "Profile"], ["/admin/events", "Events", "/admin/profile"], ["/admin/home", "Home page", "/admin/profile"], ["/admin/products", "Shop products", "/admin/profile"], ["/admin/payments", "Payments", "/admin/profile"],
   ["/admin/emails", "Email", "/admin/profile"], ["/admin/users", "Admin users", "/admin/profile"], ["/admin/changelog", "Change log", "/admin/profile"],
   ["/admin/attendees", "Attendees"], ["/admin/scanner", "QR Scanner"], ["/admin/tracker", "Attendance"], ["/admin", "Dashboard"],
 ];
