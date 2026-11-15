@@ -3,7 +3,7 @@ import type { Tone } from "~/types/ui";
 
 // An event as a concert ticket: the photo, a pastel header (coral, mint or blue, by `band`) with the title and status, notches and a dashed
 // perforation, then the details, a decorative barcode strip and the action.
-const props = withDefaults(defineProps<{ title: string; subtitle?: string; to?: string; image?: string | null; imageAlt?: string; band?: number; statusLabel?: string; statusTone?: Tone; barcode?: string }>(), { band: 0, statusTone: "ok" });
+const props = withDefaults(defineProps<{ title: string; subtitle?: string; to?: string; image?: string | null; imageAlt?: string; band?: number; statusLabel?: string; statusTone?: Tone; barcode?: string; priority?: boolean }>(), { band: 0, statusTone: "ok" });
 // Only ink text goes on coral and blue (the contrast check forbids the muted ink there)
 const BANDS = ["bg-brand-coral", "bg-brand-mint", "bg-brand-blue"];
 const bandClass = computed(() => BANDS[props.band % BANDS.length]);
@@ -13,7 +13,7 @@ const titleId = `tc-${useId()}`;
 <template>
   <article class="tcard flex h-full flex-col" :aria-labelledby="titleId">
     <div class="tcard__head overflow-hidden bg-white">
-      <slot name="media"><img v-if="image" :src="image" :alt="imageAlt || ''" loading="lazy" decoding="async" class="aspect-video w-full object-cover"></slot>
+      <slot name="media"><img v-if="image" :src="image" :alt="imageAlt || ''" :loading="priority ? 'eager' : 'lazy'" :fetchpriority="priority ? 'high' : undefined" decoding="async" class="aspect-video w-full object-cover"></slot>
       <div :class="['flex flex-col-reverse items-start gap-2 p-5 pb-6 text-ink sm:flex-row sm:justify-between sm:gap-3', bandClass]">
         <div class="min-w-0">
           <h2 :id="titleId" :title="title" class="line-clamp-2 text-lg font-black leading-snug">{{ title }}</h2>

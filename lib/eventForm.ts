@@ -5,14 +5,14 @@ export const toLocalInput = (iso) => { if (!iso) return ""; const d = new Date(i
 export const fromLocalInput = (v) => (v ? new Date(v).toISOString() : null);
 
 export const blankEvent = () => ({
-  title: "", subtitle: "", description: "", venue: "", venue_address: "", event_date: "", ends_at: "", registration_deadline: "", capacity: 100, ticket_prefix: "TICKET",
+  title: "", slug: "", subtitle: "", tagline: "", description: "", venue: "", venue_address: "", event_date: "", ends_at: "", registration_deadline: "", capacity: 100, ticket_prefix: "TICKET",
   registration_fee: 0, fee_note: "", hashtags: "", kit_inclusions: "", payment_account_name: "", payment_account_number: "", contact_links: "",
   registration_open: true, send_ack_email: false, receipt_retention_days: "", terms_html: "",
 });
 
 export const eventToForm = (e) => ({
   ...blankEvent(), ...e,
-  subtitle: e.subtitle || "", description: e.description || "", venue: e.venue || "", venue_address: e.venue_address || "", fee_note: e.fee_note || "",
+  slug: e.slug || "", subtitle: e.subtitle || "", tagline: e.tagline || "", description: e.description || "", venue: e.venue || "", venue_address: e.venue_address || "", fee_note: e.fee_note || "",
   event_date: toLocalInput(e.event_date), ends_at: toLocalInput(e.ends_at), registration_deadline: toLocalInput(e.registration_deadline),
   hashtags: (e.hashtags || []).join(" "), kit_inclusions: (e.kit_inclusions || []).join("\n"),
   payment_account_name: e.payment_account_name || "", payment_account_number: e.payment_account_number || "",

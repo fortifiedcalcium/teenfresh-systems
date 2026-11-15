@@ -77,7 +77,7 @@ onMounted(async () => {
 // The featured event is the next one people can still register for (or, if none, the first). It is shown in the hero; the others are listed below.
 const featured = computed(() => (events.value || []).find((e) => eventStatus(e, counts.value[e.id] ?? 0).canRegister) || (events.value || [])[0] || null);
 const others = computed(() => (events.value || []).filter((e) => e.id !== featured.value?.id));
-const headline = computed(() => featured.value?.subtitle || featured.value?.title || "Upcoming events");
+const headline = computed(() => featured.value?.tagline || featured.value?.subtitle || featured.value?.title || "Upcoming events");
 const optsOf = (p: ProductRow) => dropVersions.value[p.id] || [];
 onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(channel); });
 </script>
@@ -97,7 +97,7 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
       </div>
       <div id="featured-event" class="mx-auto w-full max-w-md lg:ml-auto">
         <Loading v-if="events === null" label="Loading events…" class="p-12" logo />
-        <EventCard v-else-if="featured" :event="featured" :registered="counts[featured.id] ?? 0" :banner-image="banners[featured.id]" :kits="kits[featured.id] || []" :band="0" />
+        <EventCard v-else-if="featured" :event="featured" :registered="counts[featured.id] ?? 0" :banner-image="banners[featured.id]" :kits="kits[featured.id] || []" :band="0" priority />
         <Empty v-else>No events yet. Check back soon!</Empty>
       </div>
     </section>

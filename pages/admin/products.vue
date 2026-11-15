@@ -213,6 +213,7 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
         <div class="grid gap-4 md:grid-cols-2">
           <Field id="p-artist" v-slot="a" label="Artist" required :error="errors.artist"><input v-bind="a" v-model="form.artist" class="input" maxlength="80"></Field>
           <Field id="p-title" v-slot="a" label="Product title" required :error="errors.title"><input v-bind="a" v-model="form.title" class="input" maxlength="160"></Field>
+          <Field id="p-slug" v-slot="a" label="Web address" :hint="`Appears as /shop/${form.slug.trim() || 'your-product'}. Letters, numbers and dashes are kept; the old address keeps working.`"><input v-bind="a" v-model="form.slug" class="input" maxlength="120" autocapitalize="none" spellcheck="false" placeholder="Made from the title when left empty"></Field>
           <Field id="p-price" v-slot="a" label="Price (PHP)" required :error="errors.price" hint="The price shown to visitors, for example 750"><input v-bind="a" v-model="form.price" class="input" inputmode="decimal"></Field>
           <Field id="p-discount_percent" v-slot="a" label="Discount (%)" :error="errors.discount_percent" hint="Shown in red next to the price. 0 hides it"><input v-bind="a" v-model="form.discount_percent" class="input" inputmode="numeric"></Field>
         </div>
