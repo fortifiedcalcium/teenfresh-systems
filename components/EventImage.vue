@@ -44,9 +44,9 @@ const pick = (e) => { upload(e.target.files?.[0]); e.target.value = ""; };
          width/height only reserve room until the file has loaded; then the real dimensions take over. -->
     <div class="overflow-hidden rounded-lg border border-link bg-brand-sky">
       <button v-if="lightbox" type="button" class="block w-full" :aria-label="`View larger: ${alt}`" aria-haspopup="dialog" @click="open = true">
-        <img :src="url" :alt="alt" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" class="block h-auto w-full" @error="failed = true">
+        <img :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" class="block h-auto w-full" @error="failed = true">
       </button>
-      <img v-else :src="url" :alt="alt" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" class="block h-auto w-full" @error="failed = true">
+      <img v-else :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" class="block h-auto w-full" @error="failed = true">
     </div>
     <Lightbox v-if="open" :url="url" :alt="alt" :title="spec.label" @close="open = false" />
   </template>

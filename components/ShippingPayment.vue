@@ -55,7 +55,7 @@ async function submit() {
         <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-base font-bold">{{ settings.gcash_account_number }}</span><CopyButton :text="settings.gcash_account_number" label="Copy GCash number" /></p>
       </template>
       <figure v-if="qr" class="mt-3 w-48 max-w-full">
-        <img :src="qr" :alt="`GCash QR code for ${settings.gcash_account_name || 'Teenfresh'}. Scan it in the GCash app to pay.`" class="w-full rounded-lg border border-link bg-white">
+        <img data-allow-save :src="qr" :alt="`GCash QR code for ${settings.gcash_account_name || 'Teenfresh'}. Scan it in the GCash app to pay.`" class="w-full rounded-lg border border-link bg-white">
         <figcaption class="mt-1 text-sm">Or scan this QR code in the GCash app.</figcaption>
       </figure>
       <p class="mt-2">Then enter the details below and attach your receipt. We ship your order once the shipping fee is confirmed.</p>

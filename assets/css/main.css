@@ -152,6 +152,9 @@
 @media (prefers-contrast: more) { .card, .admin-surface { border-color: var(--ink); } }
 
 /* Reduced motion (2.3.3): no animation or smooth scrolling */
+/* Pictures on the public pages cannot be dragged off the page or long-pressed to save. (The GCash QR codes and a person's own receipt keep working: they carry data-allow-save.) */
+.no-save img:not([data-allow-save]) { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

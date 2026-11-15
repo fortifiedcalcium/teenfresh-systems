@@ -28,7 +28,7 @@ onBeforeUnmount(() => stopUnlock());
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
+  <div class="no-save flex min-h-screen flex-col">
     <SkipLink />
     <header class="sticky top-0 z-30 px-3 pt-3">
       <nav class="pill-nav" aria-label="Main">
