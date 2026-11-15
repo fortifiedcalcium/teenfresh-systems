@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayStatus, orderArgs, paymentReferences, priceOrder, validateCheckout } from "../lib/orders.js";
+import { displayStatus, orderArgs, paymentReferences, priceOrder, validateCheckout } from "../lib/orders";
 
 const good = { name: "Juan Dela Cruz", email: "juan@example.com", phone: "0917 123 4567", address: "12 Rizal St., Brgy. Poblacion", province: "Metro Manila (NCR)", city: "Makati City", postal_code: "1210", notes: "", sender_name: "Juan D.", reference_number: "1234 567 890" };
 

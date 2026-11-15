@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 const wrapLines = (t) => t.split("\n").map((l) => (l.trim() ? l.replace(/^(\s*)(.*?)(\s*)$/, "$1**$2**$3") : l)).join("\n");
 const unwrapLines = (t) => t.split("\n").map((l) => l.replace(/\*\*([^*]+)\*\*/g, "$1")).join("\n");
 const allBold = (t) => t.split("\n").filter((l) => l.trim()).every((l) => /^\s*\*\*[^*]+\*\*\s*$/.test(l));
@@ -47,6 +47,6 @@ const onKey = (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "
     <div role="toolbar" aria-label="Text formatting" class="mb-1 flex gap-1">
       <button type="button" class="btn-secondary min-w-0 px-3" aria-keyshortcuts="Control+B Meta+B" title="Bold (Ctrl+B or Cmd+B)" @click="toggleBold"><b aria-hidden="true">B</b><span class="sr-only">Bold</span></button>
     </div>
-    <textarea ref="el" class="input" :rows="rows" :maxlength="maxLength" :value="modelValue" v-bind="$attrs" @input="emit('update:modelValue', $event.target.value)" @keydown="onKey" />
+    <textarea ref="el" class="input" :rows="rows" :maxlength="maxLength" :value="modelValue" v-bind="$attrs" @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)" @keydown="onKey" />
   </div>
 </template>

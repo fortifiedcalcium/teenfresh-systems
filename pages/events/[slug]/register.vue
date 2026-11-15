@@ -1,13 +1,13 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { callFunction, friendlyError } from "~/lib/api.js";
-import { stepSchemaFor } from "~/lib/validation.js";
-import { zodErrors } from "~/lib/zodErrors.js";
-import { contactLinkList } from "~/lib/contactLinks.js";
-import { eventStatus } from "~/lib/availability.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { callFunction, friendlyError } from "~/lib/api";
+import { stepSchemaFor } from "~/lib/validation";
+import { zodErrors } from "~/lib/zodErrors";
+import { contactLinkList } from "~/lib/contactLinks";
+import { eventStatus } from "~/lib/availability";
 import { findByRef, registerPath } from "~/lib/slug";
-import { fetchEventImages } from "~/lib/eventImages.js";
-import { normalizeFacebook, normalizePhone, normalizeReference, normalizeX, orderTotal, parseAmount, peso, receiptPath, reusablePayments, balanceLeft, validateReceiptFile, formatBytes } from "~/lib/payment.js";
+import { fetchEventImages } from "~/lib/eventImages";
+import { normalizeFacebook, normalizePhone, normalizeReference, normalizeX, orderTotal, parseAmount, peso, receiptPath, reusablePayments, balanceLeft, validateReceiptFile, formatBytes } from "~/lib/payment";
 
 definePageMeta({ middleware: ["auth"] });
 const DEFAULTS = { email: "", agree: false, name: "", x_username: "", facebook_url: "", contact_number: "", kit_id: "", reuse_payment_id: "", sender_name: "", amount_paid: "", reference_number: "", notes: "" };
@@ -31,7 +31,7 @@ const toast = useToast();
 const announce = useAnnounce();
 const event = ref(undefined); // undefined loading, null missing
 const registered = ref(0);
-const images = ref({});
+const images = ref<Record<string, any>>({});
 const payments = ref([]);
 const kits = ref([]);
 useSeo({ title: "Register", noindex: true });
@@ -39,7 +39,7 @@ const draft = loadDraft(id);
 const stepKey = ref(draft?.step || "info");
 const v = reactive({ ...DEFAULTS, email: user.value?.email || "", ...(draft?.values || {}) });
 const file = ref(null);
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const attempted = ref(false);         // after a failed "Next", the fields are re-checked as they change
 const receiptError = ref("");
 const submitting = ref(false);
@@ -64,7 +64,7 @@ let channel = null;
 onMounted(() => {
   loadAll();
   channel = supabase.channel("reg-" + id)
-    .on("postgres_changes", { event: "*", schema: "public", table: "event_counts", filter: `event_id=eq.${id}` }, (p) => { registered.value = p.new?.registered ?? 0; })
+    .on("postgres_changes", { event: "*", schema: "public", table: "event_counts", filter: `event_id=eq.${id}` }, (p: any) => { registered.value = p.new?.registered ?? 0; })
     .subscribe();
 });
 onBeforeUnmount(() => { if (channel) supabase.removeChannel(channel); });
@@ -152,7 +152,7 @@ function another() { Object.assign(v, { ...DEFAULTS, email: user.value?.email ||
 
 const st = computed(() => (event.value ? eventStatus(event.value, registered.value) : null));
 const reviewSections = computed(() => {
-  const out = [
+  const out: [string, string, [string, any][]][] = [
     ["info", "Event info and terms", [["Email", v.email], ["Terms and Conditions", "Agreed"]]],
     ["participant", "Participant's information", [["Name", v.name], ["X/Twitter Username", "@" + normalizeX(v.x_username)], ["Facebook Profile Link", normalizeFacebook(v.facebook_url) || v.facebook_url], ["Contact Number", normalizePhone(v.contact_number) || v.contact_number]]],
   ];
@@ -272,7 +272,7 @@ const emailText = computed(() => (emailState.value === "sending" ? "Sending your
 
         <div v-if="reusable.length > 0">
           <label for="reuse" class="label">Use the payment details from one of my earlier forms</label>
-          <select id="reuse" class="input" :value="v.reuse_payment_id || ''" aria-describedby="reuse-hint" @change="chooseReuse($event.target.value)">
+          <select id="reuse" class="input" :value="v.reuse_payment_id || ''" aria-describedby="reuse-hint" @change="chooseReuse(($event.target as HTMLInputElement).value)">
             <option value="">No, I made a new payment</option>
             <option v-for="p in reusable" :key="p.id" :value="p.id">{{ p.sender_name }}, {{ peso(p.amount_paid) }}, ref …{{ p.reference_number.slice(-4) }} ({{ peso(balanceLeft(p)) }} left)</option>
           </select>

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // Decorative barcode strip, drawn from the ticket number so every ticket looks different. It is NOT a scannable code.
 const props = defineProps({ value: { type: String, default: "" } });
 const bars = computed(() => {

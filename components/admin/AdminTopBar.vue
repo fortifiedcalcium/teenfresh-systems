@@ -1,10 +1,11 @@
-<script setup>
-import { titleFor } from "~/lib/adminNav.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { titleFor } from "~/lib/adminNav";
 
 // Slim sticky header below 1024px (the sidebar carries the context on desktop). 56px, safe-area aware.
 // The title is shown here but is aria-hidden: each page keeps its own <h1> (screen-reader only on small screens), so
 // there is exactly one h1 and route changes still move focus to it. `#admin-topbar-actions` receives page actions.
-defineProps({ notes: { type: Object, default: () => ({}) } });
+defineProps({ notes: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, default: () => ({}) } });
 const route = useRoute();
 const info = computed(() => titleFor(route.path));
 </script>

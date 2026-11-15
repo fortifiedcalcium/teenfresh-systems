@@ -1,12 +1,13 @@
-<script setup>
-import { MEDIA } from "~/lib/breakpoints.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { MEDIA } from "~/lib/breakpoints";
 
 // Sortable, paginated table. columns: [{ key, label, sortValue?(row), className?, sortable? }].
 // A cell shows row[key] unless the parent fills the slot `cell-<key>` ({ row }). The actions column is the one with `sortable: false` and no label.
 // `caption` names the table for screen readers (required). Sort buttons use aria-sort; the pagination is a labelled nav.
 const props = defineProps({
-  caption: { type: String, required: true }, columns: { type: Array, required: true }, rows: { type: Array, default: () => [] }, rowKey: { type: String, default: "id" },
-  loading: Boolean, cards: Boolean, empty: { type: String, default: "Nothing to show." }, pageSize: { type: Number, default: 25 }, initialSort: Object,
+  caption: { type: String, required: true }, columns: { type: Array as PropType<any[]> as PropType<any[]>, required: true }, rows: { type: Array as PropType<any[]> as PropType<any[]>, default: () => [] }, rowKey: { type: String, default: "id" },
+  loading: Boolean, cards: Boolean, empty: { type: String, default: "Nothing to show." }, pageSize: { type: Number, default: 25 }, initialSort: Object as PropType<Record<string, any>>,
 });
 const sort = ref(props.initialSort || null); // { key, dir }
 const page = ref(0);

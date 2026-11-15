@@ -1,5 +1,5 @@
-<script setup>
-import { takeDestination } from "~/lib/destination.js";
+<script setup lang="ts">
+import { takeDestination } from "~/lib/destination";
 
 // Landing page for the email-verification link and the Google OAuth redirect.
 // The Supabase client exchanges the ?code= for a session by itself; we just wait for it.

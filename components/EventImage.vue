@@ -1,10 +1,11 @@
-<script setup>
-import { imageUrl, SLOTS, uploadEventImage } from "~/lib/eventImages.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { imageUrl, SLOTS, uploadEventImage } from "~/lib/eventImages";
 
 // One image slot of an event. Shows the uploaded image at its own size and proportions, or a placeholder with the
 // slot's recommended aspect ratio when there is none or it fails to load. Admins get an "Upload image" button on the placeholder
 // (not with `readOnly`, e.g. on an attendee's own ticket). `image` is the event_images row for the slot (or undefined).
-const props = defineProps({ slotKey: { type: String, required: true }, event: Object, image: Object, lightbox: { type: Boolean, default: true }, readOnly: Boolean });
+const props = defineProps({ slotKey: { type: String, required: true }, event: Object as PropType<Record<string, any>>, image: Object as PropType<Record<string, any>>, lightbox: { type: Boolean, default: true }, readOnly: Boolean });
 const emit = defineEmits(["changed"]);
 const { isAdmin } = useAuth();
 const toast = useToast();

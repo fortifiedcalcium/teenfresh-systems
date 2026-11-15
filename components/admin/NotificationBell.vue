@@ -1,24 +1,25 @@
-<script setup>
-import { pendingNotes, totalUnread } from "~/lib/notifications.js";
-import { setSoundEnabled, soundEnabled } from "~/lib/chime.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { pendingNotes, totalUnread } from "~/lib/notifications";
+import { setSoundEnabled, soundEnabled } from "~/lib/chime";
 
 // The notification button: a bell with the number of NEW things, and a list that links to where each is handled.
 // Opening an item (or the page it leads to) marks it read, and its counter goes away until something new arrives.
 // Things already seen but still waiting stay listed below, without a counter. New arrivals also show as a toast and play a short chime.
-const props = defineProps({ counts: Object, unread: Object, align: { type: String, default: "left" }, iconOnly: { type: Boolean, default: true } });
+const props = defineProps({ counts: Object as PropType<Record<string, any>>, unread: Object as PropType<Record<string, any>>, align: { type: String, default: "left" }, iconOnly: { type: Boolean, default: true } });
 const emit = defineEmits(["read", "readAll"]);
 const { open, toggle, close, btn, panel, pos, id } = usePopover(props.align);
 const sound = ref(soundEnabled());
 const waiting = computed(() => pendingNotes(props.counts));
-const fresh = computed(() => waiting.value.filter((n) => (props.unread?.[n.key] || 0) > 0));
-const seen = computed(() => waiting.value.filter((n) => !((props.unread?.[n.key] || 0) > 0)));
+const fresh = computed(() => waiting.value.filter((n) => Number(props.unread?.[n.key] || 0) > 0));
+const seen = computed(() => waiting.value.filter((n) => !(Number(props.unread?.[n.key] || 0) > 0)));
 const total = computed(() => totalUnread(props.unread));
 const flip = () => { sound.value = !sound.value; setSoundEnabled(sound.value); };
 const go = (n) => { emit("read", [n.key]); close(); };
 </script>
 
 <template>
-  <button ref="btn" type="button" class="btn-secondary relative min-w-target px-2" :aria-expanded="open" :aria-controls="id" :aria-label="iconOnly ? (total > 0 ? `Notifications, ${total} new` : 'Notifications, nothing new') : undefined" @click="toggle">
+  <button ref="btn" type="button" class="btn-secondary relative min-w-target px-2" :aria-expanded="open" :aria-controls="id" :aria-label="iconOnly ? (Number(total) > 0 ? `Notifications, ${total} new` : 'Notifications, nothing new') : undefined" @click="toggle">
     <IconBell />
     <span v-if="!iconOnly">Notifications</span>
     <span v-if="total > 0" aria-hidden="true" class="notif-badge">{{ total > 99 ? "99+" : total }}</span>

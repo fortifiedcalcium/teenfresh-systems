@@ -1,5 +1,5 @@
-<script setup>
-import { SHOP_ENABLED } from "~/lib/features.js";
+<script setup lang="ts">
+import { SHOP_ENABLED } from "~/lib/features";
 
 // Event payments and shop orders on one admin page, so the menu stays short.
 const TABS = [{ key: "event", label: "Event payments" }, ...(SHOP_ENABLED ? [{ key: "shop", label: "Shop orders" }] : [])];

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // The centre scan button. Raised (protruding about half above the bar) everywhere except the Scanner page, where it is
 // docked inside the bar; the nav's data-docked attribute drives the 180 ms move (CSS, off with reduced motion).
 // Round hit area only: it is a circle, so it never covers the neighbouring tabs.

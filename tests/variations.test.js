@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { validateVariations, validateProduct } from "../lib/products.js";
-import { lineKey } from "../lib/cartLine.js";
-import { orderArgs } from "../lib/orders.js";
-import { buildCombos, groupVariations, comboKeyOf, finalVariations, normalizeLayers, parseValues, validateLayers, validateStock, inStock, stockNote, allSoldOut, variationLabel } from "../lib/variations.js";
-import { productRow } from "../lib/products.js";
+import { validateVariations, validateProduct } from "../lib/products";
+import { lineKey } from "../lib/cartLine";
+import { orderArgs } from "../lib/orders";
+import { buildCombos, groupVariations, comboKeyOf, finalVariations, normalizeLayers, parseValues, validateLayers, validateStock, inStock, stockNote, allSoldOut, variationLabel } from "../lib/variations";
+import { productRow } from "../lib/products";
 
 describe("validateVariations", () => {
   it("accepts none, or named ones with an optional price", () => {

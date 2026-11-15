@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { supabase } from "~/lib/supabaseClient.js";
-import { eventStatus } from "~/lib/availability.js";
-import { fetchEventImages, imageUrl } from "~/lib/eventImages.js";
-import { contactLinkList } from "~/lib/contactLinks.js";
+import { supabase } from "~/lib/supabaseClient";
+import { eventStatus } from "~/lib/availability";
+import { fetchEventImages, imageUrl } from "~/lib/eventImages";
+import { contactLinkList } from "~/lib/contactLinks";
 import { eventPath, findByRef, registerPath } from "~/lib/slug";
 import type { EventRow, ImageRow, KitRow } from "~/types/db";
 

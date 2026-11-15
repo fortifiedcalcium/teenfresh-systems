@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import logo from "~/assets/logo/teenfresh-logo.png";
-import { SHOP_ENABLED } from "~/lib/features.js";
-import { playChime, unlockChime } from "~/lib/chime.js";
+import { SHOP_ENABLED } from "~/lib/features";
+import { playChime, unlockChime } from "~/lib/chime";
 
 const SUPPORT = import.meta.env.VITE_SUPPORT_EMAIL;
 // One handle on every network. The "@teenfreshph" text next to the icons is plain text, not a link.

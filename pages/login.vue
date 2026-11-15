@@ -1,12 +1,13 @@
-<script setup>
-import { rememberDestination } from "~/lib/destination.js";
+<script setup lang="ts">
+import { IconLogIn } from "~/lib/icons";
+import { rememberDestination } from "~/lib/destination";
 
 definePageMeta({ layout: "blank" });
 const { user, loading, signIn, signInWithGoogle, sessionEnded } = useAuth();
 const route = useRoute();
 const from = computed(() => (typeof route.query.from === "string" && route.query.from.startsWith("/") ? route.query.from : "/"));
 const form = reactive({ email: "", password: "" });
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const [focusSignal, bumpFocus] = useErrorFocus();
 const error = ref("");
 const busy = ref(false);
@@ -16,7 +17,7 @@ watch([loading, user], () => { if (!loading.value && user.value) navigateTo(from
 
 async function onSubmit() {
   error.value = "";
-  const errs = {};
+  const errs: Record<string, string> = {};
   if (!form.email.trim()) errs.email = "Enter your email address";
   if (!form.password) errs.password = "Enter your password";
   errors.value = errs;

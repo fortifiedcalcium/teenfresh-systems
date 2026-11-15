@@ -1,5 +1,5 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
 import { DEFAULT_TEMPLATES, ORDER_FIELDS, ORDER_KINDS, renderOrderEmail, unknownOrderFields } from "~/lib/orderEmail.js";
 
 // Admin: the wording of each shop order email. The items, totals and delivery address are added automatically.
@@ -18,7 +18,7 @@ const wording = (rows, k) => { const r = rows?.[k]; return r ? { subject: r.subj
 const tag = (f) => `{{${f}}}`;
 const toast = useToast();
 const saved = ref(null);          // kind -> saved row
-const kind = ref(ORDER_KINDS[0]);
+const kind = ref<string>(ORDER_KINDS[0]);
 const draft = ref({ ...DEFAULT_TEMPLATES[ORDER_KINDS[0]] });
 const busy = ref(false);
 const error = ref("");
@@ -26,7 +26,7 @@ const error = ref("");
 onMounted(() => { supabase.from("order_email_templates").select("*").then(({ data }) => { saved.value = Object.fromEntries((data || []).map((r) => [r.kind, r])); }); });
 watch([kind, saved], () => { if (saved.value) { draft.value = { ...wording(saved.value, kind.value) }; error.value = ""; } });
 
-const preview = computed(() => renderOrderEmail(kind.value, SAMPLE_ORDER, SAMPLE_ITEMS, "", draft.value));
+const preview = computed(() => renderOrderEmail(kind.value as any, SAMPLE_ORDER, SAMPLE_ITEMS, "", draft.value));
 const customised = computed(() => Boolean(saved.value?.[kind.value]));
 const unchanged = computed(() => JSON.stringify(draft.value) === JSON.stringify(wording(saved.value, kind.value)));
 
@@ -63,7 +63,7 @@ async function restore() {
     <p class="text-sm text-ink-muted">Edit what shoppers read in their order emails. The items, totals and delivery address are added under your text automatically.</p>
 
     <div role="tablist" aria-label="Emails" class="flex flex-wrap gap-2">
-      <button v-for="k in ORDER_KINDS" :id="`tab-${k}`" :key="k" type="button" role="tab" :aria-selected="kind === k" aria-controls="email-panel" :class="kind === k ? 'btn-primary' : 'btn-secondary'" @click="kind = k">{{ LABEL[k] }}<span v-if="saved[k]" class="sr-only"> (edited)</span></button>
+      <button v-for="k in ORDER_KINDS" :id="`tab-${k}`" :key="k" type="button" role="tab" :aria-selected="kind === k" aria-controls="email-panel" :class="kind === k ? 'btn-primary' : 'btn-secondary'" @click="kind = k">{{ (LABEL as Record<string, string>)[k] }}<span v-if="saved[k]" class="sr-only"> (edited)</span></button>
     </div>
 
     <div id="email-panel" role="tabpanel" :aria-labelledby="`tab-${kind}`" class="grid gap-6 lg:grid-cols-2 lg:items-start">

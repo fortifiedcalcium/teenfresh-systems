@@ -1,10 +1,11 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { friendlyError } from "~/lib/api.js";
-import { OTHER_COURIER, courierValue, splitCourier } from "~/lib/orders.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { friendlyError } from "~/lib/api";
+import { OTHER_COURIER, courierValue, splitCourier } from "~/lib/orders";
 
 // The shopper picks the courier they would like for delivery. It can be changed until the order ships.
-const props = defineProps({ order: { type: Object, required: true } });
+const props = defineProps({ order: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const emit = defineEmits(["saved"]);
 const toast = useToast();
 const couriers = useCouriers();

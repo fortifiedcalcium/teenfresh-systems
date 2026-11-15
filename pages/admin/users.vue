@@ -1,7 +1,7 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { fetchAll } from "~/lib/api.js";
-import { fmtDateTime } from "~/lib/availability.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { fetchAll } from "~/lib/api";
+import { fmtDateTime } from "~/lib/availability";
 
 const { user } = useAuth();
 const toast = useToast();

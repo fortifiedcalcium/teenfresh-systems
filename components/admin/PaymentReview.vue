@@ -1,11 +1,12 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { callFunction, friendlyError, resendMany } from "~/lib/api.js";
-import { kitLabel, peso } from "~/lib/payment.js";
-import { fmtDateTime } from "~/lib/availability.js";
-import { PAY_TONE as TONE, PAY_LABEL as LABEL, activeForms, expectedOf } from "~/lib/payments.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { callFunction, friendlyError, resendMany } from "~/lib/api";
+import { kitLabel, peso } from "~/lib/payment";
+import { fmtDateTime } from "~/lib/availability";
+import { PAY_TONE as TONE, PAY_LABEL as LABEL, activeForms, expectedOf } from "~/lib/payments";
 
-const props = defineProps({ payment: { type: Object, required: true }, inline: Boolean });
+const props = defineProps({ payment: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true }, inline: Boolean });
 const emit = defineEmits(["close", "changed"]);
 const toast = useToast();
 const forms = computed(() => activeForms(props.payment));
@@ -72,7 +73,7 @@ const moreDetails = computed(() => [["Submitted", fmtDateTime(p.value.created_at
         <h3 id="rcpt-h" class="text-lg">Receipt</h3>
         <PaymentReceipt v-if="payment.receipt_path" :path="payment.receipt_path" :label="`GCash receipt, reference ${payment.reference_number}`" />
         <Alert v-else tone="warn">The receipt file was deleted{{ payment.receipt_deleted_at ? ` on ${fmtDateTime(payment.receipt_deleted_at)}` : "" }}.</Alert>
-        <details v-if="payment.receipt_history?.length > 0"><summary class="min-h-target cursor-pointer py-2 font-semibold">Earlier receipts ({{ payment.receipt_history.length }})</summary><div class="space-y-4"><PaymentReceipt v-for="(path, i) in payment.receipt_history" :key="path" :path="path" :label="`Earlier receipt ${i + 1}, reference ${payment.reference_history?.[i] || 'unknown'}`" /></div></details>
+        <details v-if="payment.receipt_history?.length > 0"><summary class="min-h-target cursor-pointer py-2 font-semibold">Earlier receipts ({{ payment.receipt_history.length }})</summary><div class="space-y-4"><PaymentReceipt v-for="(path, i) in payment.receipt_history" :key="path" :path="path" :label="`Earlier receipt ${Number(i) + 1}, reference ${payment.reference_history?.[i] || 'unknown'}`" /></div></details>
       </section>
 
       <section aria-labelledby="det-h" class="space-y-3">

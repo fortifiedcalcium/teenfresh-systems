@@ -1,5 +1,6 @@
-<script setup>
-defineProps({ label: String, value: [String, Number], sub: String, icon: Object, tone: { type: String, default: "text-ink" } });
+<script setup lang="ts">
+import type { PropType } from "vue";
+defineProps({ label: String, value: [String, Number], sub: String, icon: Object as PropType<Record<string, any>>, tone: { type: String, default: "text-ink" } });
 </script>
 
 <template>

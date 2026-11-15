@@ -1,11 +1,12 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from "vue";
 // A row of tabs above one panel. Arrow keys, Home and End move between tabs (the WAI-ARIA tabs pattern).
-const props = defineProps({ id: String, label: String, tabs: { type: Array, required: true }, active: String });
+const props = defineProps({ id: String, label: String, tabs: { type: Array as PropType<any[]> as PropType<any[]>, required: true }, active: String });
 const emit = defineEmits(["change"]);
 const els = {};
 function move(e, i) {
   const n = props.tabs.length;
-  const to = { ArrowRight: (i + 1) % n, ArrowLeft: (i - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
+  const to = { ArrowRight: (Number(i) + 1) % n, ArrowLeft: (i - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
   if (to === undefined) return;
   e.preventDefault();
   emit("change", props.tabs[to].key);

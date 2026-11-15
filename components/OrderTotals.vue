@@ -1,8 +1,9 @@
-<script setup>
-import { peso } from "~/lib/payment.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { peso } from "~/lib/payment";
 
 // What you pay, in pesos. Shared by the cart and the checkout summary.
-defineProps({ totals: { type: Object, required: true }, shippingNote: { type: Boolean, default: true } });
+defineProps({ totals: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true }, shippingNote: { type: Boolean, default: true } });
 </script>
 
 <template>

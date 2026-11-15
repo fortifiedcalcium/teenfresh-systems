@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NOTE_TYPES, arrivals, pendingNotes, reconcileSeen, totalNeeding, totalUnread, typesForLocation, unreadOf } from "../lib/notifications.js";
+import { NOTE_TYPES, arrivals, pendingNotes, reconcileSeen, totalNeeding, totalUnread, typesForLocation, unreadOf } from "../lib/notifications";
 
 describe("notifications", () => {
   it("lists only what is waiting, in a fixed order, with its count", () => {

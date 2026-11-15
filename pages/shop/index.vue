@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { supabase } from "~/lib/supabaseClient.js";
-import { chipsFor, productImageUrl, productMatches } from "~/lib/products.js";
-import { peso } from "~/lib/payment.js";
+import { supabase } from "~/lib/supabaseClient";
+import { chipsFor, productImageUrl, productMatches } from "~/lib/products";
+import { peso } from "~/lib/payment";
 import { productPath } from "~/lib/slug";
-import { groupVariations } from "~/lib/variations.js";
+import { groupVariations } from "~/lib/variations";
 import { badgeFor, fromPrice } from "~/lib/productBadge";
 import type { ProductRow, VariationRow } from "~/types/shop";
 

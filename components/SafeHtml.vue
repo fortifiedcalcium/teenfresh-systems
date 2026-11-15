@@ -1,5 +1,5 @@
-<script setup>
-import { sanitize } from "~/lib/sanitize.js";
+<script setup lang="ts">
+import { sanitize } from "~/lib/sanitize";
 
 // Admin-edited HTML (the Terms) is always passed through a whitelist sanitizer before it is rendered.
 const props = defineProps({ html: String });

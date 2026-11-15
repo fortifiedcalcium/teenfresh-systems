@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // Copies text and says so out loud: the live region announces "copied", and the label changes for everyone else.
 const props = defineProps({ text: String, label: { type: String, default: "Copy number" }, what: { type: String, default: "GCash number" }, iconOnly: Boolean });
 const announce = useAnnounce();

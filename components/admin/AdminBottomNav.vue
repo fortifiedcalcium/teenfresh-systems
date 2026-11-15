@@ -1,5 +1,5 @@
-<script setup>
-import { matchers, TABS } from "~/lib/adminNav.js";
+<script setup lang="ts">
+import { matchers, TABS } from "~/lib/adminNav";
 
 // Five slots: Home, Search, [Scan], History, Profile. Rendered below 1024px (lg:hidden is display:none, so the hidden bar
 // is out of the accessibility tree and the tab order). hidden: keyboard open.
@@ -14,7 +14,7 @@ watch(() => props.pending, (n) => { live.value = `${n} payment${n === 1 ? "" : "
 function scrollTopAndFocus() {
   window.scrollTo({ top: 0, behavior: "auto" });
   const h = document.querySelector("#main-content h1");
-  if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+  if (h) { h.setAttribute("tabindex", "-1"); (h as HTMLElement).focus({ preventScroll: true }); }
 }
 </script>
 

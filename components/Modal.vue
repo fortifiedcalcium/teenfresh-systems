@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 // Dialogs can open on top of each other (review dialog -> confirm dialog): only the top one reacts to Esc and Tab.
 // Order comes from mount order (a dialog opened from inside another mounts later), not from event order.
 const stack = [];
@@ -6,7 +6,7 @@ let seq = 0;
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"])';
 </script>
 
-<script setup>
+<script setup lang="ts">
 // Accessible dialog: labelled by its heading, focus moves in and is trapped, Esc closes, focus returns to the trigger.
 defineProps({ title: String, wide: Boolean });
 const emit = defineEmits(["close"]);

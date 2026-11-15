@@ -1,6 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import logoImg from "~/assets/logo/teenfresh-logo.png";
-import { SLOTS } from "~/lib/eventImages.js";
+import { SLOTS } from "~/lib/eventImages";
 
 // The "Coming soon" panel that stands in for a banner (events.banner_coming_soon). Same aspect ratio as the banner,
 // so the cards stay equal. The words are real text; the logo is decoration.

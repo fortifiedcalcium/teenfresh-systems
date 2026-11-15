@@ -1,7 +1,7 @@
-<script setup>
-import { MAX_QTY, priceOrder } from "~/lib/orders.js";
-import { peso } from "~/lib/payment.js";
-import { variationLabel } from "~/lib/variations.js";
+<script setup lang="ts">
+import { MAX_QTY, priceOrder } from "~/lib/orders";
+import { peso } from "~/lib/payment";
+import { variationLabel } from "~/lib/variations";
 
 definePageMeta({ middleware: ["shop"] });
 const { items, setQty, remove } = useCart();
@@ -48,7 +48,7 @@ const nameOf = (l) => `${l.title}${l.variation ? `, ${l.variation.name}` : ""}`;
             </div>
             <div class="flex items-center gap-2">
               <label :for="`qty-${l.key}`" class="sr-only">Quantity of {{ nameOf(l) }}</label>
-              <select :id="`qty-${l.key}`" class="input w-20 !rounded-full" :value="l.quantity" @change="setQty(l.key, Number($event.target.value))">
+              <select :id="`qty-${l.key}`" class="input w-20 !rounded-full" :value="l.quantity" @change="setQty(l.key, Number(($event.target as HTMLInputElement).value))">
                 <option v-for="n in qtyOptions(l)" :key="n" :value="n">{{ n }}</option>
               </select>
               <BaseButton variant="secondary" small @click="() => { remove(l.key); announce(`${l.title}${l.variation ? `, ${l.variation.name},` : ''} removed from your cart`); }"><IconTrash />Remove <span class="sr-only">{{ nameOf(l) }}</span></BaseButton>

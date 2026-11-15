@@ -1,6 +1,6 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { callFunction } from "~/lib/api.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { callFunction } from "~/lib/api";
 
 definePageMeta({ middleware: ["auth"] });
 const route = useRoute();

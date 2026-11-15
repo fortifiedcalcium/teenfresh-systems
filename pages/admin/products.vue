@@ -1,10 +1,10 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { VARIATIONS_MAX, CATEGORY_MAX, INFO_IMAGES_MAX, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateCategoryName, validateProduct } from "~/lib/products.js";
-import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "~/lib/eventImages.js";
-import { peso } from "~/lib/payment.js";
-import { COMBOS_MAX, LAYERS_MAX, LAYER_VALUES_MAX, buildCombos, finalVariations, groupVariations, normalizeLayers, validateLayers } from "~/lib/variations.js";
-import { blankProduct, productToForm } from "~/lib/productForm.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { VARIATIONS_MAX, CATEGORY_MAX, INFO_IMAGES_MAX, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateCategoryName, validateProduct } from "~/lib/products";
+import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "~/lib/eventImages";
+import { peso } from "~/lib/payment";
+import { COMBOS_MAX, LAYERS_MAX, LAYER_VALUES_MAX, buildCombos, finalVariations, groupVariations, normalizeLayers, validateLayers } from "~/lib/variations";
+import { blankProduct, productToForm } from "~/lib/productForm";
 
 // Admin: add, edit, hide and delete the products on the public Shop page.
 definePageMeta({ middleware: ["shop"] });
@@ -12,12 +12,12 @@ const ACCEPT = Object.keys(IMAGE_TYPES).join(",");
 const toast = useToast();
 const announce = useAnnounce();
 const rows = ref(null);
-const form = ref(null);       // null = closed; object = new (no id) or editing
+const form = ref<any>(null);       // null = closed; object = new (no id) or editing
 const file = ref(null);       // a newly chosen image, not uploaded until Save
 const preview = ref(null);
 const descFiles = ref([]);    // new description images { file, url }, not uploaded until Save
 const fileError = ref("");
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const [focusSignal, bumpFocus] = useErrorFocus();
 const saving = ref(false);
 const formError = ref("");
@@ -115,7 +115,7 @@ async function save() {
   let newPath = null;
   const newDesc = [];
   try {
-    const row = productRow(f);
+    const row: Record<string, any> = productRow(f);
     if (file.value) { newPath = await uploadProductImage(file.value); row.image_path = newPath; }
     for (const d of descFiles.value) newDesc.push(await uploadProductImage(d.file));
     row.info_images = [...f.info_images, ...newDesc];
@@ -254,18 +254,18 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
             <ul v-if="form.variations.length > 0" class="space-y-2">
               <li v-for="(v, i) in form.variations" :key="v.key" class="flex flex-wrap items-end gap-2 rounded-lg border border-brand-sky p-2">
                 <div class="min-w-[10rem] flex-1">
-                  <label class="label" :for="i === 0 ? 'p-variations' : `p-var-name-${v.key}`">Name <span class="sr-only">of variation {{ i + 1 }}</span></label>
+                  <label class="label" :for="i === 0 ? 'p-variations' : `p-var-name-${v.key}`">Name <span class="sr-only">of variation {{ Number(i) + 1 }}</span></label>
                   <input :id="i === 0 ? 'p-variations' : `p-var-name-${v.key}`" v-model="v.name" class="input" maxlength="60" placeholder="For example Version A">
                 </div>
                 <div class="w-40">
-                  <label class="label" :for="`p-var-price-${v.key}`">Price (PHP) <span class="sr-only">of variation {{ i + 1 }}</span></label>
+                  <label class="label" :for="`p-var-price-${v.key}`">Price (PHP) <span class="sr-only">of variation {{ Number(i) + 1 }}</span></label>
                   <input :id="`p-var-price-${v.key}`" v-model="v.price" class="input" inputmode="decimal" placeholder="Same as product">
                 </div>
                 <div class="w-28">
-                  <label class="label" :for="`p-var-stock-${v.key}`">Stock <span class="sr-only">of variation {{ i + 1 }}</span></label>
+                  <label class="label" :for="`p-var-stock-${v.key}`">Stock <span class="sr-only">of variation {{ Number(i) + 1 }}</span></label>
                   <input :id="`p-var-stock-${v.key}`" v-model="v.stock" class="input" inputmode="numeric" placeholder="Not counted">
                 </div>
-                <button type="button" class="btn-secondary" @click="removeVariation(v)"><IconTrash />Remove <span class="sr-only">variation {{ v.name || i + 1 }}</span></button>
+                <button type="button" class="btn-secondary" @click="removeVariation(v)"><IconTrash />Remove <span class="sr-only">variation {{ v.name || Number(i) + 1 }}</span></button>
               </li>
             </ul>
             <button type="button" :id="form.variations.length === 0 ? 'p-variations' : undefined" class="btn-secondary" :disabled="form.variations.length >= VARIATIONS_MAX" @click="addVariation"><IconPlus />Add a variation</button>
@@ -275,14 +275,14 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
             <p class="hint">Add a layer for each choice, such as Color and Storage, and type its values separated by commas (up to {{ LAYER_VALUES_MAX }}). Shoppers pick one value in each layer, and every combination can have its own price. Once a layer has values, it replaces the simple list above.</p>
             <div v-for="(l, i) in form.layers" :key="l.key" class="flex flex-wrap items-end gap-2">
               <div class="w-40">
-                <label class="label" :for="`p-layer-name-${l.key}`">Layer {{ i + 1 }} name</label>
+                <label class="label" :for="`p-layer-name-${l.key}`">Layer {{ Number(i) + 1 }} name</label>
                 <input :id="`p-layer-name-${l.key}`" v-model="l.name" class="input" maxlength="30" placeholder="For example Color">
               </div>
               <div class="min-w-[12rem] flex-1">
-                <label class="label" :for="`p-layer-values-${l.key}`">Values of layer {{ i + 1 }}</label>
+                <label class="label" :for="`p-layer-values-${l.key}`">Values of layer {{ Number(i) + 1 }}</label>
                 <input :id="`p-layer-values-${l.key}`" v-model="l.values" class="input" placeholder="Black, White, Gold">
               </div>
-              <button type="button" class="btn-secondary" @click="removeLayer(l)"><IconTrash />Remove <span class="sr-only">layer {{ l.name || i + 1 }}</span></button>
+              <button type="button" class="btn-secondary" @click="removeLayer(l)"><IconTrash />Remove <span class="sr-only">layer {{ l.name || Number(i) + 1 }}</span></button>
             </div>
             <button type="button" class="btn-secondary" :disabled="form.layers.length >= LAYERS_MAX" @click="addLayer"><IconPlus />Add a layer</button>
             <div v-if="comboRows.length > 0">
@@ -291,12 +291,12 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
                 <li v-for="r in comboRows" :key="r.key" class="flex flex-wrap items-center gap-2 rounded-md bg-brand-ivory px-3 py-2 text-sm">
                   <span class="min-w-[10rem] flex-1 font-semibold">{{ r.name }}</span>
                   <label class="flex items-center gap-2"><span class="sr-only">Price of {{ r.name }}, PHP</span>
-                    <input class="input w-36" inputmode="decimal" :aria-label="`Price of ${r.name}, PHP`" placeholder="Same as product" :value="comboOf(r.key).price ?? ''" @input="setCombo(r.key, { price: $event.target.value })">
+                    <input class="input w-36" inputmode="decimal" :aria-label="`Price of ${r.name}, PHP`" placeholder="Same as product" :value="comboOf(r.key).price ?? ''" @input="setCombo(r.key, { price: ($event.target as HTMLInputElement).value })">
                   </label>
                   <label class="flex items-center gap-2"><span class="sr-only">Stock of {{ r.name }}</span>
-                    <input class="input w-28" inputmode="numeric" :aria-label="`Stock of ${r.name}`" placeholder="Not counted" :value="comboOf(r.key).stock ?? ''" @input="setCombo(r.key, { stock: $event.target.value })">
+                    <input class="input w-28" inputmode="numeric" :aria-label="`Stock of ${r.name}`" placeholder="Not counted" :value="comboOf(r.key).stock ?? ''" @input="setCombo(r.key, { stock: ($event.target as HTMLInputElement).value })">
                   </label>
-                  <label class="flex min-h-target items-center gap-2"><input type="checkbox" class="check" :checked="comboOf(r.key).active !== false" @change="setCombo(r.key, { active: $event.target.checked })">For sale<span class="sr-only">: {{ r.name }}</span></label>
+                  <label class="flex min-h-target items-center gap-2"><input type="checkbox" class="check" :checked="comboOf(r.key).active !== false" @change="setCombo(r.key, { active: ($event.target as HTMLInputElement).checked })">For sale<span class="sr-only">: {{ r.name }}</span></label>
                 </li>
               </ul>
             </div>
@@ -333,12 +333,12 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
             <p id="p-desc-images-label" class="label">Description images</p>
             <ul v-if="form.info_images.length > 0 || descFiles.length > 0" class="flex flex-wrap gap-3">
               <li v-for="(path, i) in form.info_images" :key="path" class="w-28 space-y-1">
-                <img :src="productImageUrl({ image_path: path })" :alt="`Description illustration ${i + 1}`" class="w-full rounded-lg border border-link">
-                <button type="button" class="btn-secondary w-full" @click="dropSaved(path)"><IconTrash />Remove<span class="sr-only"> description image {{ i + 1 }}</span></button>
+                <img :src="productImageUrl({ image_path: path })" :alt="`Description illustration ${Number(i) + 1}`" class="w-full rounded-lg border border-link">
+                <button type="button" class="btn-secondary w-full" @click="dropSaved(path)"><IconTrash />Remove<span class="sr-only"> description image {{ Number(i) + 1 }}</span></button>
               </li>
               <li v-for="(d, i) in descFiles" :key="d.url" class="w-28 space-y-1">
-                <img :src="d.url" :alt="`New description illustration ${i + 1}`" class="w-full rounded-lg border border-link">
-                <button type="button" class="btn-secondary w-full" @click="dropDesc(d)"><IconClose />Undo<span class="sr-only"> new description image {{ i + 1 }}</span></button>
+                <img :src="d.url" :alt="`New description illustration ${Number(i) + 1}`" class="w-full rounded-lg border border-link">
+                <button type="button" class="btn-secondary w-full" @click="dropDesc(d)"><IconClose />Undo<span class="sr-only"> new description image {{ Number(i) + 1 }}</span></button>
               </li>
             </ul>
             <input id="p-desc-images" type="file" multiple :accept="ACCEPT" class="file-input sr-only" aria-describedby="p-desc-images-hint" @change="onDescImages">

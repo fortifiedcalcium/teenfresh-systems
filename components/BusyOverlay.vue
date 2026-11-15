@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // A screen over the whole page while something that must not be interrupted is running (for example sending an email).
 // It blocks clicks, tells screen readers what is happening, and warns before the tab is closed or reloaded.
 const props = defineProps({ show: Boolean, label: { type: String, default: "Please wait…" } });

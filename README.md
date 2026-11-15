@@ -31,7 +31,7 @@ public/email, public/banners                 placeholder logo, icons and banner:
 
 ## Accessibility
 The app targets **WCAG 2.2 AA** with the Teenfresh palette (brand colours as surfaces, accessible companion tokens for text and borders). See [ACCESSIBILITY.md](ACCESSIBILITY.md) for the token ratios, deviations, and the manual test checklist.
-`npm run check:contrast` runs before every build; `npm test`, `npm run lint`, `npm run test:e2e` (Playwright + axe) and `npm run lighthouse` cover the rest.
+`npm run typecheck` (vue-tsc) checks every `.ts` and `.vue` file. `npm run check:contrast` runs before every build; `npm test`, `npm run lint`, `npm run test:e2e` (Playwright + axe) and `npm run lighthouse` cover the rest.
 
 ## 1. Create the Supabase project
 1. https://supabase.com → **New project**. Note the **Project URL**, the **anon key** (Project Settings → API) and the **project ref**.

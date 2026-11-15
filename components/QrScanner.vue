@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { Html5Qrcode } from "html5-qrcode";
 
 // Camera QR scanner (needs HTTPS or localhost). Emits `scan` (text) for each code, ignoring the same
@@ -71,7 +71,7 @@ const pickCamera = (e) => { cameraId.value = e.target.value; if (running.value) 
       <label for="camera-select" class="sr-only">Camera</label>
       <select id="camera-select" class="input max-w-xs" :value="cameraId" @change="pickCamera">
         <option value="">Back camera (default)</option>
-        <option v-for="(c, i) in cameras" :key="c.id" :value="c.id">{{ c.label || `Camera ${i + 1}` }}</option>
+        <option v-for="(c, i) in cameras" :key="c.id" :value="c.id">{{ c.label || `Camera ${Number(i) + 1}` }}</option>
       </select>
       <button v-if="running" type="button" class="btn-secondary" @click="stop"><IconCameraOff />Stop camera</button>
       <button v-else type="button" class="btn-primary" @click="start(cameraId)"><IconCamera />Start camera</button>

@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from "vue";
 // One tab: a real link (so long-press, open in new tab and keyboard behave), icon above label.
 // Active state comes from the router's location (aria-current="page"), never from local state.
-defineProps({ to: String, label: String, icon: Object, active: Boolean, badge: { type: Number, default: 0 }, badgeLabel: String });
+defineProps({ to: String, label: String, icon: Object as PropType<Record<string, any>>, active: Boolean, badge: { type: Number, default: 0 }, badgeLabel: String });
 const emit = defineEmits(["activeClick"]);
 </script>
 

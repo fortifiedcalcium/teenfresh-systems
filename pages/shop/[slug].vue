@@ -1,10 +1,11 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { INFO_SECTIONS, productImageUrl } from "~/lib/products.js";
-import { peso } from "~/lib/payment.js";
-import { allSoldOut, inStock, normalizeLayers, stockNote, variationLabel } from "~/lib/variations.js";
-import { MAX_QTY } from "~/lib/orders.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { INFO_SECTIONS, productImageUrl } from "~/lib/products";
+import { peso } from "~/lib/payment";
+import { allSoldOut, inStock, normalizeLayers, stockNote, variationLabel } from "~/lib/variations";
+import { MAX_QTY } from "~/lib/orders";
 import { findByRef, productPath } from "~/lib/slug";
+import { lineKey } from "~/lib/cartLine";
 import { badgeFor } from "~/lib/productBadge";
 
 definePageMeta({ middleware: ["shop"] });
@@ -186,7 +187,7 @@ function onBuy() { if (needPick()) return; addToCart(); navigateTo("/checkout");
       <details v-for="([k, label], i) in infoSections" :key="k" :open="i === 0">
         <summary>{{ label }}</summary>
         <div class="pd-prose">
-          <template v-if="k === 'info_description'"><img v-for="(path, n) in p.info_images || []" :key="path" :src="productImageUrl({ image_path: path })" :alt="`${p.title}, detail ${n + 1}`" loading="lazy" class="pd-desc-img"></template>
+          <template v-if="k === 'info_description'"><img v-for="(path, n) in p.info_images || []" :key="path" :src="productImageUrl({ image_path: path })" :alt="`${p.title}, detail ${Number(n) + 1}`" loading="lazy" class="pd-desc-img"></template>
           <FormattedText :text="p[k]" />
         </div>
       </details>

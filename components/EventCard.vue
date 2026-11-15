@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { eventStatus, fmtDate, fmtDeadline, fmtTimeRange, STATUS_TONE } from "~/lib/availability.js";
-import { peso } from "~/lib/payment.js";
+import { eventStatus, fmtDate, fmtDeadline, fmtTimeRange, STATUS_TONE } from "~/lib/availability";
+import { peso } from "~/lib/payment";
 import { eventPath } from "~/lib/slug";
-import { imageUrl } from "~/lib/eventImages.js";
+import { imageUrl } from "~/lib/eventImages";
 import type { EventRow, ImageRow, KitRow } from "~/types/db";
 import type { Tone } from "~/types/ui";
 

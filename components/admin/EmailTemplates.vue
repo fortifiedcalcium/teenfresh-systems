@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 const { event } = useAdminContext();
 const tab = ref("template");
 const TABS = [["template", "Confirmation template", "IconMail"], ["bulk", "Bulk mail merge", "IconSend"], ["logs", "Email logs", "IconHistory"]];

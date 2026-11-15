@@ -1,8 +1,9 @@
-<script setup>
-import { fmtDateTime } from "~/lib/availability.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { fmtDateTime } from "~/lib/availability";
 
 // The ticket and QR code. Only a confirmed registration has a ticket number; anything else shows its status instead.
-const props = defineProps({ registration: { type: Object, required: true }, event: Object });
+const props = defineProps({ registration: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true }, event: Object as PropType<Record<string, any>> });
 const confirmed = computed(() => props.registration.status === "confirmed" && props.registration.ticket_number);
 </script>
 

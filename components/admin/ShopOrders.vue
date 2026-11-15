@@ -1,11 +1,12 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { SHIPPING, displayStatus } from "~/lib/orders.js";
-import { peso } from "~/lib/payment.js";
-import { fmtDateTime } from "~/lib/availability.js";
-import { exportReportSheets } from "~/lib/excel.js";
-import { orderReport, orderReportFilename } from "~/lib/orderReport.js";
-import { fetchAll } from "~/lib/api.js";
+<script setup lang="ts">
+import { IconDownload } from "~/lib/icons";
+import { supabase } from "~/lib/supabaseClient";
+import { SHIPPING, displayStatus } from "~/lib/orders";
+import { peso } from "~/lib/payment";
+import { fmtDateTime } from "~/lib/availability";
+import { exportReportSheets } from "~/lib/excel";
+import { orderReport, orderReportFilename } from "~/lib/orderReport";
+import { fetchAll } from "~/lib/api";
 
 const FILTERS = [["all", "All"], ["pending", "Awaiting payment"], ["set_fee", "Set shipping fee"], ["underpaid", "Underpaid"], ["ship_review", "Shipping payment to check"], ["paid", "Paid"], ["shipped", "Shipped"], ["cancelled", "Cancelled"]];
 const toast = useToast();

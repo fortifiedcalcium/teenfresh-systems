@@ -1,10 +1,11 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { OTHER_COURIER, courierValue, splitCourier } from "~/lib/orders.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { OTHER_COURIER, courierValue, splitCourier } from "~/lib/orders";
 
 // Admin: change the courier of an order that has not shipped yet (for example when the shopper's choice cannot deliver there).
 // The shopper sees the new courier. Once the shipping fee is set, only an admin can change it.
-const props = defineProps({ order: { type: Object, required: true } });
+const props = defineProps({ order: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const emit = defineEmits(["saved"]);
 const toast = useToast();
 const couriers = useCouriers();

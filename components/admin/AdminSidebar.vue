@@ -1,10 +1,11 @@
-<script setup>
-import { SIDEBAR } from "~/lib/adminNav.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { SIDEBAR } from "~/lib/adminNav";
 import logo from "~/assets/logo/teenfresh-logo.png";
 
 // Desktop navigation (1024px and up): 240px (260px at 1536+), collapsible to an icon rail. Hidden below 1024px
 // with display:none, so it is not in the accessibility tree while the bottom bar is. `notes` is { counts, unread, onRead, onReadAll }.
-defineProps({ email: String, pending: { type: Number, default: 0 }, notes: { type: Object, default: () => ({}) } });
+defineProps({ email: String, pending: { type: Number, default: 0 }, notes: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, default: () => ({}) } });
 const emit = defineEmits(["signOut"]);
 const KEY = "admin_sidebar_collapsed";
 const collapsed = ref(false);

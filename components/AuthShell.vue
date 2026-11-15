@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from "vue";
 import logo from "~/assets/logo/teenfresh-logo.png";
 
-defineProps({ title: String, subtitle: String, icon: Object });
+defineProps({ title: String, subtitle: String, icon: Object as PropType<Record<string, any>> });
 </script>
 
 <template>

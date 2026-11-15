@@ -1,7 +1,7 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { productImageUrl, removeProductImage, uploadProductImage } from "~/lib/products.js";
-import { IMAGE_TYPES, validateImageFile } from "~/lib/eventImages.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { productImageUrl, removeProductImage, uploadProductImage } from "~/lib/products";
+import { IMAGE_TYPES, validateImageFile } from "~/lib/eventImages";
 
 // GCash details and QR code of the checkout.
 const toast = useToast();

@@ -1,9 +1,9 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { SHIPPING } from "~/lib/orders.js";
-import { nextText } from "~/lib/orderNext.js";
-import { peso } from "~/lib/payment.js";
-import { fmtDateTime } from "~/lib/availability.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { SHIPPING } from "~/lib/orders";
+import { nextText } from "~/lib/orderNext";
+import { peso } from "~/lib/payment";
+import { fmtDateTime } from "~/lib/availability";
 
 // One order: used right after checkout (with a thank-you banner) and from My orders. Only the owner and admins can open it (RLS).
 definePageMeta({ middleware: ["shop", "auth"] });
@@ -17,7 +17,7 @@ async function load() {
   const id = route.params.id;
   // Only MY order: admins can read every order in the database, so ask for mine explicitly. Someone else's order reads as "not found".
   const o = await supabase.from("orders").select("*").eq("id", id).eq("user_id", user.value.id).maybeSingle();
-  const it = o.data ? await supabase.from("order_items").select("*").eq("order_id", id).order("title") : { data: [] };
+  const it: any = o.data ? await supabase.from("order_items").select("*").eq("order_id", id).order("title") : { data: [] };
   if (id !== route.params.id) return;
   // a background refresh that fails keeps what is on screen; only the first load may say "not found"
   order.value = o.error && order.value ? order.value : o.data || null;

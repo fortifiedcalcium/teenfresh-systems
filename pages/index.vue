@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { supabase } from "~/lib/supabaseClient.js";
+import { supabase } from "~/lib/supabaseClient";
 import type { EventRow, ImageRow, KitRow } from "~/types/db";
 
 useSeo({ title: "Upcoming events", description: "Reserve your slot at the next Teenfresh event: cupsleeve events, fan meets and more. Register online and pay by GCash.", path: "/" });
@@ -25,13 +25,13 @@ onMounted(async () => {
   kits.value = (kt.data || []).reduce((m: Record<string, Pick<KitRow, "unit_price">[]>, k: { event_id: string; unit_price: number }) => ({ ...m, [k.event_id]: [...(m[k.event_id] || []), k] }), {});
   banners.value = Object.fromEntries((im.data || []).map((r: ImageRow) => [r.event_id, r]));
   if (ev.error || av.error) { error.value = "We could not load the events. Check your connection and refresh the page."; events.value = []; return; }
-  counts.value = Object.fromEntries(av.data.map((r: { event_id: string; registered: number }) => [r.event_id, r.registered]));
+  counts.value = Object.fromEntries((av.data as any[]).map((r: { event_id: string; registered: number }) => [r.event_id, r.registered]));
   events.value = ev.data;
 
   // Live availability: event_counts is a public counter table (no attendee data) streamed by Realtime.
   // Screen-reader announcements are throttled to one per 10 s so a busy event does not flood the user.
   channel = supabase.channel("event-counts")
-    .on("postgres_changes", { event: "*", schema: "public", table: "event_counts" }, (p: { new?: { event_id?: string; registered: number } }) => {
+    .on("postgres_changes", { event: "*", schema: "public", table: "event_counts" } as any, (p: { new?: { event_id?: string; registered: number } }) => {
       if (!p.new?.event_id) return;
       counts.value = { ...counts.value, [p.new.event_id]: p.new.registered };
       const e = (events.value || []).find((x) => x.id === p.new?.event_id);

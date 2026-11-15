@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // Shows text an admin wrote with **bold** markers. Only bold is recognised, and everything else is plain text
 // (Vue escapes it), so admin text can never add HTML. Line breaks are kept by the caller's CSS (white-space: pre-line).
 const props = defineProps({ text: { type: [String, Number], default: "" } });

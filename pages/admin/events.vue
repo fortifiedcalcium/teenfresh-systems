@@ -1,12 +1,12 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { fmtDateTime } from "~/lib/availability.js";
-import { peso } from "~/lib/payment.js";
-import { blankEvent, eventToForm, fromLocalInput, cleanTerms, parseLinks } from "~/lib/eventForm.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { fmtDateTime } from "~/lib/availability";
+import { peso } from "~/lib/payment";
+import { blankEvent, eventToForm, fromLocalInput, cleanTerms, parseLinks } from "~/lib/eventForm";
 
 const { events, reloadEvents } = useAdminContext();
 const toast = useToast();
-const form = ref(null); // null closed; object = editing (id present) or new
+const form = ref<any>(null); // null closed; object = editing (id present) or new
 const tab = ref("details");
 const saving = ref(false);
 const error = ref("");
@@ -102,7 +102,7 @@ const current = computed(() => (form.value?.id ? events.value.find((e) => e.id =
               <Field id="ends_at" v-slot="a" label="End"><input v-bind="a" v-model="form.ends_at" type="datetime-local" class="input"></Field>
               <Field id="deadline" v-slot="a" label="Registration deadline" hint="Empty = until the event starts"><input v-bind="a" v-model="form.registration_deadline" type="datetime-local" class="input"></Field>
               <Field id="capacity" v-slot="a" label="Capacity" required hint="Pending forms count toward capacity"><input v-bind="a" v-model="form.capacity" type="number" min="1" class="input"></Field>
-              <Field id="prefix" v-slot="a" label="Ticket prefix" hint="IVEMONOP gives IVEMONOP-000123"><input v-bind="a" :value="form.ticket_prefix" class="input font-mono uppercase" @input="form.ticket_prefix = $event.target.value.toUpperCase()"></Field>
+              <Field id="prefix" v-slot="a" label="Ticket prefix" hint="IVEMONOP gives IVEMONOP-000123"><input v-bind="a" :value="form.ticket_prefix" class="input font-mono uppercase" @input="form.ticket_prefix = ($event.target as HTMLInputElement).value.toUpperCase()"></Field>
             </div>
             <label class="flex min-h-target items-center gap-3 text-sm"><input v-model="form.registration_open" type="checkbox" class="check"> Registration open</label>
             <Field id="hashtags" v-slot="a" label="Hashtags" hint="Separated by spaces, for example #IVEMON_OP #Teenfresh"><input v-bind="a" v-model="form.hashtags" class="input"></Field>

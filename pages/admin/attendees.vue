@@ -1,9 +1,10 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { callFunction, fetchAll, resendMany } from "~/lib/api.js";
-import { exportReport } from "~/lib/excel.js";
-import { normalizeFacebook, normalizePhone, normalizeX, kitLabel, peso } from "~/lib/payment.js";
-import { fmtDateTime } from "~/lib/availability.js";
+<script setup lang="ts">
+import { IconDownload } from "~/lib/icons";
+import { supabase } from "~/lib/supabaseClient";
+import { callFunction, fetchAll, resendMany } from "~/lib/api";
+import { exportReport } from "~/lib/excel";
+import { normalizeFacebook, normalizePhone, normalizeX, kitLabel, peso } from "~/lib/payment";
+import { fmtDateTime } from "~/lib/availability";
 
 const EMAIL_BADGE = { sent: "badge-ok", failed: "badge-bad", none: "badge-neutral" };
 const STATUS_BADGE = { pending_verification: ["badge-warn", "pending verification"], confirmed: ["badge-ok", "confirmed"], rejected: ["badge-bad", "rejected"], cancelled: ["badge-bad", "cancelled"] };
@@ -51,7 +52,7 @@ const shown = computed(() => (rows.value || []).filter((r) => {
   return true;
 }));
 
-async function run(fn, okMsg) {
+async function run(fn, okMsg?) {
   busy.value = true;
   try { await fn(); if (okMsg) toast(okMsg, "success"); await load(); } catch (e) { toast(e.message || "Failed", "error"); } finally { busy.value = false; }
 }

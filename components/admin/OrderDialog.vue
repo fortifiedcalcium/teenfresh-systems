@@ -1,12 +1,13 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, isFullyPaid, paymentReferences, sendOrderEmail, splitCourier } from "~/lib/orders.js";
-import { peso, parseAmount } from "~/lib/payment.js";
-import { friendlyError } from "~/lib/api.js";
-import { fmtDateTime } from "~/lib/availability.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { MAX_TRACKING, OTHER_COURIER, SHIPPING, STATUS, courierValue, isFullyPaid, paymentReferences, sendOrderEmail, splitCourier } from "~/lib/orders";
+import { peso, parseAmount } from "~/lib/payment";
+import { friendlyError } from "~/lib/api";
+import { fmtDateTime } from "~/lib/availability";
 
 const MAIL_LABEL = { order_received: "Order received (old, no longer sent)", order_paid: "Payment confirmed", order_balance_due: "Payment short: remaining amount", order_shipping_due: "Shipping fee to pay", order_shipped: "Shipped", order_cancelled: "Cancelled" };
-const props = defineProps({ order: { type: Object, required: true } });
+const props = defineProps({ order: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const emit = defineEmits(["close", "changed"]);
 const toast = useToast();
 const items = ref([]);

@@ -1,9 +1,10 @@
-<script setup>
-import { fmtDate, fmtDeadline, fmtTimeRange, mapsUrl } from "~/lib/availability.js";
-import { peso } from "~/lib/payment.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { fmtDate, fmtDeadline, fmtTimeRange, mapsUrl } from "~/lib/availability";
+import { peso } from "~/lib/payment";
 
 // The event's key facts as real text (never only inside a poster image).
-const props = defineProps({ event: { type: Object, required: true }, st: Object, kits: { type: Array, default: () => [] }, asH1: Boolean, requiredNote: { type: Boolean, default: true } });
+const props = defineProps({ event: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true }, st: Object as PropType<Record<string, any>>, kits: { type: Array as PropType<any[]> as PropType<any[]>, default: () => [] }, asH1: Boolean, requiredNote: { type: Boolean, default: true } });
 const fee = computed(() => Number(props.event.registration_fee));
 const paid = computed(() => fee.value > 0 || props.kits.length > 0);
 </script>

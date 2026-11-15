@@ -1,7 +1,7 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { playChime, unlockChime } from "~/lib/chime.js";
-import { typesForLocation } from "~/lib/notifications.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { playChime, unlockChime } from "~/lib/chime";
+import { typesForLocation } from "~/lib/notifications";
 
 // Admin frame. Below 1024px: sticky top bar + bottom navigation (raised scan button). From 1024px: the sidebar.
 // The switch is pure CSS (lg:), so there is no user-agent sniffing and the hidden navigation is display:none.
@@ -59,7 +59,7 @@ function select(id) { adminEventId.value = id; try { localStorage.setItem("admin
       <AdminTopBar :notes="notes" />
       <section v-if="!onShopPage" aria-label="Event selection" class="flex flex-wrap items-center gap-2 border-b border-brand-sky bg-white/60 px-4 py-3">
         <label for="event-select" class="text-sm font-semibold">Event</label>
-        <select id="event-select" class="input max-w-md" :value="event?.id || ''" :disabled="!adminEvents?.length" @change="select($event.target.value)">
+        <select id="event-select" class="input max-w-md" :value="event?.id || ''" :disabled="!adminEvents?.length" @change="select(($event.target as HTMLInputElement).value)">
           <option v-for="e in adminEvents" :key="e.id" :value="e.id">{{ e.title }}</option>
           <option v-if="adminEvents && !adminEvents.length">No events yet</option>
         </select>

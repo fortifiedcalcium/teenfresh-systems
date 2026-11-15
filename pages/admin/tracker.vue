@@ -1,8 +1,9 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { fetchAll } from "~/lib/api.js";
-import { exportReport } from "~/lib/excel.js";
-import { fmtDateTime } from "~/lib/availability.js";
+<script setup lang="ts">
+import { IconDownload } from "~/lib/icons";
+import { supabase } from "~/lib/supabaseClient";
+import { fetchAll } from "~/lib/api";
+import { exportReport } from "~/lib/excel";
+import { fmtDateTime } from "~/lib/availability";
 
 const RESULT_BADGE = { success: "badge-ok", duplicate: "badge-warn", invalid: "badge-bad" };
 const toast = useToast();

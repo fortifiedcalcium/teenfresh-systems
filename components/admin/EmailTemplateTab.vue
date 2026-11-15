@@ -1,6 +1,7 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { callFunction } from "~/lib/api.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { callFunction } from "~/lib/api";
 
 const KINDS = [
   ["confirmation", "Confirmation (sent when a payment is verified)"],
@@ -8,7 +9,7 @@ const KINDS = [
   ["payment_rejected", "Payment rejected"],
   ["acknowledgment", "Registration received (optional, see Events)"],
 ];
-const props = defineProps({ event: { type: Object, required: true } });
+const props = defineProps({ event: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const { user } = useAuth();
 const toast = useToast();
 const kind = ref("confirmation");

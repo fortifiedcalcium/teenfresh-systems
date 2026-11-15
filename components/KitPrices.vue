@@ -1,8 +1,9 @@
-<script setup>
-import { priceBounds } from "~/lib/payment.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { priceBounds } from "~/lib/payment";
 
 // "₱100.00 each", "₱100.00 to ₱250.00 each" (wraps only at "to"), or just "₱100.00" for a single kit
-const props = defineProps({ kits: { type: Array, default: () => [] } });
+const props = defineProps({ kits: { type: Array as PropType<any[]> as PropType<any[]>, default: () => [] } });
 const b = computed(() => priceBounds(props.kits));
 </script>
 

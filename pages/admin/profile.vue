@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // The Profile tab: who is signed in, the pages that have no tab of their own, and sign out.
 const MANAGE = [
   ["/admin/events", "Events", "Create events, kits and images", "IconCalendar"],

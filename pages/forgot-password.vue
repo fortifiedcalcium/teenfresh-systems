@@ -1,8 +1,9 @@
-<script setup>
+<script setup lang="ts">
+import { IconMail } from "~/lib/icons";
 definePageMeta({ layout: "blank" });
 const { resetPassword } = useAuth();
 const email = ref("");
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const [focusSignal, bumpFocus] = useErrorFocus();
 const sent = ref(false);
 const error = ref("");

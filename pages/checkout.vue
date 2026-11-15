@@ -1,10 +1,10 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { friendlyError } from "~/lib/api.js";
-import { orderArgs, priceOrder, validateCheckout } from "~/lib/orders.js";
-import { peso, receiptPath, validateReceiptFile } from "~/lib/payment.js";
-import { variationLabel } from "~/lib/variations.js";
-import { productImageUrl } from "~/lib/products.js";
+<script setup lang="ts">
+import { supabase } from "~/lib/supabaseClient";
+import { friendlyError } from "~/lib/api";
+import { orderArgs, priceOrder, validateCheckout } from "~/lib/orders";
+import { peso, receiptPath, validateReceiptFile } from "~/lib/payment";
+import { variationLabel } from "~/lib/variations";
+import { productImageUrl } from "~/lib/products";
 
 definePageMeta({ middleware: ["shop", "auth"] });
 const LABELS = { name: "Full name", email: "Email", phone: "Mobile number", address: "Street address", province: "Province", city: "City/Municipality", postal_code: "Postal code", sender_name: "GCash sender name", reference_number: "Reference number", receipt: "Payment receipt" };
@@ -19,7 +19,7 @@ const cartLines = useCartLines(computed(() => state.value.products), computed(()
 const lines = computed(() => cartLines.value.lines);
 const f = reactive({ name: profile.value?.full_name || "", email: user.value?.email || "", phone: "", address: "", province: "", city: "", postal_code: "", notes: "", sender_name: "", reference_number: "" });
 const file = ref(null);
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const [focusSignal, bumpFocus] = useErrorFocus();
 const serverError = ref("");
 const busy = ref(false);

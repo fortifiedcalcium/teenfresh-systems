@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // The review opens as a dialog (a full-screen sheet on phones). From 768px it is shown beside the list instead (master-detail).
 defineProps({ inline: Boolean, title: String });
 const emit = defineEmits(["close"]);

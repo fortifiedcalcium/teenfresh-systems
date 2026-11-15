@@ -1,18 +1,19 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { friendlyError } from "~/lib/api.js";
-import { isValidReference, normalizeReference, peso, receiptPath, validateReceiptFile } from "~/lib/payment.js";
-import { productImageUrl } from "~/lib/products.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { friendlyError } from "~/lib/api";
+import { isValidReference, normalizeReference, peso, receiptPath, validateReceiptFile } from "~/lib/payment";
+import { productImageUrl } from "~/lib/products";
 
 // The shopper paid less than the order asks for. They see how much is missing and send a receipt for just that amount.
-const props = defineProps({ order: { type: Object, required: true } });
+const props = defineProps({ order: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const emit = defineEmits(["sent"]);
 const { user } = useAuth();
 const settings = useShopSettings();
 const sender = ref("");
 const reference = ref("");
 const file = ref(null);
-const errors = ref({});
+const errors = ref<Record<string, string>>({});
 const serverError = ref("");
 const busy = ref(false);
 const what = computed(() => (props.order.balance_for === "shipping" ? "shipping fee" : "order"));
@@ -20,7 +21,7 @@ const qr = computed(() => (settings.value?.gcash_qr_path ? productImageUrl({ ima
 
 async function submit() {
   serverError.value = "";
-  const errs = {};
+  const errs: Record<string, string> = {};
   if (!sender.value.trim()) errs.sender = "Enter the name on the GCash account you paid from";
   if (!isValidReference(reference.value)) errs.reference = "Enter the reference number exactly as GCash shows it";
   const fileProblem = validateReceiptFile(file.value);

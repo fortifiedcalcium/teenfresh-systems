@@ -1,12 +1,13 @@
-<script setup>
-import { supabase } from "~/lib/supabaseClient.js";
-import { friendlyError } from "~/lib/api.js";
-import { balanceStage, sendOrderEmail } from "~/lib/orders.js";
-import { parseAmount, peso } from "~/lib/payment.js";
+<script setup lang="ts">
+import type { PropType } from "vue";
+import { supabase } from "~/lib/supabaseClient";
+import { friendlyError } from "~/lib/api";
+import { balanceStage, sendOrderEmail } from "~/lib/orders";
+import { parseAmount, peso } from "~/lib/payment";
 
 // Admin: the shopper paid less than they should have. Ask for the remaining amount, then check what they send.
 // It appears while an order's items payment (pending) or shipping payment (receipt being checked) is open.
-const props = defineProps({ order: { type: Object, required: true } });
+const props = defineProps({ order: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true } });
 const emit = defineEmits(["changed"]);
 const toast = useToast();
 const stage = computed(() => balanceStage(props.order));                    // "items" | "shipping" | null
