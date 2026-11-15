@@ -25,5 +25,6 @@ export default defineNuxtConfig({
   },
   // The production build can be made in separate folders (NUXT_BUILD_DIR / NUXT_OUTPUT_DIR), so a test build and the dev server never share files.
   buildDir: process.env.NUXT_BUILD_DIR || ".nuxt",
-  nitro: { output: { dir: process.env.NUXT_OUTPUT_DIR || ".output", publicDir: `${process.env.NUXT_OUTPUT_DIR || ".output"}/public` } },
+  // Prerender only the shell ("/"), not one folder per route: hosts then serve every route from index.html (see public/_redirects) with no /login -> /login/ redirect.
+  nitro: { prerender: { crawlLinks: false, routes: ["/"], failOnError: false }, output: { dir: process.env.NUXT_OUTPUT_DIR || ".output", publicDir: `${process.env.NUXT_OUTPUT_DIR || ".output"}/public` } },
 });
