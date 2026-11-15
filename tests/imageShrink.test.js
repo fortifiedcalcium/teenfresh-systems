@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { fitWidth, renamed, shrinkImage, worthShrinking, SKIP_BELOW_BYTES } from "../lib/imageShrink.ts";
 
 describe("image shrinking", () => {
@@ -21,6 +21,36 @@ describe("image shrinking", () => {
   });
   it("hands the original back where the browser cannot shrink (no canvas here)", async () => {
     const f = new File([new Uint8Array(500 * 1024)], "big.jpg", { type: "image/jpeg" });
+    expect(await shrinkImage(f, 1920)).toBe(f);
+  });
+});
+
+describe("shrinking where the browser cannot encode WebP (Safari)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  // a fake canvas: it can only encode what `encodes` lists, and gives a PNG for anything else, the way Safari does
+  function fakeBrowser(encodes, bytes) {
+    vi.stubGlobal("createImageBitmap", async () => ({ width: 4000, height: 3000, close() {} }));
+    vi.stubGlobal("document", { createElement: () => ({ getContext: () => ({ drawImage() {} }), toBlob(cb, type) { const t = encodes.includes(type) ? type : "image/png"; cb(new Blob([new Uint8Array(bytes[t] ?? 1000)], { type: t })); } }) });
+  }
+  const photo = (type, name) => new File([new Uint8Array(5 * 1024 * 1024)], name, { type });
+  it("saves a JPEG photo as a smaller JPEG", async () => {
+    fakeBrowser(["image/jpeg"], { "image/jpeg": 300000, "image/png": 9e6 });
+    const out = await shrinkImage(photo("image/jpeg", "crowd.jpg"), 1920);
+    expect(out.type).toBe("image/jpeg"); expect(out.name).toBe("crowd.jpg"); expect(out.size).toBe(300000);
+  });
+  it("keeps a PNG as a PNG (transparency), if it got smaller", async () => {
+    fakeBrowser([], { "image/png": 900000 });
+    const out = await shrinkImage(photo("image/png", "art.png"), 1600);
+    expect(out.type).toBe("image/png"); expect(out.size).toBe(900000);
+  });
+  it("uses WebP when the browser can", async () => {
+    fakeBrowser(["image/webp"], { "image/webp": 250000 });
+    const out = await shrinkImage(photo("image/jpeg", "crowd.jpg"), 1920);
+    expect(out.type).toBe("image/webp"); expect(out.name).toBe("crowd.webp");
+  });
+  it("uploads the original when the result is not smaller", async () => {
+    fakeBrowser(["image/webp"], { "image/webp": 6 * 1024 * 1024 });
+    const f = photo("image/jpeg", "crowd.jpg");
     expect(await shrinkImage(f, 1920)).toBe(f);
   });
 });
