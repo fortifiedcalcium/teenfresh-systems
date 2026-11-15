@@ -3,6 +3,7 @@
 // QR codes and anything else that must stay pixel-exact is uploaded as it is (pass `shrink: false`).
 
 export const SHRINK_QUALITY = 0.82;
+const EXT: Record<string, string> = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" };
 export const SKIP_BELOW_BYTES = 200 * 1024;          // a file this small is not worth touching
 
 /** The size to draw at: scaled down so the width is at most `max`, keeping the ratio; never larger than the original. */
@@ -31,9 +32,13 @@ export async function shrinkImage(file: File, maxWidth = 1920): Promise<File> {
     if (!ctx) { bitmap.close(); return file; }
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", SHRINK_QUALITY));
-    if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
-    return new File([blob], renamed(file.name, "webp"), { type: "image/webp", lastModified: Date.now() });
+    const toBlob = (type: string): Promise<Blob | null> => new Promise((resolve) => canvas.toBlob(resolve, type, SHRINK_QUALITY));
+    // WebP first. Safari cannot encode WebP and quietly gives a PNG instead; then a JPEG photo is saved as a JPEG (a PNG stays a PNG, to keep any
+    // transparency), still at the smaller size.
+    let blob = await toBlob("image/webp");
+    if (!blob || blob.type !== "image/webp") blob = await toBlob(file.type === "image/jpeg" ? "image/jpeg" : "image/png");
+    if (!blob || !EXT[blob.type] || blob.size >= file.size) return file;
+    return new File([blob], renamed(file.name, EXT[blob.type]), { type: blob.type, lastModified: Date.now() });
   } catch {
     return file;                                                         // an odd file: upload the original rather than fail
   }
