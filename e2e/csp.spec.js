@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import sharp from "sharp";
 import { test as base, expect } from "./fixtures.js";
 
 // Runs the REAL production build (the Node server, which sends the same headers as the Cloudflare worker) with its REAL headers enforced, and fails on any
@@ -41,7 +42,7 @@ test.beforeAll(async () => {
 
 test.describe("security headers", () => {
   test("the server sends the headers, and the policy has no unsafe-eval, no unsafe-inline scripts and no wildcard sources", async () => {
-    expect(CSP).toMatch(/script-src 'self'( 'sha256-[^']+')*;/);   // the build adds the hash of Nuxt's inline settings script
+    expect(CSP).toMatch(/script-src 'self' 'wasm-unsafe-eval'( 'sha256-[^']+')*;/);   // the build adds the hash of Nuxt's inline settings script; 'wasm-unsafe-eval' is for the picture compressor
     for (const bad of ["'unsafe-eval'", "script-src 'self' 'unsafe-inline'", "default-src *", " * ", "data: https:"]) expect(header("Content-Security-Policy"), bad).not.toContain(bad);
     expect(header("Content-Security-Policy")).toContain("frame-ancestors 'none'");
     expect(header("Content-Security-Policy")).toContain("object-src 'none'");
@@ -115,6 +116,31 @@ test.describe("security headers", () => {
     await page.getByRole("tab", { name: "Media" }).click();
     await expect(page.getByRole("heading", { level: 3, name: "Event poster" })).toBeVisible();
     expect(await violations()).toEqual([]);
+  });
+
+  test("the picture compressor (WebAssembly) runs under the policy: an upload goes up as a smaller WebP, with no violation", async ({ page, as, violations }) => {
+    await as("admin");
+    const big = await sharp({ create: { width: 3000, height: 2000, channels: 3, background: "#888", noise: { type: "gaussian", mean: 128, sigma: 40 } } }).jpeg({ quality: 90 }).toBuffer();
+    let upload = null;
+    page.on("request", (r) => { if (r.method() === "POST" && r.url().includes("/storage/v1/object/event-media/home/")) upload = r.postDataBuffer(); });
+    const wasm = page.waitForRequest((r) => r.url().endsWith(".wasm"), { timeout: 20000 });
+    await page.goto("/admin/home");
+    await expect(page.getByRole("heading", { level: 1, name: "Home page" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await page.locator('input[type="file"]').setInputFiles({ name: "crowd.jpg", mimeType: "image/jpeg", buffer: big });
+    await page.getByLabel(/Describe the picture/).fill("A crowd");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("Home page saved")).toBeVisible();
+    await wasm;                                                                      // the Squoosh encoder really ran (not the browser fallback)
+    expect(upload.length).toBeLessThan(big.length * 0.6);
+    expect(upload.includes(Buffer.from("WEBP"))).toBe(true);
+    expect(await violations()).toEqual([]);
+  });
+
+  test("the policy allows WebAssembly (for the picture compressor) but not eval or inline scripts", async () => {
+    expect(CSP).toMatch(/script-src[^;]*'wasm-unsafe-eval'/);
+    expect(CSP).not.toMatch(/'unsafe-eval'/);
+    expect(CSP).not.toMatch(/script-src[^;]*'unsafe-inline'/);
   });
 
   test("the QR scanner can open the camera (Permissions-Policy allows camera=(self))", async ({ page, as, violations }) => {
