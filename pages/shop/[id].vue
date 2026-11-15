@@ -4,6 +4,7 @@ import { INFO_SECTIONS, productImageUrl } from "~/lib/products.js";
 import { peso } from "~/lib/payment.js";
 import { allSoldOut, inStock, normalizeLayers, stockNote, variationLabel } from "~/lib/variations.js";
 import { MAX_QTY } from "~/lib/orders.js";
+import { lineKey } from "~/lib/cartLine.js";
 
 definePageMeta({ middleware: ["shop"] });
 const unitPrice = (p) => Number(p.price);
