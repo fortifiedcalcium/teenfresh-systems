@@ -26,7 +26,7 @@ export const TABLES = {
     { id: "pa", slug: "orbital", artist: "Marv", title: "ÖRBITAL", price: 750, discount_percent: 10, pre_order: false, is_new: true, categories: ["ALBUM"], image_path: null, image_alt: "", active: true, created_at: future, info_description: "The debut album.", info_images: [], variation_layers: [] },
     { id: "pb", slug: "light-stick", artist: "IVE", title: "Light stick", price: 1200, discount_percent: 0, pre_order: false, is_new: false, categories: ["MD"], image_path: null, image_alt: "", active: true, created_at: future, info_images: [], variation_layers: [] },
     { id: "pc", slug: "photocard-set", artist: "Teenfresh", title: "Photocard set", price: 180, discount_percent: 0, pre_order: false, is_new: false, categories: ["MD"], image_path: null, image_alt: "", active: true, created_at: future, info_images: [], variation_layers: [] },
-    { id: "pd", slug: "season-greetings", artist: "Teenfresh", title: "Season's greetings", price: 900, discount_percent: 0, pre_order: true, is_new: false, categories: ["ALBUM"], image_path: null, image_alt: "", active: true, created_at: future, info_images: [], variation_layers: [] },
+    { id: "pd", slug: "season-greetings", artist: "Teenfresh", title: "Season's greetings", price: 900, discount_percent: 0, pre_order: true, is_new: false, categories: ["ALBUM", "SINGLE"], image_path: null, image_alt: "", active: true, created_at: future, info_images: [], variation_layers: [] },
   ],
   product_variations: [
     { id: "va", product_id: "pa", name: "Version A", price: null, stock: 20, active: true, position: 0, options: null },
@@ -34,7 +34,7 @@ export const TABLES = {
     { id: "vc", product_id: "pb", name: "Standard", price: null, stock: 3, active: true, position: 0, options: null },
     { id: "vd", product_id: "pc", name: "Standard", price: null, stock: 0, active: true, position: 0, options: null },
   ],
-  product_categories: [{ id: 1, name: "ALBUM" }, { id: 2, name: "MD" }],
+  product_categories: [{ id: 1, name: "ALBUM" }, { id: 2, name: "MD" }, { id: 3, name: "SINGLE" }, { id: 4, name: "LIMITED" }],
   shop_settings: [{ id: true, gcash_account_name: "BR**N CA**O S.", gcash_account_number: "09171234567", gcash_qr_path: null }],
   event_availability: [{ event_id: "e1", registered: 93 }, { event_id: "e2", registered: 100 }, { event_id: "e3", registered: 10 }],
   registrations: [{ ...reg, kit_name: "Standard kit", kit_quantity: 2, kit_unit_price: 100, total_amount: 200, facebook_url: "https://www.facebook.com/juan", payment: { status: "verified", amount_paid: 100, reference_number: "1234567890123" }, payments: { id: "p1", status: "verified", review_note: null, amount_due: null, amount_paid: 100, reference_number: "1234567890123", sender_name: "Juan D." }, payment_id: "p1", events: { title: ev.title, event_date: future, venue: ev.venue, registration_fee: 100 } }, { ...reg, id: "r2", user_id: "u3", name: "Maria Santos", ticket_number: "IVEMON-000002", checked_in_at: future, checker: { full_name: "Admin", email: "admin@example.com" } }, { ...reg, id: "r3", user_id: "u1", name: "Maria Santos", x_username: "maria", ticket_number: null, status: "pending_verification", payment_id: "p3", payment: { status: "underpaid", amount_paid: 95, reference_number: "9876543210987" }, payments: { id: "p3", status: "underpaid", review_note: "A transaction fee was deducted", amount_due: 5, amount_paid: 95, reference_number: "9876543210987", sender_name: "Maria S." } }],

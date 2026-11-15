@@ -37,8 +37,9 @@ watch(data, (d) => {
 }, { immediate: true });
 onMounted(async () => { if (hydrating && !data.value?.ok) { retried = true; await refresh(); } });
 
-// "All" always shows; a category chip appears only once it has more than one product
-const chips = computed(() => chipsFor(categories.value).filter((c: string) => c === "All" || (products.value || []).filter((p) => productMatches(p, c)).length > 1));
+// Every category the admin made gets a chip (plus All and Pre-Order), even one with a single product or none yet: picking it says how many there are.
+// (A rule added on 2026-11-13 hid a chip unless its category had two or more products; it made the chips vanish from a small shop.)
+const chips = computed(() => chipsFor(categories.value));
 const shown = computed(() => (products.value || []).filter((p) => productMatches(p, chip.value)));
 function pick(c: string) {
   chip.value = c;

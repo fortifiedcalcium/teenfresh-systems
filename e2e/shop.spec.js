@@ -51,3 +51,21 @@ test("admin: the shop products page loads the products and their variations", as
   await expect(row).toContainText("2 variations");                    // loaded from product_variations (this page stayed on "Loading products…" when that call failed)
   await expect(page.locator("li.card", { hasText: "Photocard set" })).toContainText("Sold out");
 });
+
+test("category chips: every category has one (even with a single product or none), filtering works and the count is announced", async ({ page, as }) => {
+  await as(null);
+  await page.goto("/shop");
+  await page.waitForLoadState("networkidle");
+  await page.locator("html[data-hydrated]").waitFor({ state: "attached" });      // the server-rendered page is interactive
+  const group = page.getByRole("group", { name: "Filter products" });
+  for (const name of ["All", "ALBUM", "MD", "SINGLE", "LIMITED", "Pre-Order"]) await expect(group.getByRole("button", { name, exact: true })).toBeVisible();
+  await group.getByRole("button", { name: "SINGLE", exact: true }).click();
+  await expect(group.getByRole("button", { name: "SINGLE", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("article.pcard")).toHaveCount(1);
+  await expect(page.getByRole("status").filter({ hasText: "SINGLE: 1 product" })).toHaveCount(1);
+  await group.getByRole("button", { name: "ALBUM", exact: true }).click();
+  await expect(page.locator("article.pcard")).toHaveCount(2);
+  await expect(page.getByRole("status").filter({ hasText: "ALBUM: 2 products" })).toHaveCount(1);
+  await group.getByRole("button", { name: "LIMITED", exact: true }).click();
+  await expect(page.getByText("No products in LIMITED yet.")).toBeVisible();
+});
