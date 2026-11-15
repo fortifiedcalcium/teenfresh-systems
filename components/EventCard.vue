@@ -8,7 +8,7 @@ import type { Tone } from "~/types/ui";
 
 // One event as a concert ticket: photo, pastel header with the title and status, a compact grid (date, time, fee, slots left), the slots bar,
 // a barcode strip and the Register button.
-const props = withDefaults(defineProps<{ event: EventRow; registered: number; bannerImage?: ImageRow; kits?: Pick<KitRow, "unit_price">[]; band?: number }>(), { kits: () => [], band: 0 });
+const props = withDefaults(defineProps<{ event: EventRow; registered: number; bannerImage?: ImageRow; kits?: Pick<KitRow, "unit_price">[]; band?: number; priority?: boolean }>(), { kits: () => [], band: 0 });
 const st = computed(() => eventStatus(props.event, props.registered));
 const fee = computed(() => Number(props.event.registration_fee));
 const taken = computed(() => Math.min(props.registered, props.event.capacity));
@@ -20,7 +20,7 @@ const feeNote = computed(() => (props.event.fee_note ? `(${props.event.fee_note}
 </script>
 
 <template>
-  <TicketCard :title="event.title" :subtitle="event.subtitle || undefined" :image="image" :image-alt="bannerImage?.alt_text || ''" :band="band" :status-label="st.label" :status-tone="(STATUS_TONE as Record<string, Tone>)[st.key]" :barcode="event.slug || event.id">
+  <TicketCard :title="event.title" :subtitle="event.subtitle || undefined" :image="image" :image-alt="bannerImage?.alt_text || ''" :band="band" :priority="priority" :status-label="st.label" :status-tone="(STATUS_TONE as Record<string, Tone>)[st.key]" :barcode="event.slug || event.id">
     <template v-if="soon" #media><ComingSoonBanner /></template>
     <dl class="event-facts">
       <div><dt>Date</dt><dd>{{ fmtDate(event.event_date) }}</dd></div>

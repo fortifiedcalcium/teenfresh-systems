@@ -1,6 +1,6 @@
 // The parts of the database rows the pages read. (The tables themselves are unchanged.)
 export interface EventRow {
-  id: string; slug?: string | null; title: string; subtitle: string | null; description: string | null;
+  id: string; slug?: string | null; title: string; subtitle: string | null; tagline?: string | null; description: string | null;
   event_date: string; ends_at: string | null; registration_deadline: string | null; venue: string | null; venue_address: string | null;
   capacity: number; registration_open: boolean; registration_fee: number | string; fee_note: string | null; price_info: string | null;
   banner_coming_soon?: boolean; hashtags?: string[]; kit_inclusions?: string[]; terms_html?: string | null;

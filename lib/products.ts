@@ -73,6 +73,7 @@ export function productRow(f) {
     artist: f.artist.trim(), title: f.title.trim(), price: Number(f.price), discount_percent: String(f.discount_percent).trim() === "" ? 0 : Number(f.discount_percent),
     ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, (f[k] || "").trim() || null])),
     variation_layers: normalizeLayers(f.layers),
+    ...(String(f.slug || "").trim() ? { slug: String(f.slug).trim() } : {}),   // blank keeps the current address (or derives one from the title)
     pre_order: f.pre_order, is_new: f.is_new, categories: f.categories, image_alt: f.image_alt.trim() || null, active: f.active, updated_at: new Date().toISOString(),
   };
 }

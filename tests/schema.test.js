@@ -104,6 +104,7 @@ beforeAll(async () => {
   await db.exec(read("030_variation_layers.sql"));
   await db.exec(read("031_variation_stock.sql"));
   await db.exec(read("032_slugs.sql"));
+  await db.exec(read("033_event_tagline.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1352,5 +1353,15 @@ describe("slugs (migration 032)", () => {
     expect(r.rows[0].slug).toBe("fan-meet-dec-12-2");   // already taken by the first one, so it gets a number
     const p = await db.query("insert into products (artist, title, price) values ('IVE', 'Light Stick (Ver. 2)', 1200) returning slug");
     expect(p.rows[0].slug).toBe("light-stick-ver-2");
+  });
+});
+
+describe("event tagline (migration 033)", () => {
+  it("is optional, and limited to 120 characters", async () => {
+    const ok = await db.query("insert into events (title, event_date, capacity, ticket_prefix, tagline) values ('Tag A', now() + interval '30 days', 10, 'TAGA', 'A night to remember') returning tagline");
+    expect(ok.rows[0].tagline).toBe("A night to remember");
+    const none = await db.query("insert into events (title, event_date, capacity, ticket_prefix) values ('Tag B', now() + interval '30 days', 10, 'TAGB') returning tagline");
+    expect(none.rows[0].tagline).toBeNull();
+    await expect(db.query("insert into events (title, event_date, capacity, ticket_prefix, tagline) values ('Tag C', now() + interval '30 days', 10, 'TAGC', $1)", ["x".repeat(121)])).rejects.toThrow();
   });
 });

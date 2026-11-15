@@ -31,8 +31,8 @@ async function save() {
   if (days !== null && !(days >= 0)) { error.value = "Receipt retention must be 0 or more days."; return; }
 
   saving.value = true;
-  const row = {
-    title: f.title.trim(), subtitle: f.subtitle.trim() || null, description: f.description.trim() || null,
+  const row: Record<string, any> = {
+    title: f.title.trim(), subtitle: f.subtitle.trim() || null, tagline: f.tagline.trim() || null, description: f.description.trim() || null,
     venue: f.venue.trim() || null, venue_address: f.venue_address.trim() || null,
     event_date: fromLocalInput(f.event_date), ends_at: fromLocalInput(f.ends_at), registration_deadline: fromLocalInput(f.registration_deadline),
     capacity: cap, ticket_prefix: f.ticket_prefix, registration_fee: fee, fee_note: f.fee_note.trim() || null,
@@ -42,6 +42,7 @@ async function save() {
     contact_links: parsed.links, registration_open: f.registration_open, send_ack_email: f.send_ack_email,
     receipt_retention_days: days, terms_html: cleanTerms(f.terms_html),
   };
+  if (f.slug.trim()) row.slug = f.slug.trim();   // blank keeps the current address (or makes one from the title for a new event)
   const { data, error: err } = f.id ? await supabase.from("events").update(row).eq("id", f.id).select().single() : await supabase.from("events").insert(row).select().single();
   saving.value = false;
   if (err) { error.value = err.message; return; }
@@ -93,7 +94,9 @@ const current = computed(() => (form.value?.id ? events.value.find((e) => e.id =
           <Alert v-if="error" tone="bad">{{ error }}</Alert>
           <fieldset class="space-y-4"><legend class="text-lg font-black">Basics</legend>
             <Field id="title" v-slot="a" label="Title" required><input v-bind="a" v-model="form.title" class="input"></Field>
+            <Field id="slug" v-slot="a" label="Web address" :hint="`Appears as /events/${form.slug.trim() || 'your-event'}. Letters, numbers and dashes are kept; the old address keeps working.`"><input v-bind="a" v-model="form.slug" class="input" maxlength="120" autocapitalize="none" spellcheck="false" placeholder="Made from the title when left empty"></Field>
             <Field id="subtitle" v-slot="a" label="Subtitle"><input v-bind="a" v-model="form.subtitle" class="input"></Field>
+            <Field id="tagline" v-slot="a" label="Home page headline" hint="The big line on the home page. Falls back to the subtitle, then the title."><input v-bind="a" v-model="form.tagline" class="input" maxlength="120"></Field>
             <Field id="description" v-slot="a" label="Description"><textarea v-bind="a" v-model="form.description" class="input" rows="2" /></Field>
             <div class="grid gap-4 md:grid-cols-2">
               <Field id="venue" v-slot="a" label="Venue"><input v-bind="a" v-model="form.venue" class="input"></Field>
