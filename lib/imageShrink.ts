@@ -1,0 +1,40 @@
+// Admin pictures are shrunk in the browser before they are uploaded: a 6 MB camera photo becomes a few hundred KB, so the pages that show it
+// load fast. The picture is scaled down to `maxWidth` (never up) and saved as WebP. If that does not make the file smaller, the original is kept.
+// QR codes and anything else that must stay pixel-exact is uploaded as it is (pass `shrink: false`).
+
+export const SHRINK_QUALITY = 0.82;
+export const SKIP_BELOW_BYTES = 200 * 1024;          // a file this small is not worth touching
+
+/** The size to draw at: scaled down so the width is at most `max`, keeping the ratio; never larger than the original. */
+export function fitWidth(width: number, height: number, max: number): { width: number; height: number } {
+  if (!(width > 0) || !(height > 0)) return { width: 1, height: 1 };
+  if (width <= max) return { width, height };
+  return { width: max, height: Math.max(1, Math.round((height * max) / width)) };
+}
+
+/** Is there anything to gain? Small files that already fit are left alone. */
+export const worthShrinking = (bytes: number, width: number, max: number): boolean => bytes > SKIP_BELOW_BYTES || width > max;
+
+/** The file name with a new extension (a.b.jpg -> a.b.webp). */
+export const renamed = (name: string, ext: string): string => `${name.replace(/\.[^./\\]+$/, "") || "image"}.${ext}`;
+
+/** Returns a smaller WebP version of the picture, or the same file when shrinking would not help or the browser cannot do it. */
+export async function shrinkImage(file: File, maxWidth = 1920): Promise<File> {
+  if (typeof createImageBitmap !== "function" || typeof document === "undefined") return file;
+  try {
+    const bitmap = await createImageBitmap(file);                       // honours the photo's rotation
+    if (!worthShrinking(file.size, bitmap.width, maxWidth)) { bitmap.close(); return file; }
+    const { width, height } = fitWidth(bitmap.width, bitmap.height, maxWidth);
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { bitmap.close(); return file; }
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", SHRINK_QUALITY));
+    if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
+    return new File([blob], renamed(file.name, "webp"), { type: "image/webp", lastModified: Date.now() });
+  } catch {
+    return file;                                                         // an odd file: upload the original rather than fail
+  }
+}
