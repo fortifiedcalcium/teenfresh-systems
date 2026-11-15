@@ -50,7 +50,7 @@ async function onSubmit() {
         <Field id="password" v-slot="a" label="Password" required :error="errors.password"><PasswordInput v-bind="a" v-model="form.password" autocomplete="new-password" aria-describedby="pw-rules" /></Field>
       </div>
       <Field id="confirm" v-slot="a" label="Confirm password" required :error="errors.confirm"><PasswordInput v-bind="a" v-model="form.confirm" autocomplete="new-password" /></Field>
-      <button class="btn-primary w-full" :disabled="busy"><IconUserPlus />{{ busy ? "Creating account…" : "Sign up" }}</button>
+      <BaseButton type="submit" variant="accent" block :loading="busy"><IconUserPlus />{{ busy ? "Creating account…" : "Sign up" }}</BaseButton>
       <p class="text-center text-sm text-ink-muted">or</p>
       <GoogleButton @click="() => { rememberDestination(from); signInWithGoogle(); }" />
       <p class="text-center text-sm">Already have an account? <NuxtLink :to="loginTo">Sign in</NuxtLink></p>

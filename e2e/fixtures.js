@@ -106,3 +106,6 @@ export const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa",
 export const newAxe = (page) => new AxeBuilder({ page }).setLegacyMode(true);
 export const scan = async (page) => (await newAxe(page).withTags(AXE_TAGS).analyze()).violations;
 export const formatViolations = (v) => v.map((x) => `${x.id} (${x.impact}): ${x.help}\n  ` + x.nodes.slice(0, 3).map((n) => n.target.join(" ") + "  " + (n.failureSummary || "").split("\n").slice(0, 2).join(" ")).join("\n  ")).join("\n");
+
+/** Waits until the Matahari font has really loaded (document.fonts.load can answer before the @font-face rule exists on a busy dev server). */
+export const fontsReady = (page) => page.waitForFunction(async () => (await Promise.all(["400", "700", "800", "900"].map((w) => document.fonts.load(`${w} 16px Matahari`)))).every((r) => r.length > 0), null, { timeout: 15000 });

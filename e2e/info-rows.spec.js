@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures.js";
+import { test, expect, fontsReady } from "./fixtures.js";
 
 // The event facts on the card: icon and label line up with the FIRST line of the text, rows are 12 px apart,
 // nothing overflows sideways, and the Kits note sits on its own line.
@@ -36,6 +36,7 @@ test.describe("visual snapshots", () => {
       await page.goto("/");
       const card = page.locator("article").first();
       await expect(card.locator(".info-row").first()).toBeVisible();
+      await fontsReady(page);
       await expect(card).toHaveScreenshot(`event-card-${width}.png`, { maxDiffPixelRatio: 0.01 });
     });
   }

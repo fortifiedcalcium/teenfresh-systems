@@ -40,7 +40,7 @@ async function onSubmit() {
       <Field id="password" v-slot="a" label="Password" required :error="errors.password">
         <PasswordInput v-bind="a" v-model="form.password" autocomplete="current-password" />
       </Field>
-      <button class="btn-primary w-full" :disabled="busy"><IconLogIn />{{ busy ? "Signing in…" : "Sign in" }}</button>
+      <BaseButton type="submit" variant="accent" block :loading="busy"><IconLogIn />{{ busy ? "Signing in…" : "Sign in" }}</BaseButton>
       <p class="text-center text-sm text-ink-muted">or</p>
       <GoogleButton @click="signInWithGoogle()" />
       <p class="text-center text-sm">

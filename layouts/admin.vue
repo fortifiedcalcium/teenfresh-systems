@@ -57,7 +57,7 @@ function select(id) { adminEventId.value = id; try { localStorage.setItem("admin
     <AdminSidebar :email="profile?.email" :pending="adminPending" :notes="notes" @sign-out="signOut" />
     <div class="min-w-0 flex-1">
       <AdminTopBar :notes="notes" />
-      <section v-if="!onShopPage" aria-label="Event selection" class="flex flex-wrap items-center gap-2 border-b border-link bg-brand-cream px-4 py-3">
+      <section v-if="!onShopPage" aria-label="Event selection" class="flex flex-wrap items-center gap-2 border-b border-brand-sky bg-white/60 px-4 py-3">
         <label for="event-select" class="text-sm font-semibold">Event</label>
         <select id="event-select" class="input max-w-md" :value="event?.id || ''" :disabled="!adminEvents?.length" @change="select($event.target.value)">
           <option v-for="e in adminEvents" :key="e.id" :value="e.id">{{ e.title }}</option>

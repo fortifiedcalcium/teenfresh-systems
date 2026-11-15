@@ -36,7 +36,7 @@ async function onSubmit() {
         <Field id="password" v-slot="a" label="New password" required :error="errors.password"><PasswordInput v-bind="a" v-model="form.password" autocomplete="new-password" aria-describedby="pw-rules" /></Field>
       </div>
       <Field id="confirm" v-slot="a" label="Confirm new password" required :error="errors.confirm"><PasswordInput v-bind="a" v-model="form.confirm" autocomplete="new-password" /></Field>
-      <button class="btn-primary w-full" :disabled="busy"><IconKey />{{ busy ? "Saving…" : "Update password" }}</button>
+      <BaseButton type="submit" variant="accent" block :loading="busy"><IconKey />{{ busy ? "Saving…" : "Update password" }}</BaseButton>
     </form>
   </AuthShell>
 </template>

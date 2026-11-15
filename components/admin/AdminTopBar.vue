@@ -10,7 +10,7 @@ const info = computed(() => titleFor(route.path));
 </script>
 
 <template>
-  <header class="sticky top-0 z-20 flex items-center gap-2 border-b-2 border-ink bg-brand-cream px-3 lg:hidden" style="min-height: var(--topbar-h); padding-top: var(--safe-top)">
+  <header class="admin-surface sticky top-0 z-20 flex items-center gap-2 border-b px-3 lg:hidden" style="min-height: var(--topbar-h); padding-top: var(--safe-top)">
     <NuxtLink v-if="info.back" :to="info.back" class="btn-secondary min-w-target px-2" aria-label="Back to Profile"><IconArrowLeft /></NuxtLink>
     <p class="min-w-0 flex-1 truncate text-lg font-extrabold" aria-hidden="true">{{ info.title }}</p>
     <div id="admin-topbar-actions" class="flex items-center gap-2" />

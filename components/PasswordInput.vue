@@ -9,6 +9,6 @@ const show = ref(false);
 <template>
   <div class="flex gap-2">
     <input v-bind="$attrs" :value="modelValue" :type="show ? 'text' : 'password'" class="input" @input="emit('update:modelValue', $event.target.value)">
-    <button type="button" class="btn-secondary shrink-0" :aria-pressed="show" @click="show = !show"><IconEyeOff v-if="show" /><IconEye v-else />{{ show ? "Hide" : "Show" }} <span class="sr-only">password</span></button>
+    <button type="button" class="bbtn bbtn--secondary bbtn--sm shrink-0" :aria-pressed="show" @click="show = !show"><IconEyeOff v-if="show" /><IconEye v-else />{{ show ? "Hide" : "Show" }} <span class="sr-only">password</span></button>
   </div>
 </template>

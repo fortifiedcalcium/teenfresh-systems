@@ -76,7 +76,7 @@ const liveText = computed(() => `${sorted.value.length} ${sorted.value.length ==
     <template v-else>
       <div v-if="compact || (tablet && allCols)" class="mb-2 flex justify-end"><button type="button" class="btn-secondary" :aria-pressed="allCols" @click="allCols = !allCols">{{ allCols ? "Fewer columns" : "Columns: show all" }}</button></div>
       <!-- 1.4.10: the table scrolls inside a labelled, keyboard-focusable region instead of the whole page scrolling -->
-      <div role="region" :aria-label="`${caption} (scrollable)`" tabindex="0" class="relative overflow-x-auto rounded-lg border border-link bg-white">
+      <div role="region" :aria-label="`${caption} (scrollable)`" tabindex="0" class="relative overflow-x-auto rounded-2xl border border-brand-sky bg-white shadow-[0_2px_10px_color-mix(in_srgb,var(--ink)_8%,transparent)]">
         <table class="min-w-full divide-y divide-brand-sky">
           <caption class="sr-only">{{ caption }}{{ sortLabel }}</caption>
           <thead class="bg-brand-ivory">
