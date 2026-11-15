@@ -1,6 +1,7 @@
 <script setup>
 import { supabase } from "~/lib/supabaseClient.js";
 import { chipsFor, productMatches } from "~/lib/products.js";
+import { groupVariations } from "~/lib/variations.js";
 
 definePageMeta({ middleware: ["shop"] });
 const products = ref(null);
