@@ -22,7 +22,7 @@ export function validateBanner(s: { hasImage: boolean; decorative: boolean; alt:
 }
 
 /** The event shown in the hero: the one an admin chose, otherwise the next one people can still register for, otherwise the first. */
-export function pickFeatured<T extends { id: string }>(events: T[], chosenId: string | null | undefined, canRegister: (e: T) => boolean): T | null {
+export function pickFeatured<T extends { id: string }>(events: T[], chosenId: string | null | undefined, canRegister: (_e: T) => boolean): T | null {
   return events.find((e) => e.id === chosenId) || events.find(canRegister) || events[0] || null;
 }
 

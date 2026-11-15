@@ -25,11 +25,11 @@ export async function callFunction(name, body) {
 }
 
 /** Resends confirmation emails in chunks of 50. onProgress(done, total). Returns {sent, failed}. */
-export async function resendMany(ids, onProgress: (done: number, total: number) => void = () => {}) {
+export async function resendMany(ids, onProgress: (_done: number, _total: number) => void = () => {}) {
   let sent = 0, failed = 0;
   for (let i = 0; i < ids.length; i += 50) {
     const { results } = await callFunction("send-confirmation-email", { registration_ids: ids.slice(i, i + 50) });
-    for (const r of results) r.status === "sent" ? sent++ : failed++;
+    for (const r of results) { if (r.status === "sent") sent++; else failed++; }
     onProgress(Math.min(i + 50, ids.length), ids.length);
   }
   return { sent, failed };
