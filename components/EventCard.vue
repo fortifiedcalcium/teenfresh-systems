@@ -6,31 +6,34 @@ import { imageUrl } from "~/lib/eventImages";
 import type { EventRow, ImageRow, KitRow } from "~/types/db";
 import type { Tone } from "~/types/ui";
 
-// One event on the home page: a concert ticket (TicketCard) with the date, venue, price, how many slots are left, and a button.
+// One event as a concert ticket: photo, pastel header with the title and status, a compact grid (date, time, fee, slots left), the slots bar,
+// a barcode strip and the Register button.
 const props = withDefaults(defineProps<{ event: EventRow; registered: number; bannerImage?: ImageRow; kits?: Pick<KitRow, "unit_price">[]; band?: number }>(), { kits: () => [], band: 0 });
 const st = computed(() => eventStatus(props.event, props.registered));
 const fee = computed(() => Number(props.event.registration_fee));
 const taken = computed(() => Math.min(props.registered, props.event.capacity));
 const soon = computed(() => Boolean(props.event.banner_coming_soon));   // an admin switched the banner to "Coming soon"
 const image = computed(() => (soon.value ? null : imageUrl(props.bannerImage)));
-const explainId = computed(() => `explain-${props.event.id}`);
-const slotsText = computed(() => (st.value.key === "closed" ? "Registration is closed" : `${st.value.slotsLeft} of ${props.event.capacity} slots left`));
+const explainId = `explain-${useId()}`;
+const slotsText = computed(() => (st.value.key === "closed" ? "Closed" : `${st.value.slotsLeft} of ${props.event.capacity}`));
+const feeNote = computed(() => (props.event.fee_note ? `(${props.event.fee_note})` : ""));
 </script>
 
 <template>
-  <TicketCard :title="event.title" :subtitle="event.subtitle || undefined" :image="image" :image-alt="bannerImage?.alt_text || ''" :band="band" :status-label="st.label" :status-tone="(STATUS_TONE as Record<string, Tone>)[st.key]">
+  <TicketCard :title="event.title" :subtitle="event.subtitle || undefined" :image="image" :image-alt="bannerImage?.alt_text || ''" :band="band" :status-label="st.label" :status-tone="(STATUS_TONE as Record<string, Tone>)[st.key]" :barcode="event.slug || event.id">
     <template v-if="soon" #media><ComingSoonBanner /></template>
-    <InfoList>
-      <InfoRow label="Date:"><template #icon><IconCalendar /></template>{{ fmtDate(event.event_date) }}</InfoRow>
-      <InfoRow label="Time:"><template #icon><IconClock /></template>{{ fmtTimeRange(event.event_date, event.ends_at) }}</InfoRow>
-      <InfoRow v-if="event.venue" label="Venue:"><template #icon><IconMapPin /></template>{{ event.venue }}</InfoRow>
-      <InfoRow v-if="kits.length > 0" label="Kits:" :note="event.fee_note ? `(${event.fee_note})` : undefined"><template #icon><IconPackage /></template><KitPrices :kits="kits" /></InfoRow>
-      <InfoRow v-else label="Fee:" :note="fee > 0 && event.fee_note ? `(${event.fee_note})` : undefined"><template #icon><IconWallet /></template><NoWrap v-if="fee > 0">{{ peso(fee) }}</NoWrap><template v-else>{{ event.price_info || "Free" }}</template></InfoRow>
-      <InfoRow v-if="event.registration_deadline" label="Registration closes:"><template #icon><IconLock /></template>{{ fmtDeadline(event.registration_deadline) }}</InfoRow>
-    </InfoList>
-    <div class="mt-4 space-y-2">
+    <dl class="event-facts">
+      <div><dt>Date</dt><dd>{{ fmtDate(event.event_date) }}</dd></div>
+      <div><dt>Time</dt><dd>{{ fmtTimeRange(event.event_date, event.ends_at) }}</dd></div>
+      <div>
+        <dt>{{ kits.length > 0 ? "Kits" : "Fee" }}</dt>
+        <dd><KitPrices v-if="kits.length > 0" :kits="kits" /><NoWrap v-else-if="fee > 0">{{ peso(fee) }}</NoWrap><template v-else>{{ event.price_info || "Free" }}</template><span v-if="feeNote && (kits.length > 0 || fee > 0)" class="event-facts__note">{{ feeNote }}</span></dd>
+      </div>
+      <div><dt>Slots left</dt><dd>{{ slotsText }}</dd></div>
+    </dl>
+    <div class="mt-3 space-y-2">
       <AvailabilityBar :registered="taken" :capacity="event.capacity" :label="`Slots taken for ${event.title}`" />
-      <p class="text-sm font-semibold text-ink">{{ slotsText }}</p>
+      <p v-if="event.venue || event.registration_deadline" class="text-xs text-ink-muted">{{ event.venue }}<template v-if="event.venue && event.registration_deadline"> · </template><template v-if="event.registration_deadline">Registration closes {{ fmtDeadline(event.registration_deadline) }}</template></p>
       <p v-if="!st.canRegister" :id="explainId" class="text-sm text-danger">Registration is unavailable. {{ st.reason }}</p>
     </div>
     <template #action>

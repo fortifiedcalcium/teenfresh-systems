@@ -59,7 +59,7 @@ test.describe("security headers", () => {
 
   test("public pages work under the policy", async ({ page, as, violations }) => {
     await as(null);
-    for (const [path, h1] of [["/", "Upcoming events"], ["/login", "Sign in"], ["/register", "Create an account"], ["/forgot-password", "Forgot your password?"]]) {
+    for (const [path, h1] of [["/", "IVE's Kim Gaeul Cupsleeve Event hosted by Teenfresh"], ["/login", "Sign in"], ["/register", "Create an account"], ["/forgot-password", "Forgot your password?"]]) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1, name: h1 })).toBeVisible();
     }
