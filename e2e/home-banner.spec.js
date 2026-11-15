@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { test, expect } from "./fixtures.js";
 
 const settle = async (page) => { await page.waitForLoadState("networkidle"); await page.locator("html[data-hydrated]").waitFor({ state: "attached" }); };
@@ -72,4 +73,24 @@ test("admin: the banner headline and description are saved", async ({ page, as }
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Home page saved")).toBeVisible();
   expect(saved.at(-1)).toMatchObject({ hero_headline: "Fan meet night", hero_description: "Come hang out with us." });
+});
+
+test("admin: a big photo is shrunk to a smaller WebP before it is uploaded", async ({ page, as }) => {
+  await as("admin");
+  // a 3600 x 2400 photo full of noise: several MB as a JPEG
+  const big = await sharp({ create: { width: 3600, height: 2400, channels: 3, background: "#888", noise: { type: "gaussian", mean: 128, sigma: 40 } } }).jpeg({ quality: 90 }).toBuffer();
+  expect(big.length).toBeGreaterThan(2 * 1024 * 1024);
+  let upload = null;
+  page.on("request", (r) => { if (r.method() === "POST" && r.url().includes("/storage/v1/object/event-media/home/")) upload = r.postDataBuffer(); });
+  await page.goto("/admin/home");
+  await expect(page.getByRole("heading", { level: 1, name: "Home page" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  await page.locator('input[type="file"]').setInputFiles({ name: "crowd.jpg", mimeType: "image/jpeg", buffer: big });
+  await page.getByLabel(/Describe the picture/).fill("A crowd");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Home page saved")).toBeVisible();
+  expect(upload).not.toBeNull();
+  expect(upload.length).toBeLessThan(big.length * 0.6);                           // clearly smaller than what the admin chose
+  expect(upload.includes(Buffer.from("WEBP"))).toBe(true);                          // and saved as WebP
+  expect(upload.includes(Buffer.from("image/webp"))).toBe(true);
 });

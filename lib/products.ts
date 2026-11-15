@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import { BUCKET, IMAGE_TYPES, validateImageFile } from "./eventImages";
+import { shrinkImage } from "./imageShrink";
 import { validatePreorderDates } from "./preorder";
 import { COMBOS_MAX, finalVariations, normalizeLayers, validateLayers, validateStock } from "./variations";
 
@@ -84,9 +85,10 @@ export function productRow(f) {
 }
 
 /** Uploads a product image and returns its storage path. */
-export async function uploadProductImage(file) {
-  const bad = validateImageFile(file);
+export async function uploadProductImage(original, { shrink = true } = {}) {
+  const bad = validateImageFile(original);
   if (bad) throw new Error(bad);
+  const file = shrink ? await shrinkImage(original, 1600) : original;
   const path = `products/${crypto.randomUUID()}.${IMAGE_TYPES[file.type]}`;
   const up = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: false });
   if (up.error) throw new Error("Upload failed: " + up.error.message);

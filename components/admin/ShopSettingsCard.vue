@@ -32,7 +32,7 @@ async function save() {
   error.value = "";
   saving.value = true;
   let newPath = null;
-  try { if (file.value) newPath = await uploadProductImage(file.value); } catch (e) { saving.value = false; error.value = e.message; return; }
+  try { if (file.value) newPath = await uploadProductImage(file.value, { shrink: false }); /* a QR code stays pixel-exact */ } catch (e) { saving.value = false; error.value = e.message; return; }
   const qrPath = newPath || (removeQr.value ? null : s.value.gcash_qr_path);
   const { error: err } = await supabase.from("shop_settings").update({ gcash_qr_path: qrPath, gcash_account_name: s.value.gcash_account_name.trim() || null, gcash_account_number: s.value.gcash_account_number.trim() || null, updated_at: new Date().toISOString() }).eq("id", true);
   saving.value = false;

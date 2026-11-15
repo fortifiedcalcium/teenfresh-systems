@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient";
+import { shrinkImage } from "./imageShrink";
 
 export const BUCKET = "event-media";
 export const IMAGE_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
@@ -36,9 +37,10 @@ export function validateImageFile(file) {
 }
 
 /** Uploads a new image (or replaces the current one) for a slot. No redeploy needed: the page reads the table. */
-export async function uploadEventImage(event, slot, file, altText, previous) {
-  const bad = validateImageFile(file);
+export async function uploadEventImage(event, slot, original, altText, previous) {
+  const bad = validateImageFile(original);
   if (bad) throw new Error(bad);
+  const file = slot === "gcash_qr" ? original : await shrinkImage(original, SLOTS[slot]?.w || 1600);   // a QR code stays pixel-exact; the rest are shrunk to the slot's size
   const path = `${event.id}/${slot}-${crypto.randomUUID()}.${IMAGE_TYPES[file.type]}`;
   const up = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: false });
   if (up.error) throw new Error("Upload failed: " + up.error.message);

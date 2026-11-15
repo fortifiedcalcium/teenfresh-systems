@@ -2,7 +2,14 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period. `2.5.0` makes the banner headline and description editable.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period. `2.5.0` makes the banner headline and description editable. `2.6.0` shrinks admin pictures when they are uploaded.
+
+## [2.6.0] - 2026-11-15
+
+No migration.
+
+### Changed
+- **Admin pictures are shrunk before they upload.** The home banner (up to 1920 px wide), product photos (1600 px) and event pictures (the size of their slot) are resized in the browser and saved as WebP, so a 6 MB camera photo becomes a few hundred KB. A small picture that already fits is left alone, and if shrinking does not make the file smaller the original is uploaded. The GCash QR codes are never touched, so they stay sharp. Pictures already uploaded are not changed: replace a large one to shrink it.
 
 ## [2.5.0] - 2026-11-15
 
