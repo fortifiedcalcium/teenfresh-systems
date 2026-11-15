@@ -98,7 +98,7 @@ async function submit() {
             <p class="mt-1 font-bold">{{ settings.gcash_account_name || "Teenfresh" }}</p>
             <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-base font-bold">{{ settings.gcash_account_number }}</span><CopyButton :text="settings.gcash_account_number" label="Copy GCash number" /></p>
             <figure v-if="settings.gcash_qr_path" class="mt-3 w-48 max-w-full">
-              <img :src="productImageUrl({ image_path: settings.gcash_qr_path })" :alt="`GCash QR code for ${settings.gcash_account_name || 'Teenfresh'}. Scan it in the GCash app to pay.`" class="w-full rounded-lg border border-link bg-white">
+              <img data-allow-save :src="productImageUrl({ image_path: settings.gcash_qr_path })" :alt="`GCash QR code for ${settings.gcash_account_name || 'Teenfresh'}. Scan it in the GCash app to pay.`" class="w-full rounded-lg border border-link bg-white">
               <figcaption class="mt-1 text-sm">Or scan this QR code in the GCash app.</figcaption>
             </figure>
             <p class="mt-2">Then enter the details below and attach your receipt. We check it within 48 to 72 hours.</p>

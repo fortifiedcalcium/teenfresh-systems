@@ -43,3 +43,20 @@ export async function shrinkImage(file: File, maxWidth = 1920): Promise<File> {
     return file;                                                         // an odd file: upload the original rather than fail
   }
 }
+
+/** The most a saved picture may weigh after shrinking. A picture still bigger than this is refused, so a huge file never reaches the site. */
+export const MAX_SAVED_BYTES = 1.5 * 1024 * 1024;
+const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
+
+/** A message when the (shrunk) picture is too big to save, else "". */
+export function savedSizeError(file: { size: number }, max = MAX_SAVED_BYTES): string {
+  return file.size > max ? `This picture is still ${mb(file.size)} after shrinking, and the most allowed is ${mb(max)}. Choose a smaller picture, or export it at a lower quality or size first.` : "";
+}
+
+/** Shrinks the picture, and throws when it is still too big to save. */
+export async function shrinkOrRefuse(file: File, maxWidth: number): Promise<File> {
+  const out = await shrinkImage(file, maxWidth);
+  const bad = savedSizeError(out);
+  if (bad) throw new Error(bad);
+  return out;
+}

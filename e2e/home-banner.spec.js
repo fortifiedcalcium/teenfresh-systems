@@ -94,3 +94,19 @@ test("admin: a big photo is shrunk to a smaller WebP before it is uploaded", asy
   expect(upload.includes(Buffer.from("WEBP"))).toBe(true);                          // and saved as WebP
   expect(upload.includes(Buffer.from("image/webp"))).toBe(true);
 });
+
+test("admin: a picture that is still too big after shrinking is refused and nothing is uploaded", async ({ page, as }) => {
+  await as("admin");
+  // incompressible noise saved as a PNG stays far over 1.5 MB even when scaled to 1920 px wide
+  const big = await sharp({ create: { width: 1920, height: 1280, channels: 3, background: "#888", noise: { type: "gaussian", mean: 128, sigma: 80 } } }).png({ compressionLevel: 0 }).toBuffer();
+  let uploaded = false;
+  page.on("request", (r) => { if (r.method() === "POST" && r.url().includes("/storage/v1/object/event-media/home/")) uploaded = true; });
+  await page.goto("/admin/home");
+  await expect(page.getByRole("heading", { level: 1, name: "Home page" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  await page.locator('input[type="file"]').setInputFiles({ name: "noise.png", mimeType: "image/png", buffer: big });
+  await page.getByLabel(/Describe the picture/).fill("Noise");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".alert-bad", { hasText: "the most allowed is 1.5 MB" })).toBeVisible();
+  expect(uploaded).toBe(false);
+});

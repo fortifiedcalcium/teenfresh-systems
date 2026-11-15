@@ -43,7 +43,7 @@ export function priceFor(price: number | string, versions: Pick<VariationRow, "p
 }
 
 /** "₱750.00" or, for a range, "₱750.00 – ₱900.00". */
-export const priceText = (r: { min: number; max: number }, fmt: (n: number) => string): string => (r.min === r.max ? fmt(r.min) : `${fmt(r.min)} – ${fmt(r.max)}`);
+export const priceText = (r: { min: number; max: number }, fmt: (_n: number) => string): string => (r.min === r.max ? fmt(r.min) : `${fmt(r.min)} – ${fmt(r.max)}`);
 
 /** The lowest in-stock price when a product's versions cost different amounts, else null. */
 export function fromPrice(price: number | string, versions: Pick<VariationRow, "price" | "stock" | "active">[] = []): number | null {

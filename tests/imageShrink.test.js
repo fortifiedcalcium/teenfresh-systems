@@ -54,3 +54,17 @@ describe("shrinking where the browser cannot encode WebP (Safari)", () => {
     expect(await shrinkImage(f, 1920)).toBe(f);
   });
 });
+
+import { MAX_SAVED_BYTES, savedSizeError, shrinkOrRefuse } from "../lib/imageShrink.ts";
+describe("refusing a picture that is still too big", () => {
+  it("accepts up to the limit and refuses anything over it, saying how big it is", () => {
+    expect(savedSizeError({ size: MAX_SAVED_BYTES })).toBe("");
+    expect(savedSizeError({ size: 300 * 1024 })).toBe("");
+    expect(savedSizeError({ size: 5 * 1024 * 1024 })).toMatch(/still 5\.0 MB.*most allowed is 1\.5 MB/);
+  });
+  it("refuses a big file the browser could not shrink, and lets a small one through", async () => {
+    await expect(shrinkOrRefuse(new File([new Uint8Array(4 * 1024 * 1024)], "big.jpg", { type: "image/jpeg" }), 1920)).rejects.toThrow(/still 4\.0 MB/);
+    const small = new File([new Uint8Array(100 * 1024)], "ok.jpg", { type: "image/jpeg" });
+    expect(await shrinkOrRefuse(small, 1920)).toBe(small);
+  });
+});

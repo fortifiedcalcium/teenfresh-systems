@@ -48,7 +48,7 @@ const onDrop = (e) => { over.value = false; if (e.dataTransfer.files?.[0]) take(
       <p class="text-sm font-semibold">Files submitted:</p>
       <ul v-if="modelValue" class="mt-1 space-y-2">
         <li class="flex flex-wrap items-center gap-3 rounded-lg border border-link bg-white p-2 text-sm">
-          <img v-if="preview" :src="preview" alt="Preview of your receipt" class="h-20 w-20 rounded object-cover" width="80" height="80">
+          <img data-allow-save v-if="preview" :src="preview" alt="Preview of your receipt" class="h-20 w-20 rounded object-cover" width="80" height="80">
           <span v-else aria-hidden="true" class="flex h-20 w-20 items-center justify-center rounded bg-brand-sky font-bold">PDF</span>
           <span class="min-w-0 flex-1 break-all"><span class="font-semibold">{{ modelValue.name }}</span><br><span class="text-ink-muted">{{ formatBytes(modelValue.size) }}</span></span>
           <button type="button" class="btn-secondary" @click="remove"><IconTrash />Remove <span class="sr-only">{{ modelValue.name }}</span></button>

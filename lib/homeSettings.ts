@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient";
 import { BUCKET, IMAGE_TYPES, validateImageFile } from "./eventImages";
-import { shrinkImage } from "./imageShrink";
+import { shrinkOrRefuse } from "./imageShrink";
 
 export interface HomeSettings { banner_path: string | null; banner_alt: string | null; banner_decorative: boolean; featured_event_id: string | null; hero_headline?: string | null; hero_description?: string | null }
 export const BANNER_ALT_MAX = 200;
@@ -46,7 +46,7 @@ export function pickFeatured<T extends { id: string }>(events: T[], chosenId: st
 export async function uploadBanner(original: File): Promise<string> {
   const bad = validateImageFile(original);
   if (bad) throw new Error(bad);
-  const file = await shrinkImage(original, 1920);      // a banner is never wider than a big screen
+  const file = await shrinkOrRefuse(original, 1920);      // a banner is never wider than a big screen
   const path = `home/banner-${crypto.randomUUID()}.${IMAGE_TYPES[file.type as keyof typeof IMAGE_TYPES]}`;
   const up = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: false });
   if (up.error) throw new Error("Upload failed: " + up.error.message);
