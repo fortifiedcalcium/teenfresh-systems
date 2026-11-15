@@ -28,3 +28,12 @@ describe("colour tokens (WCAG 2.2)", () => {
     expect(scanSource().failures).toEqual([]);
   });
 });
+
+describe("home banner overlay", () => {
+  it("keeps the text readable over the darkest and the lightest picture", () => {
+    const { results } = checkTokens();
+    const rows = results.filter((r) => /^hero-over-/.test(r.bg));
+    expect(rows.length).toBeGreaterThanOrEqual(6);
+    for (const r of rows) expect(r.ratio).toBeGreaterThanOrEqual(r.min);
+  });
+});

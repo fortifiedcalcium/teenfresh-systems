@@ -47,6 +47,8 @@ export const APPROVED = [
   T("social-pink", "brand-cream", 3, "footer social icons"), T("social-pink-hover", "brand-cream", 3, "footer social icons on hover"),
   // shop page (white panel): pink PRE-ORDER label, muted artist, red discount, NEW badge
   T("social-pink", "white", 4.5, "shop: PRE-ORDER label"), T("ink-muted", "white", 4.5, "shop: artist name"), T("danger", "white", 4.5, "shop: discount"), T("brand-ivory", "ink", 4.5, "shop: NEW badge and selected chip"),
+  // home banner: text over the overlay on a black picture (worst case) and a white one
+  ...["hero-over-black", "hero-over-white"].flatMap((bg) => [T("ink", bg, 4.5, "home banner: headline and eyebrow over the overlay"), T("ink-muted", bg, 4.5, "home banner: intro text over the overlay"), T("ink", bg, 3, "home banner: focus ring over the overlay")]),
   // non-text (>= 3:1)
   T("link", "white", 3, "input / card border"), T("link", "brand-ivory", 3, "border"), T("link", "brand-sky", 3, "progress fill on track"),
   T("ink-muted", "brand-ivory", 3, "ticket perforation"), T("ink-muted", "white", 3, "ticket perforation"), T("link", "brand-blush", 3, "ticket outline on the page"),
@@ -70,8 +72,19 @@ export const FORBIDDEN = [
 const CLASS_TOKEN = { ink: "ink", "ink-muted": "ink-muted", link: "link", danger: "danger", success: "success", "warning-ink": "warning-ink", white: "white",
   "brand-cream": "brand-cream", "brand-blue": "brand-blue", "brand-coral": "brand-coral", "brand-ivory": "brand-ivory", "brand-sky": "brand-sky", "brand-blush": "brand-blush", "brand-mint": "brand-mint" };
 
+/** The hero overlay is the cream colour at --hero-overlay-alpha over the banner picture. Dark text is hardest to read where the picture is
+ *  black, so that is the worst case; a white picture is the lightest case. Both become tokens for the pairs below. */
+export function heroOverlayTokens(tokens) {
+  const css = fs.readFileSync(path.join(ROOT, "assets/css/tokens.css"), "utf8");
+  const a = parseFloat(css.match(/--hero-overlay-alpha:\s*([0-9.]+)/)?.[1] ?? "NaN");
+  if (!(a > 0 && a <= 1)) return {};
+  const over = (under) => "#" + [1, 3, 5].map((i) => Math.round(a * parseInt(tokens["brand-cream"].slice(i, i + 2), 16) + (1 - a) * under).toString(16).padStart(2, "0")).join("");
+  return { "hero-over-black": over(0), "hero-over-white": over(255) };
+}
+
 export function checkTokens() {
   const tokens = readTokens();
+  Object.assign(tokens, heroOverlayTokens(tokens));
   const failures = [], results = [];
   for (const [k, v] of Object.entries(BRAND)) if (tokens[k] !== v) failures.push(`brand token --${k} is ${tokens[k]}, the brand guide says ${v}`);
   for (const name of ["ink", "ink-muted", "link", "danger", "success", "warning-ink", "white"]) if (!tokens[name]) failures.push(`missing token --${name}`);
