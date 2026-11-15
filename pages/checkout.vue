@@ -67,7 +67,7 @@ async function submit() {
     <ErrorSummary :errors="errors" :labels="LABELS" :field-ids="{ receipt: 'receipt' }" :extra="serverError" :focus-signal="focusSignal" />
     <form novalidate class="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start" @submit.prevent="submit">
       <div class="space-y-6">
-        <fieldset class="card space-y-4 p-4"><legend class="px-1 text-lg font-black">Contact and delivery<span v-if="flagCount(DELIVERY) > 0" class="ml-2 inline-flex items-center gap-1 text-sm font-bold" style="color: var(--error-red)"><span class="error-icon error-icon--sm" aria-hidden="true">!</span>{{ flagCount(DELIVERY) }} {{ flagCount(DELIVERY) === 1 ? "field needs" : "fields need" }} attention</span></legend>
+        <fieldset class="card-soft space-y-4 p-4 sm:p-5"><legend class="px-1 text-lg font-black">Contact and delivery<span v-if="flagCount(DELIVERY) > 0" class="ml-2 inline-flex items-center gap-1 text-sm font-bold" style="color: var(--error-red)"><span class="error-icon error-icon--sm" aria-hidden="true">!</span>{{ flagCount(DELIVERY) }} {{ flagCount(DELIVERY) === 1 ? "field needs" : "fields need" }} attention</span></legend>
           <div class="grid gap-4 md:grid-cols-3">
             <Field id="name" v-slot="a" label="Full name" required :error="errors.name"><input v-bind="a" v-model="f.name" class="input" autocomplete="name"></Field>
             <Field id="email" v-slot="a" label="Email" required :error="errors.email"><input v-bind="a" v-model="f.email" class="input" type="email" autocomplete="email"></Field>
@@ -92,7 +92,7 @@ async function submit() {
           <Field id="notes" v-slot="a" label="Notes for the seller" hint="Optional"><textarea v-bind="a" v-model="f.notes" class="input" rows="2" maxlength="500" /></Field>
         </fieldset>
 
-        <fieldset class="card space-y-4 p-4"><legend class="px-1 text-lg font-black">Pay with GCash<span v-if="flagCount(PAYMENT) > 0" class="ml-2 inline-flex items-center gap-1 text-sm font-bold" style="color: var(--error-red)"><span class="error-icon error-icon--sm" aria-hidden="true">!</span>{{ flagCount(PAYMENT) }} {{ flagCount(PAYMENT) === 1 ? "field needs" : "fields need" }} attention</span></legend>
+        <fieldset class="card-soft space-y-4 p-4 sm:p-5"><legend class="px-1 text-lg font-black">Pay with GCash<span v-if="flagCount(PAYMENT) > 0" class="ml-2 inline-flex items-center gap-1 text-sm font-bold" style="color: var(--error-red)"><span class="error-icon error-icon--sm" aria-hidden="true">!</span>{{ flagCount(PAYMENT) }} {{ flagCount(PAYMENT) === 1 ? "field needs" : "fields need" }} attention</span></legend>
           <div v-if="paymentReady" class="rounded-lg bg-brand-sky p-3 text-sm">
             <p>Send <strong>{{ peso(totals.totalPhp) }}</strong> to:</p>
             <p class="mt-1 font-bold">{{ settings.gcash_account_name || "Teenfresh" }}</p>
@@ -111,14 +111,14 @@ async function submit() {
         </fieldset>
       </div>
 
-      <aside class="card space-y-3 p-4 lg:sticky lg:top-24" aria-label="Order summary">
+      <aside class="card-soft space-y-3 p-4 sm:p-5 lg:sticky lg:top-24" aria-label="Order summary">
         <h2 class="text-lg font-black">Your order</h2>
         <ul class="space-y-2">
           <li v-for="l in lines" :key="l.key" class="flex items-center gap-3 text-sm"><LineThumb :p="l" /><span class="min-w-0 flex-1"><span class="block break-words font-bold">{{ l.title }}</span><span v-if="l.variation" class="block font-semibold">{{ l.variation.options ? variationLabel(l.variation) : `Version: ${l.variation.name}` }}</span><span class="text-ink-muted">{{ peso(l.price) }} × {{ l.quantity }}</span></span></li>
         </ul>
         <OrderTotals :totals="totals" />
-        <button class="btn-primary w-full" :disabled="busy || !paymentReady || soldOut.length > 0"><IconSend />{{ busy ? "Placing order…" : "Place order" }}</button>
-        <NuxtLink to="/cart" class="btn-secondary w-full no-underline">Back to cart</NuxtLink>
+        <BaseButton type="submit" variant="accent" block :loading="busy" :disabled="!paymentReady || soldOut.length > 0"><IconSend />{{ busy ? "Placing order…" : "Place order" }}</BaseButton>
+        <BaseButton to="/cart" variant="secondary" block>Back to cart</BaseButton>
       </aside>
     </form>
   </div>

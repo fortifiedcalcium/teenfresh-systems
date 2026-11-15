@@ -26,6 +26,8 @@ const lines = [{ key: "a", title: "ÖRBITAL", subtitle: "Marv · Version A", qty
         <li><ProductCard title="Photocard set" artist="Teenfresh" to="/shop" price-label="₱180.00" badge="Low stock" badge-tone="low" :discount="10" :tint="2" /></li>
         <li><ProductCard title="Poster" to="/shop" price-label="₱90.00" :tint="3" /></li></ul></section>
     <section class="space-y-3" aria-labelledby="sg-cart"><h2 id="sg-cart" class="text-xl">Cart stub</h2>
-      <CartStub :lines="lines"><p class="text-lg font-black">Total ₱1,750.00</p><BaseButton block variant="accent" class="mt-3" to="/checkout">Checkout</BaseButton></CartStub></section>
+      <CartStub>
+        <template #lines><ul class="space-y-3"><li v-for="l in lines" :key="l.key" class="flex items-center justify-between gap-3"><span class="min-w-0"><span class="block break-words font-bold">{{ l.title }}</span><span v-if="l.subtitle" class="block text-sm text-ink-muted">{{ l.subtitle }}</span></span><span class="shrink-0 text-right tabular-nums"><span class="block text-sm text-ink-muted">× {{ l.qty }}</span><span class="font-bold">{{ l.price }}</span></span></li></ul></template>
+        <p class="text-lg font-black">Total ₱1,750.00</p><BaseButton block variant="accent" class="mt-3" to="/checkout">Checkout</BaseButton></CartStub></section>
   </main>
 </template>

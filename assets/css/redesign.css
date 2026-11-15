@@ -1,8 +1,8 @@
 /* Soft pastel + ticket stub. Colours come from tokens.css only (the contrast check scans this file too). */
 
 /* Rounded pill navbar */
-.pill-nav { @apply mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 rounded-full border border-brand-sky bg-white px-3 py-2; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 14%, transparent); }
-.pill-link { @apply inline-flex min-h-target items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-ink no-underline transition-colors hover:bg-brand-sky; }
+.pill-nav { @apply mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-2 gap-y-1 border border-brand-sky bg-white px-3 py-2; border-radius: 2rem;   /* a pill on one row, a soft rounded bar when it wraps on a phone */ box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 14%, transparent); }
+.pill-link { @apply inline-flex min-h-target min-w-[2.75rem] items-center justify-center gap-2 rounded-full px-2 py-2 sm:px-4 text-sm font-bold text-ink no-underline transition-colors hover:bg-brand-sky; }
 .pill-link[aria-current="page"] { @apply bg-ink text-brand-ivory hover:bg-ink; }
 
 /* Event ticket card: two stacked parts, each with two half-circle notches where they meet (the perforation). The shadow sits on the wrapper because a mask would clip it. */
@@ -33,3 +33,10 @@
 .bbtn--ghost { @apply border-transparent bg-transparent text-ink hover:bg-brand-sky; }
 .bbtn--sm { @apply px-4 py-1 text-xs; }
 .bbtn--block { @apply w-full; }
+
+/* A soft white panel: 24px radius, a gentle shadow, no hard border (cart, checkout) */
+.card-soft { @apply bg-white; border-radius: 1.5rem; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
+fieldset.card-soft { @apply border-0; }
+/* a fieldset legend inside a soft panel is the panel's heading, not a label sitting on the border */
+fieldset.card-soft > legend { float: left; width: 100%; padding: 0; margin-bottom: 0.25rem; }
+fieldset.card-soft > legend + * { clear: both; }

@@ -33,34 +33,36 @@ const nameOf = (l) => `${l.title}${l.variation ? `, ${l.variation.name}` : ""}`;
     <Alert v-if="lines.some((l) => l.stock != null && l.stock > 0 && l.quantity >= l.stock)" tone="info">Some items have only a few left. The quantity can be no more than what is left.</Alert>
     <Loading v-if="state.products === null || (items.length > 0 && !settings)" label="Loading your cart…" class="p-12" />
     <Empty v-else-if="lines.length === 0">Your cart is empty. <NuxtLink to="/shop">Browse the shop</NuxtLink></Empty>
-    <div v-else class="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
-      <ul class="space-y-3">
-        <li v-for="l in lines" :key="l.key" class="card flex flex-wrap items-center gap-3 p-3">
-          <LineThumb :p="l" />
-          <div class="min-w-0 flex-1">
-            <p class="text-sm text-ink-muted">{{ l.artist }}</p>
-            <h2 class="break-words text-base font-bold">{{ l.title }}</h2>
-            <p v-if="l.stock === 0" class="text-sm font-bold text-danger">Sold out</p>
-            <p v-if="l.stock != null && l.stock > 0 && l.stock <= 5" class="text-sm font-semibold text-ink-muted">Only {{ l.stock }} left</p>
-            <p v-if="l.variation" class="text-sm font-semibold">{{ l.variation.options ? variationLabel(l.variation) : `Version: ${l.variation.name}` }}</p>
-            <p class="tabular-nums font-bold">{{ peso(l.price) }}<span v-if="l.discount_percent > 0" class="ml-2 text-danger"><span class="sr-only">Discount </span>{{ l.discount_percent }}%</span></p>
-          </div>
-          <div class="flex items-center gap-2">
-            <label :for="`qty-${l.key}`" class="sr-only">Quantity of {{ nameOf(l) }}</label>
-            <select :id="`qty-${l.key}`" class="input w-20" :value="l.quantity" @change="setQty(l.key, Number($event.target.value))">
-              <option v-for="n in qtyOptions(l)" :key="n" :value="n">{{ n }}</option>
-            </select>
-            <button type="button" class="btn-secondary" @click="() => { remove(l.key); announce(`${l.title}${l.variation ? `, ${l.variation.name},` : ''} removed from your cart`); }"><IconTrash />Remove <span class="sr-only">{{ nameOf(l) }}</span></button>
-          </div>
-        </li>
-      </ul>
-      <aside class="card space-y-3 p-4" aria-label="Order summary">
-        <h2 class="text-lg font-black">Summary</h2>
-        <OrderTotals :totals="totals" />
-        <button v-if="soldOut.length > 0" type="button" class="btn-primary w-full" disabled>Go to checkout</button>
-        <NuxtLink v-else to="/checkout" class="btn-primary w-full">Go to checkout</NuxtLink>
-        <NuxtLink to="/shop" class="btn-secondary w-full no-underline">Keep shopping</NuxtLink>
-      </aside>
-    </div>
+    <CartStub v-else>
+      <template #lines>
+        <ul class="divide-y divide-brand-sky">
+          <li v-for="l in lines" :key="l.key" class="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
+            <LineThumb :p="l" />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm text-ink-muted">{{ l.artist }}</p>
+              <h2 class="break-words text-base font-bold">{{ l.title }}</h2>
+              <p v-if="l.stock === 0" class="text-sm font-bold text-danger">Sold out</p>
+              <p v-if="l.stock != null && l.stock > 0 && l.stock <= 5" class="text-sm font-semibold text-ink-muted">Only {{ l.stock }} left</p>
+              <p v-if="l.variation" class="text-sm font-semibold">{{ l.variation.options ? variationLabel(l.variation) : `Version: ${l.variation.name}` }}</p>
+              <p class="tabular-nums font-bold">{{ peso(l.price) }}<span v-if="l.discount_percent > 0" class="ml-2 text-danger"><span class="sr-only">Discount </span>{{ l.discount_percent }}%</span></p>
+            </div>
+            <div class="flex items-center gap-2">
+              <label :for="`qty-${l.key}`" class="sr-only">Quantity of {{ nameOf(l) }}</label>
+              <select :id="`qty-${l.key}`" class="input w-20 !rounded-full" :value="l.quantity" @change="setQty(l.key, Number($event.target.value))">
+                <option v-for="n in qtyOptions(l)" :key="n" :value="n">{{ n }}</option>
+              </select>
+              <BaseButton variant="secondary" small @click="() => { remove(l.key); announce(`${l.title}${l.variation ? `, ${l.variation.name},` : ''} removed from your cart`); }"><IconTrash />Remove <span class="sr-only">{{ nameOf(l) }}</span></BaseButton>
+            </div>
+          </li>
+        </ul>
+      </template>
+      <h2 class="mb-3 text-lg font-black">Summary</h2>
+      <OrderTotals :totals="totals" />
+      <div class="mt-4 space-y-2">
+        <BaseButton v-if="soldOut.length > 0" variant="accent" block disabled>Go to checkout</BaseButton>
+        <BaseButton v-else to="/checkout" variant="accent" block>Go to checkout</BaseButton>
+        <BaseButton to="/shop" variant="secondary" block>Keep shopping</BaseButton>
+      </div>
+    </CartStub>
   </div>
 </template>
