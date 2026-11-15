@@ -4,7 +4,7 @@ import { chipsFor, productImageUrl, productMatches } from "~/lib/products";
 import { peso } from "~/lib/payment";
 import { productPath } from "~/lib/slug";
 import { groupVariations } from "~/lib/variations";
-import { badgeFor, priceFor } from "~/lib/productBadge";
+import { badgeFor, priceFor, priceText } from "~/lib/productBadge";
 import { preorderNotice } from "~/lib/preorder";
 import type { ProductRow, VariationRow } from "~/types/shop";
 
@@ -65,7 +65,7 @@ const opts = (p: ProductRow) => versions.value[p.id] || [];
     <ul v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       <li v-for="(p, i) in shown" :key="p.id">
         <ProductCard :title="p.title" :artist="p.artist" :to="productPath(p)" :image="productImageUrl(p)" :image-alt="p.image_alt || ''" :tint="i"
-          :price-label="`${priceFor(p.price, opts(p)).from ? 'From ' : ''}${peso(priceFor(p.price, opts(p)).amount)}`" :discount="p.discount_percent > 0 ? p.discount_percent : undefined"
+          :price-label="priceText(priceFor(p.price, opts(p)), peso)" :discount="p.discount_percent > 0 ? p.discount_percent : undefined"
           :badge="badgeFor(p, opts(p))?.label" :badge-tone="badgeFor(p, opts(p))?.tone" :notice="preorderNotice(p)" />
       </li>
     </ul>

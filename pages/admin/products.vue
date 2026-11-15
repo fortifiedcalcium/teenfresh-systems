@@ -162,6 +162,7 @@ async function remove() {
 const shownImage = computed(() => preview.value || (form.value?.image_path ? productImageUrl(form.value) : null));
 const summaryErrors = computed(() => Object.fromEntries(Object.entries(errors.value).map(([k, message]) => [`p-${k}`, message])));
 const versionsOf = (p) => versions.value[p.id] || [];
+const hasVariations = computed(() => form.value ? form.value.layers.length > 0 || form.value.variations.length > 0 : false);
 const allSold = (p) => isSoldOut(p, versionsOf(p));
 
 // layers and combinations
@@ -216,7 +217,8 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
           <Field id="p-artist" v-slot="a" label="Artist" required :error="errors.artist"><input v-bind="a" v-model="form.artist" class="input" maxlength="80"></Field>
           <Field id="p-title" v-slot="a" label="Product title" required :error="errors.title"><input v-bind="a" v-model="form.title" class="input" maxlength="160"></Field>
           <Field id="p-slug" v-slot="a" label="Web address" :hint="`Appears as /shop/${form.slug.trim() || 'your-product'}. Letters, numbers and dashes are kept; the old address keeps working.`"><input v-bind="a" v-model="form.slug" class="input" maxlength="120" autocapitalize="none" spellcheck="false" placeholder="Made from the title when left empty"></Field>
-          <Field id="p-price" v-slot="a" label="Price (PHP)" required :error="errors.price" hint="The price shown to visitors, for example 750"><input v-bind="a" v-model="form.price" class="input" inputmode="decimal"></Field>
+          <Field v-if="!hasVariations" id="p-price" v-slot="a" label="Price (PHP)" required :error="errors.price" hint="The price shown to visitors, for example 750"><input v-bind="a" v-model="form.price" class="input" inputmode="decimal"></Field>
+          <p v-else class="text-sm text-ink-muted md:self-end md:pb-2"><strong class="text-ink">Price:</strong> set on each variation below. Visitors see the range from the lowest to the highest price that is still in stock.</p>
           <Field id="p-discount_percent" v-slot="a" label="Discount (%)" :error="errors.discount_percent" hint="Shown in red next to the price. 0 hides it"><input v-bind="a" v-model="form.discount_percent" class="input" inputmode="numeric"></Field>
         </div>
 
@@ -251,7 +253,7 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
 
         <fieldset class="space-y-3">
           <legend class="label">Variations <span class="font-normal text-ink-muted">(versions, sizes, colours: optional)</span></legend>
-          <p class="hint">If you add variations, shoppers must pick one before they can buy. Leave a price empty to use this product's price. Leave stock empty if you do not count it; 0 means sold out.</p>
+          <p class="hint">If you add variations, shoppers must pick one before they can buy, and each variation has its own price (the product then needs no price of its own). Leave stock empty if you do not count it; 0 means sold out.</p>
           <p v-if="errors.variations" id="p-variations-err" role="alert" class="field-msg"><span class="error-icon error-icon--sm" aria-hidden="true">!</span>{{ errors.variations }}</p>
           <template v-if="form.layers.length === 0">
             <ul v-if="form.variations.length > 0" class="space-y-2">
@@ -262,7 +264,7 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
                 </div>
                 <div class="w-40">
                   <label class="label" :for="`p-var-price-${v.key}`">Price (PHP) <span class="sr-only">of variation {{ Number(i) + 1 }}</span></label>
-                  <input :id="`p-var-price-${v.key}`" v-model="v.price" class="input" inputmode="decimal" placeholder="Same as product">
+                  <input :id="`p-var-price-${v.key}`" v-model="v.price" class="input" inputmode="decimal" placeholder="For example 750">
                 </div>
                 <div class="w-28">
                   <label class="label" :for="`p-var-stock-${v.key}`">Stock <span class="sr-only">of variation {{ Number(i) + 1 }}</span></label>
@@ -294,7 +296,7 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
                 <li v-for="r in comboRows" :key="r.key" class="flex flex-wrap items-center gap-2 rounded-md bg-brand-ivory px-3 py-2 text-sm">
                   <span class="min-w-[10rem] flex-1 font-semibold">{{ r.name }}</span>
                   <label class="flex items-center gap-2"><span class="sr-only">Price of {{ r.name }}, PHP</span>
-                    <input class="input w-36" inputmode="decimal" :aria-label="`Price of ${r.name}, PHP`" placeholder="Same as product" :value="comboOf(r.key).price ?? ''" @input="setCombo(r.key, { price: ($event.target as HTMLInputElement).value })">
+                    <input class="input w-36" inputmode="decimal" :aria-label="`Price of ${r.name}, PHP`" placeholder="Price" :value="comboOf(r.key).price ?? ''" @input="setCombo(r.key, { price: ($event.target as HTMLInputElement).value })">
                   </label>
                   <label class="flex items-center gap-2"><span class="sr-only">Stock of {{ r.name }}</span>
                     <input class="input w-28" inputmode="numeric" :aria-label="`Stock of ${r.name}`" placeholder="Not counted" :value="comboOf(r.key).stock ?? ''" @input="setCombo(r.key, { stock: ($event.target as HTMLInputElement).value })">

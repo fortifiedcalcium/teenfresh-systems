@@ -36,7 +36,7 @@ export function productImageUrl(p) {
 
 export const VARIATIONS_MAX = 20;
 /** A problem with a product's versions (variations), in plain words, or "" when they are fine. Each is { name, price } with an optional price. */
-export function validateVariations(list, max = VARIATIONS_MAX) {
+export function validateVariations(list, max = VARIATIONS_MAX, { requirePrice = false } = {}) {
   const seen = new Set();
   if (list.length > max) return `A product can have up to ${max} variations.`;
   for (const v of list) {
@@ -46,7 +46,8 @@ export function validateVariations(list, max = VARIATIONS_MAX) {
     if (seen.has(name.toLowerCase())) return `"${name}" is used twice. Give each variation its own name.`;
     seen.add(name.toLowerCase());
     const price = String(v.price ?? "").trim();
-    if (price !== "" && (!/^\d+(\.\d{1,2})?$/.test(price) || Number(price) <= 0)) return `The price of "${name}" must be above 0, with at most 2 decimals, or empty to use the product's price.`;
+    if (requirePrice && price === "") return `Enter a price for "${name}".`;
+    if (price !== "" && (!/^\d+(\.\d{1,2})?$/.test(price) || Number(price) <= 0)) return `The price of "${name}" must be above 0, with at most 2 decimals${requirePrice ? "." : ", or empty to use the product's price."}`;
     const stock = validateStock(v.stock, name);
     if (stock) return stock;
   }
@@ -60,11 +61,13 @@ export function validateProduct(f) {
   else if (f.artist.trim().length > 80) e.artist = "The artist can be 80 characters at most";
   if (!f.title.trim()) e.title = "Enter the product title";
   else if (f.title.trim().length > 160) e.title = "The title can be 160 characters at most";
-  if (!/^\d+(\.\d{1,2})?$/.test(String(f.price).trim()) || Number(f.price) <= 0) e.price = "Enter a price in pesos above 0, with at most 2 decimals";
+  const hasVariations = normalizeLayers(f.layers).length > 0 || (f.variations || []).length > 0;
+  // a product with variations is priced by them (the shop shows the range), so it has no price of its own to enter
+  if (!hasVariations && (!/^\d+(\.\d{1,2})?$/.test(String(f.price).trim()) || Number(f.price) <= 0)) e.price = "Enter a price in pesos above 0, with at most 2 decimals";
   const d = String(f.discount_percent).trim();
   if (d !== "" && (!/^\d+$/.test(d) || Number(d) > 90)) e.discount_percent = "Enter a whole number from 0 to 90";
   const layers = normalizeLayers(f.layers);
-  const vmsg = layers.length ? validateLayers(layers) || validateVariations(finalVariations(f), COMBOS_MAX) : validateVariations(f.variations || []);       // layers make the combinations; without them it is the simple list
+  const vmsg = layers.length ? validateLayers(layers) || validateVariations(finalVariations(f), COMBOS_MAX, { requirePrice: true }) : validateVariations(f.variations || [], VARIATIONS_MAX, { requirePrice: true });       // layers make the combinations; without them it is the simple list
   if (vmsg) e.variations = vmsg;
   if (finalVariations(f).length === 0) { const s = validateStock(f.stock, "this product"); if (s) e.stock = s; }
   if (f.pre_order) { const m = validatePreorderDates(String(f.pre_order_starts_on || ""), String(f.pre_order_ends_on || "")); if (m) e.pre_order_dates = m; }
@@ -72,9 +75,15 @@ export function validateProduct(f) {
   return e;
 }
 
+/** The price saved on the product itself: its own price, or, when it has variations, the lowest of theirs (the shop shows the range). */
+export function basePrice(f) {
+  const prices = finalVariations(f).map((v) => Number(String(v.price).trim())).filter((n) => n > 0);
+  return prices.length > 0 ? Math.min(...prices) : Number(f.price);
+}
+
 export function productRow(f) {
   return {
-    artist: f.artist.trim(), title: f.title.trim(), price: Number(f.price), discount_percent: String(f.discount_percent).trim() === "" ? 0 : Number(f.discount_percent),
+    artist: f.artist.trim(), title: f.title.trim(), price: basePrice(f), discount_percent: String(f.discount_percent).trim() === "" ? 0 : Number(f.discount_percent),
     ...Object.fromEntries(INFO_SECTIONS.map(([k]) => [k, (f[k] || "").trim() || null])),
     variation_layers: normalizeLayers(f.layers),
     ...(String(f.slug || "").trim() ? { slug: String(f.slug).trim() } : {}),   // blank keeps the current address (or derives one from the title)

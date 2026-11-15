@@ -2,7 +2,16 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period. `2.5.0` makes the banner headline and description editable. `2.6.0` shrinks admin pictures when they are uploaded. `2.6.1` makes that work in Safari.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period. `2.5.0` makes the banner headline and description editable. `2.6.0` shrinks admin pictures when they are uploaded. `2.6.1` makes that work in Safari. `2.7.0` prices products by their variations and locks the quantity until one is picked.
+
+## [2.7.0] - 2026-11-15
+
+No migration.
+
+### Changed
+- **Quantity is locked until a version is picked.** On a product with variations the quantity buttons are off (and the total shows a dash) until the shopper chooses a version; each new pick starts again at 1. A product with no variations is unchanged.
+- **A product with variations has no price of its own.** In admin the product Price field is hidden once a variation exists, every variation (or layer combination) needs its own price, and the product saves the lowest of them as its base price. "Same as product" is gone. A product with no variations still has its Price field. Older variations that had no price open pre-filled with the product's price, so nothing has to be retyped.
+- **Price range.** The shop card, home "Shop the drop", the product page (before a version is picked) and the related products show the range from the lowest to the highest price among the versions still in stock, for example ₱750.00 – ₱900.00 (one price when they cost the same; the range of all versions when everything is sold out). It replaces "From".
 
 ## [2.6.1] - 2026-11-15
 
