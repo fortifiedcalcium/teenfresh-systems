@@ -60,3 +60,16 @@ test("admin: a file that is not a JPG, PNG or WebP is refused before upload", as
   await page.locator('input[type="file"]').setInputFiles({ name: "x.gif", mimeType: "image/gif", buffer: Buffer.from("GIF89a") });
   await expect(page.locator(".alert-bad", { hasText: "JPG, PNG or WebP" })).toBeVisible();
 });
+
+test("admin: the banner headline and description are saved", async ({ page, as }) => {
+  await as("admin");
+  const saved = [];
+  page.on("request", (r) => { if (r.url().includes("/rest/v1/home_settings") && r.method() === "PATCH") saved.push(r.postDataJSON()); });
+  await page.goto("/admin/home");
+  await page.waitForLoadState("networkidle");
+  await page.getByLabel(/Headline \(the event name\)/).fill("Fan meet night");
+  await page.getByLabel(/Description under the headline/).fill("Come hang out with us.");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Home page saved")).toBeVisible();
+  expect(saved.at(-1)).toMatchObject({ hero_headline: "Fan meet night", hero_description: "Come hang out with us." });
+});

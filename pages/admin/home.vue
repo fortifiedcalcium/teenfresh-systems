@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { supabase } from "~/lib/supabaseClient";
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "~/lib/eventImages";
-import { BANNER_ALT_MAX, bannerUrl, removeBanner, uploadBanner, validateBanner } from "~/lib/homeSettings";
+import { BANNER_ALT_MAX, HERO_DESCRIPTION_MAX, HERO_HEADLINE_MAX, bannerUrl, removeBanner, uploadBanner, validateBanner, validateHeroText } from "~/lib/homeSettings";
 import { fmtDate } from "~/lib/availability";
 
 // Admin: the home page banner picture and which event is featured in the hero.
@@ -13,7 +13,7 @@ const saving = ref(false);
 const error = ref("");
 const events = ref<{ id: string; title: string; event_date: string }[]>([]);
 const saved = ref<{ banner_path: string | null }>({ banner_path: null });
-const form = reactive({ alt: "", decorative: false, featured: "" });
+const form = reactive({ alt: "", decorative: false, featured: "", headline: "", description: "" });
 const file = ref<File | null>(null);          // a newly chosen picture, uploaded on Save
 const removing = ref(false);
 const preview = ref<string | null>(null);
@@ -24,7 +24,7 @@ onMounted(async () => {
   if (s.error) error.value = "The home page settings are not set up yet. Run migration 034_home_settings.sql in Supabase first.";
   const d = s.data;
   saved.value = { banner_path: d?.banner_path || null };
-  Object.assign(form, { alt: d?.banner_alt || "", decorative: !!d?.banner_decorative, featured: d?.featured_event_id || "" });
+  Object.assign(form, { alt: d?.banner_alt || "", decorative: !!d?.banner_decorative, featured: d?.featured_event_id || "", headline: d?.hero_headline || "", description: d?.hero_description || "" });
   loaded.value = true;
 });
 watch(file, (f, _o, onCleanup) => {
@@ -48,13 +48,15 @@ async function save() {
   error.value = "";
   const bad = validateBanner({ hasImage: hasImage.value, decorative: form.decorative, alt: form.alt });
   if (bad) { error.value = bad; return; }
+  const textBad = validateHeroText(form.headline.trim(), form.description.trim());
+  if (textBad) { error.value = textBad; return; }
   saving.value = true;
   let newPath: string | null = null;
   try { if (file.value) newPath = await uploadBanner(file.value); } catch (e) { saving.value = false; error.value = (e as Error).message; return; }
   const path = newPath || (removing.value ? null : saved.value.banner_path);
   const { error: err } = await supabase.from("home_settings").update({
     banner_path: path, banner_alt: path ? form.alt.trim() || null : null, banner_decorative: path ? form.decorative : false,
-    featured_event_id: form.featured || null, updated_at: new Date().toISOString(),
+    featured_event_id: form.featured || null, hero_headline: form.headline.trim() || null, hero_description: form.description.trim() || null, updated_at: new Date().toISOString(),
   }).eq("id", true);
   saving.value = false;
   if (err) { if (newPath) await removeBanner(newPath); error.value = err.message; return; }
@@ -68,7 +70,7 @@ async function save() {
 <template>
   <div class="space-y-4">
     <h1 class="flex items-center gap-2 text-2xl"><IconImage />Home page</h1>
-    <p class="text-sm text-ink-muted">The banner behind the top of the home page, and the event shown there. Changes show up straight away; no redeploy is needed. Without a picture the page keeps its plain cream background.</p>
+    <p class="text-sm text-ink-muted">The banner at the top of the home page: its picture, its text and the event shown there. Changes show up straight away; no redeploy is needed. Without a picture the page keeps its plain cream background.</p>
     <Loading v-if="!loaded" label="Loading settings…" />
     <form v-else class="card space-y-5 p-4" novalidate aria-labelledby="banner-h" @submit.prevent="save">
       <h2 id="banner-h" class="text-lg font-black">Banner picture</h2>
@@ -91,6 +93,13 @@ async function save() {
         </Field>
         <label class="flex items-center gap-2 font-semibold"><input v-model="form.decorative" type="checkbox" class="check"> Decorative (the picture says nothing a person needs to know)</label>
       </template>
+      <h2 class="text-lg font-black">Banner text</h2>
+      <Field id="hero-headline" v-slot="a" label="Headline (the event name)" hint="The big line in the banner. Leave it empty to use the featured event's headline, subtitle or title.">
+        <input v-bind="a" v-model="form.headline" class="input" :maxlength="HERO_HEADLINE_MAX">
+      </Field>
+      <Field id="hero-description" v-slot="a" label="Description under the headline" :hint="`Up to ${HERO_DESCRIPTION_MAX} characters. Leave it empty for the standard sentence.`">
+        <textarea v-bind="a" v-model="form.description" class="input" rows="3" :maxlength="HERO_DESCRIPTION_MAX" />
+      </Field>
       <h2 class="text-lg font-black">Featured event</h2>
       <Field id="featured" v-slot="a" label="Event shown in the banner" hint="The headline and the ticket in the banner come from this event. Automatic picks the next event people can still register for.">
         <select v-bind="a" v-model="form.featured" class="input">
