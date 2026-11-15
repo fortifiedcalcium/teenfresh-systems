@@ -26,3 +26,25 @@ describe("banner form", () => {
     expect(bannerAlt({ banner_alt: " A crowd ", banner_decorative: false })).toBe("A crowd");
   });
 });
+
+import { DEFAULT_HERO_DESCRIPTION, heroDescription, heroHeadline, validateHeroText } from "../lib/homeSettings.ts";
+describe("hero text", () => {
+  const e = { tagline: "Tag", subtitle: "Sub", title: "Title" };
+  it("uses what the admin typed, else the event's tagline, subtitle, title, else a default", () => {
+    expect(heroHeadline({ hero_headline: " My headline " }, e)).toBe("My headline");
+    expect(heroHeadline({ hero_headline: "  " }, e)).toBe("Tag");
+    expect(heroHeadline(null, { subtitle: "Sub", title: "Title" })).toBe("Sub");
+    expect(heroHeadline(null, { title: "Title" })).toBe("Title");
+    expect(heroHeadline(null, null)).toBe("Upcoming events");
+  });
+  it("uses the typed description, else the standard sentence", () => {
+    expect(heroDescription({ hero_description: " Come along. " })).toBe("Come along.");
+    expect(heroDescription({ hero_description: "" })).toBe(DEFAULT_HERO_DESCRIPTION);
+    expect(heroDescription(null)).toBe(DEFAULT_HERO_DESCRIPTION);
+  });
+  it("limits their length", () => {
+    expect(validateHeroText("x".repeat(121), "")).toMatch(/headline/);
+    expect(validateHeroText("", "x".repeat(301))).toMatch(/description/);
+    expect(validateHeroText("ok", "ok")).toBe("");
+  });
+});

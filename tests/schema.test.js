@@ -108,6 +108,7 @@ beforeAll(async () => {
   await db.exec(read("034_home_settings.sql"));
   await db.exec(read("035_product_stock.sql"));
   await db.exec(read("036_preorder_period.sql"));
+  await db.exec(read("037_home_hero_text.sql"));
   for (const k of ["alice", "bob", "carol", "dave", "erin", "frank", "gina", "hank", "ivy", "jack", "kim", "lee", "max", "ned"]) await mkUser(k);
   await mkUser("admin", true);
 });
@@ -1499,5 +1500,19 @@ describe("036 pre-order period", () => {
     await asUser("alice");
     await db.query("update public.products set pre_order_ends_on = public.manila_today() - 1 where id = $1", [prod]);
     await place([{ product_id: prod, quantity: 1 }], "PO-7");                                 // still sells: the visitor's update changed nothing
+  });
+});
+
+describe("home hero text (migration 037)", () => {
+  it("is optional, limited in length, and only an admin can change it", async () => {
+    await asUser("alice");
+    await db.query("update public.home_settings set hero_headline = 'Hacked' where id");
+    expect((await row("select hero_headline from public.home_settings")).hero_headline).toBeNull();
+    await asUser("admin");
+    await db.query("update public.home_settings set hero_headline = 'Fan meet night', hero_description = 'Come hang out.' where id");
+    expect(await row("select hero_headline, hero_description from public.home_settings")).toEqual({ hero_headline: "Fan meet night", hero_description: "Come hang out." });
+    await asUser("admin");
+    await expect(db.query("update public.home_settings set hero_headline = $1 where id", ["x".repeat(121)])).rejects.toThrow();
+    await expect(db.query("update public.home_settings set hero_description = $1 where id", ["x".repeat(301)])).rejects.toThrow();
   });
 });

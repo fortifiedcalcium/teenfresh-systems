@@ -8,7 +8,7 @@ import { productPath } from "~/lib/slug";
 import { badgeFor, priceFor } from "~/lib/productBadge";
 import { preorderNotice } from "~/lib/preorder";
 import { groupVariations } from "~/lib/variations";
-import { bannerAlt, bannerUrl, NO_HOME_SETTINGS, pickFeatured } from "~/lib/homeSettings";
+import { bannerAlt, bannerUrl, heroDescription, heroHeadline, NO_HOME_SETTINGS, pickFeatured } from "~/lib/homeSettings";
 import type { HomeSettings } from "~/lib/homeSettings";
 import type { EventRow, ImageRow, KitRow } from "~/types/db";
 import type { ProductRow, VariationRow } from "~/types/shop";
@@ -84,7 +84,8 @@ onMounted(async () => {
 const featured = computed(() => pickFeatured(events.value || [], home.value.featured_event_id, (e) => eventStatus(e, counts.value[e.id] ?? 0).canRegister));
 const heroImage = computed(() => bannerUrl(home.value));
 const others = computed(() => (events.value || []).filter((e) => e.id !== featured.value?.id));
-const headline = computed(() => featured.value?.tagline || featured.value?.subtitle || featured.value?.title || "Upcoming events");
+const headline = computed(() => heroHeadline(home.value, featured.value));
+const description = computed(() => heroDescription(home.value));
 const optsOf = (p: ProductRow) => dropVersions.value[p.id] || [];
 onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(channel); });
 </script>
@@ -100,7 +101,7 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
       <div class="space-y-5">
         <p class="text-sm font-extrabold uppercase tracking-widest text-ink-muted">Teenfresh Events</p>
         <h1 id="home-h" class="home-hero__title">{{ headline }}</h1>
-        <p class="home-hero__lead max-w-prose text-ink-muted">Pick an event and reserve your slot. Pay by GCash and your ticket arrives by email once the payment is checked.</p>
+        <p class="home-hero__lead max-w-prose text-ink-muted">{{ description }}</p>
         <div class="flex flex-wrap gap-3">
           <BaseButton :to="others.length ? '#events' : '#featured-event'" variant="accent"><IconCalendar />See events</BaseButton>
           <BaseButton v-if="SHOP_ENABLED" to="/shop" variant="secondary"><IconBag />Browse shop</BaseButton>
