@@ -1,11 +1,18 @@
 import fs from "node:fs";
 import { test as base, expect } from "./fixtures.js";
 
-// Runs the REAL production build with the REAL headers from firebase.json enforced, and fails on any CSP violation.
+// Runs the REAL production build with the REAL headers from public/_headers (what Cloudflare Pages serves) enforced, and fails on any CSP violation.
 // (The only change: https://*.supabase.co becomes the local fake Supabase, so the mocked API is reachable.)
-const cfg = JSON.parse(fs.readFileSync(new URL("../firebase.json", import.meta.url), "utf8")).hosting;
-const all = cfg.headers.find((h) => h.source === "**").headers;
-const header = (k) => all.find((h) => h.key === k).value;
+// Parse Cloudflare's _headers file: a path line, then indented "Name: value" lines. The build adds the inline-script hashes to the copy in the output folder.
+const raw = fs.readFileSync(new URL("../dist-csp/public/_headers", import.meta.url), "utf8");
+const rules = [];
+for (const line of raw.split("\n")) {
+  if (!line.trim() || line.trim().startsWith("#")) continue;
+  if (/^\S/.test(line)) rules.push({ source: line.trim(), headers: [] });
+  else { const i = line.indexOf(":"); rules.at(-1).headers.push({ key: line.slice(0, i).trim(), value: line.slice(i + 1).trim() }); }
+}
+const all = rules.find((r) => r.source === "/*").headers;
+const header = (k) => all.find((h) => h.key.toLowerCase() === k.toLowerCase()).value;
 const CSP = header("Content-Security-Policy").replaceAll("https://*.supabase.co", "http://localhost:54321").replaceAll("wss://*.supabase.co", "ws://localhost:54321").replace("; upgrade-insecure-requests", "");
 
 const test = base.extend({
@@ -27,8 +34,8 @@ const test = base.extend({
 });
 
 test.describe("security headers", () => {
-  test("firebase.json sets the headers, and the policy has no unsafe-eval, no unsafe-inline scripts and no wildcard sources", () => {
-    expect(CSP).toContain("script-src 'self';");
+  test("_headers sets the headers, and the policy has no unsafe-eval, no unsafe-inline scripts and no wildcard sources", () => {
+    expect(CSP).toMatch(/script-src 'self'( 'sha256-[^']+')*;/);   // the build adds the hash of Nuxt's inline settings script
     for (const bad of ["'unsafe-eval'", "script-src 'self' 'unsafe-inline'", "default-src *", " * ", "data: https:"]) expect(header("Content-Security-Policy"), bad).not.toContain(bad);
     expect(header("Content-Security-Policy")).toContain("frame-ancestors 'none'");
     expect(header("Content-Security-Policy")).toContain("object-src 'none'");
@@ -39,10 +46,10 @@ test.describe("security headers", () => {
     expect(header("Permissions-Policy")).toContain("microphone=()");
     expect(header("Strict-Transport-Security")).toContain("max-age=63072000");
     expect(header("Cache-Control")).toBe("no-cache");                                          // HTML is always revalidated
-    const assets = cfg.headers.find((h) => h.source === "/assets/**");
+    const assets = rules.find((r) => r.source === "/_nuxt/*");
     expect(assets.headers[0].value).toContain("immutable");                                   // fingerprinted files are cached for a year
-    // hosting itself: the built app is served from dist, every route falls back to index.html, on the teenfresh-events site
-    expect(cfg).toMatchObject({ site: "teenfresh-events", public: "dist", rewrites: [{ source: "**", destination: "/index.html" }] });
+    // every route falls back to index.html (a single-page app)
+    expect(fs.readFileSync(new URL("../public/_redirects", import.meta.url), "utf8")).toContain("/*  /index.html  200");
   });
 
   test("public pages work under the policy", async ({ page, as, violations }) => {

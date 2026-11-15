@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { orderReport, orderReportFilename } from "../src/lib/orderReport.js";
+import { orderReport, orderReportFilename } from "../lib/orderReport.js";
 
 const at = (d) => new Date(2026, 10, d, 14, 5).toISOString();
 const base = { id: "a", order_number: "TF-000001", created_at: at(10), status: "pending", shipping_status: "none", balance_status: "none", subtotal_php: 1500, shipping_php: 0, total_php: 1500, name: "Juan Dela Cruz", email: "juan@example.com", phone: "+639171234567", address: "12 Rizal St.", city: "Makati City, Metro Manila (NCR)", postal_code: "1210", reference_number: "111" };

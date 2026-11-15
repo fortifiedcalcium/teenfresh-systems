@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { step1Schema, step2Schema, makeStep3Schema, makeKitSchema, stepSchemaFor } from "../src/lib/validation.js";
-import { balanceLeft, kitLabel, orderTotal, priceRange, isValidReference, priceBounds, normalizeFacebook, normalizePhone, normalizeReference, normalizeX, parseAmount, reusablePayments, validateReceiptFile, MAX_RECEIPT_BYTES } from "../src/lib/payment.js";
+import { step1Schema, step2Schema, makeStep3Schema, makeKitSchema, stepSchemaFor } from "../lib/validation.js";
+import { balanceLeft, kitLabel, orderTotal, priceRange, isValidReference, priceBounds, normalizeFacebook, normalizePhone, normalizeReference, normalizeX, parseAmount, reusablePayments, validateReceiptFile, MAX_RECEIPT_BYTES } from "../lib/payment.js";
 
 // the first message per field, which is what the form shows (react-hook-form keeps the first error of a field)
 const issues = (schema, value) => { const r = schema.safeParse(value); return r.success ? {} : r.error.issues.reduce((o, i) => (i.path[0] in o ? o : { ...o, [i.path[0]]: i.message }), {}); };

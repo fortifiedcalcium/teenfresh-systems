@@ -235,6 +235,7 @@ test.describe("WCAG behaviours", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await as(null);
     await page.goto("/");
+    await page.locator("a.btn-primary, a.nav-link").first().waitFor();
     const d = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("a.btn-primary, a.nav-link")).transitionDuration));
     expect(d).toBeLessThan(0.001);
   });

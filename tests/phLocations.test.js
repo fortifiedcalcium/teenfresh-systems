@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import places from "../src/data/ph-locations.json";
+import places from "../data/ph-locations.json";
 
 describe("Philippine locations (PSGC)", () => {
   const provinces = Object.keys(places);

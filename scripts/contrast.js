@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export function readTokens() {
-  const css = fs.readFileSync(path.join(ROOT, "src/styles/tokens.css"), "utf8");
+  const css = fs.readFileSync(path.join(ROOT, "assets/css/tokens.css"), "utf8");
   const tokens = {};
   for (const m of css.matchAll(/--([a-z-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)) tokens[m[1]] = m[2].toLowerCase();
   return tokens;
@@ -94,7 +94,7 @@ export function checkTokens() {
 function walk(dir, out = []) {
   for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, f.name);
-    if (f.isDirectory()) walk(p, out); else if (/\.(jsx?|css)$/.test(f.name)) out.push(p);
+    if (f.isDirectory()) walk(p, out); else if (/\.(jsx?|vue|css)$/.test(f.name)) out.push(p);
   }
   return out;
 }
@@ -104,9 +104,9 @@ function walk(dir, out = []) {
 export function scanSource() {
   const { tokens } = checkTokens();
   const failures = [];
-  const files = walk(path.join(ROOT, "src"));
-  const HEX_ALLOW = [/styles[\\/]tokens\.css$/, /AuthShell\.jsx$/]; // AuthShell: the multicolour Google "G" logo (third-party trademark colours)
-  const chunks = (text) => [...text.matchAll(/(?:className=(?:"([^"]*)"|\{`([^`]*)`\})|@apply ([^;]+);|"([^"\n]*(?:bg|text)-[^"\n]*)")/g)].map((m) => m[1] || m[2] || m[3] || m[4] || "");
+  const files = [...["components", "layouts", "pages", "assets/css", "lib", "composables"].flatMap((d) => walk(path.join(ROOT, d))), path.join(ROOT, "app.vue")];
+  const HEX_ALLOW = [/css[\\/]tokens\.css$/, /GoogleButton\.vue$/]; // GoogleButton: the multicolour Google "G" logo (third-party trademark colours)
+  const chunks = (text) => [...text.matchAll(/(?:className=(?:"([^"]*)"|\{`([^`]*)`\})|@apply ([^;]+);|"([^"\n]*(?:bg|text)-[^"\n]*)"|'([^'\n]*(?:bg|text)-[^'\n]*)'|`([^`\n]*(?:bg|text)-[^`\n]*)`)/g)].map((m) => m[1] || m[2] || m[3] || m[4] || m[5] || m[6] || "");
 
   for (const file of files) {
     const rel = path.relative(ROOT, file);

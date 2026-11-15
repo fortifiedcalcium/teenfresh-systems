@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { wrapSelection } from "../src/lib/formatText.js";
+import { wrapSelection } from "../lib/formatText.js";
 
 const B = ["<strong>", "</strong>"];
 describe("wrapSelection", () => {
