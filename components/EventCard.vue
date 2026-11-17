@@ -20,7 +20,7 @@ const feeNote = computed(() => (props.event.fee_note ? `(${props.event.fee_note}
 </script>
 
 <template>
-  <TicketCard :title="event.title" :subtitle="event.subtitle || undefined" :image="image" :image-alt="bannerImage?.alt_text || ''" :band="band" :priority="priority" :status-label="st.label" :status-tone="(STATUS_TONE as Record<string, Tone>)[st.key]" :barcode="compact ? undefined : (event.slug || event.id)">
+  <TicketCard :title="event.title" :subtitle="event.subtitle || undefined" :image="image" :image-alt="bannerImage?.alt_text || ''" :band="band" :priority="priority" :compact="compact" :status-label="st.label" :status-tone="(STATUS_TONE as Record<string, Tone>)[st.key]" :barcode="compact ? undefined : (event.slug || event.id)">
     <template v-if="soon && !compact" #media><ComingSoonBanner /></template>
     <div v-if="compact" class="space-y-1">
       <p class="font-bold">{{ fmtDate(event.event_date) }}, {{ fmtTimeRange(event.event_date, event.ends_at) }}</p>
