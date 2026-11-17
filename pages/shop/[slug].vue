@@ -154,6 +154,7 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
         <p class="pd-price">
           <span v-if="p.discount_percent > 0" class="text-danger"><span class="sr-only">Discount </span>{{ p.discount_percent }}%</span>
           <span><template v-if="!chosen && variations.length">{{ priceText(shownPrice, peso) }}</template><template v-else>{{ peso(unit) }}</template></span>
+          <span v-if="stockText" role="status" class="ml-auto text-sm font-bold" :class="soldOutAll ? 'text-danger' : 'text-ink-muted'">{{ stockText }}</span>
         </p>
 
         <div v-if="p.pre_order" class="pd-status">
@@ -185,7 +186,6 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
           <p v-if="pickError" id="pick-err" role="alert" class="field-msg"><span class="error-icon error-icon--sm" aria-hidden="true">!</span>{{ layered && missing.length ? `Choose ${missing.join(" and ")} first.` : "Choose a version first." }}</p>
         </div>
         <p v-if="soldOutAll" role="status" class="rounded-lg border border-danger bg-brand-ivory px-3 py-2 font-bold text-danger">{{ variations.length ? "Sold out. Every version is sold out for now." : "Sold out for now." }}</p>
-        <p v-if="stockText && !soldOutAll" role="status" class="text-sm font-bold">{{ stockText }}</p>
         <div class="pd-option">
           <p id="opt-label" class="pd-label">Select option</p>
           <div class="pd-option-row" role="group" aria-labelledby="opt-label">
@@ -219,7 +219,7 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
     <section v-if="related.length" class="mt-8" aria-labelledby="related-title">
       <h2 id="related-title" class="mb-4 text-lg font-bold">Related products</h2>
       <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <li v-for="(r, i) in related" :key="r.id"><ProductCard :title="r.title" :artist="r.artist" :to="productPath(r)" :image="productImageUrl(r)" :image-alt="r.image_alt || ''" :tint="i" :price-label="priceText(priceFor(r.price, relatedVersions[r.id] || []), peso)" /></li>
+        <li v-for="(r, i) in related" :key="r.id"><ProductCard :title="r.title" :artist="r.artist" :stock="stockLabel(r, relatedVersions[r.id] || [])" :to="productPath(r)" :image="productImageUrl(r)" :image-alt="r.image_alt || ''" :tint="i" :price-label="priceText(priceFor(r.price, relatedVersions[r.id] || []), peso)" /></li>
       </ul>
     </section>
   </section>
