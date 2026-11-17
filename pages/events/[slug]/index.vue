@@ -102,8 +102,8 @@ useSeo({
       <div class="mt-4"><BaseButton v-if="st!.canRegister" :to="registerPath(event)" variant="accent" block><IconTicket />Register for this event</BaseButton></div>
     </section>
 
-    <section v-if="images.poster || isAdmin" class="space-y-2" aria-labelledby="poster-h"><h2 id="poster-h" class="text-lg">Event poster</h2><EventImage slot-key="poster" :event="event" :image="images.poster" class="mx-auto max-w-md" @changed="load" /></section>
-    <section v-if="images.details_card || event.kit_inclusions?.length || isAdmin" class="space-y-2" aria-labelledby="details-h"><h2 id="details-h" class="text-lg">Event details</h2><EventImage v-if="images.details_card || isAdmin" slot-key="details_card" :event="event" :image="images.details_card" class="mx-auto max-w-md" @changed="load" />
+    <section v-if="images.poster || isAdmin" class="space-y-2" aria-labelledby="poster-h"><h2 id="poster-h" class="text-lg">Event poster</h2><EventImage slot-key="poster" :event="event" :image="images.poster" class="w-full" @changed="load" /></section>
+    <section v-if="images.details_card || event.kit_inclusions?.length || isAdmin" class="space-y-2" aria-labelledby="details-h"><h2 id="details-h" class="text-lg">Event details</h2><EventImage v-if="images.details_card || isAdmin" slot-key="details_card" :event="event" :image="images.details_card" class="w-full" @changed="load" />
       <div v-if="event.kit_inclusions?.length" class="rounded-2xl bg-brand-ivory p-4 text-sm"><p class="font-semibold">Kit inclusions</p><ul class="mt-1 list-disc pl-5"><li v-for="k in event.kit_inclusions" :key="k">{{ k }}</li></ul></div>
     </section>
     <TermsBox :event="event" default-open />
