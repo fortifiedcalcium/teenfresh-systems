@@ -8,6 +8,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 No migration.
 
+### Changed
+- **The shop heading no longer has the line under it** ("Official merch, paid by GCash. Pick a product…").
+
 ### Fixed
 - **Every card shows its stock** ("In stock" when no count is kept), on the same row as the price, at its right edge; the "related" cards too.
 - **The product page now always shows the stock**, when a count is kept ("12 in stock", "Only 3 left"), pre-orders included. Before it appeared only at 5 or fewer. With versions it shows the chosen version's count, else the total.

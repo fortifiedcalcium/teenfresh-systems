@@ -56,7 +56,6 @@ const cardCategories = (p: ProductRow) => [...(p.categories || []), ...(p.pre_or
   <section class="space-y-5" aria-labelledby="shop-title">
     <div class="rounded-[2rem] bg-brand-mint p-6 sm:p-8">
       <h1 id="shop-title" class="mb-1 flex items-center gap-2 text-3xl sm:text-4xl"><IconBag /><span>Teenfresh's products <span aria-hidden="true">⭐</span></span></h1>
-      <p class="max-w-prose text-ink-muted">Official merch, paid by GCash. Pick a product to see its versions and add it to your cart.</p>
     </div>
     <div class="shop-chips" role="group" aria-label="Filter products">
       <button v-for="c in chips" :key="c" type="button" class="shop-chip" :aria-pressed="chip === c" @click="pick(c)">{{ c }}</button>
