@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
+- **Home page follows the new design more closely**: "Teenfresh Events" is a white pill, the last word of the headline is in the accent colour, "See events" is dark and "Browse shop" white (no icons), "More events" is "Upcoming events" with "Pick an event and reserve your slot." on its right, and the events and shop sit in rounded cream and sky-blue bands.
 - **The category tags on a product page are links**: one opens the shop already filtered to that category (`/shop?category=…`). Only the main product page links; cards, the related products and the admin list stay plain..
 - **The product page shows the product's categories** as tags beside the artist name, like the cards, and the related-product cards show theirs. The card tags are a little smaller.
 - **Categories on a card sit beside the artist name** as filled, rounded-rectangle tags (they were small text above it).
