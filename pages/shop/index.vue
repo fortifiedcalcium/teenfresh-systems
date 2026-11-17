@@ -13,11 +13,7 @@ useSeo({ title: "Shop", description: "Official Teenfresh merch: albums, photocar
 const products = ref<ProductRow[] | null>(null);
 const error = ref("");
 const versions = ref<Record<string, VariationRow[]>>({});             // each product's versions, by product id
-const route = useRoute();
-// A product page links here with /shop?category=Merchandise, which opens the shop already filtered. Picking a chip here does not change the address.
-const fromQuery = () => (typeof route.query.category === "string" && route.query.category ? route.query.category : "All");
-const chip = ref(fromQuery());
-watch(() => route.query.category, () => { chip.value = fromQuery(); });
+const chip = ref("All");
 const announce = useAnnounce();
 
 async function fetchShop() {
