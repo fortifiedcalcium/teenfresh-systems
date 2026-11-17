@@ -72,7 +72,7 @@ fieldset.card-soft > legend + * { clear: both; }
 }
 .home-hero > * { min-width: 0; }
 /* With no banner picture the hero is the pink page itself. With one, the picture and its pink veil run the full width of the window. */
-.home-hero--image { clip-path: inset(0 -100vmax); }
+.home-hero--image { clip-path: inset(0 -100vmax); min-height: max(clamp(22rem, 12rem + 28vw, 38rem), 56.25vw); }   /* tall enough for the whole 16:9 banner picture to show, so it is not cropped */
 .home-hero__title { font-size: clamp(2rem, 1.2rem + 3.4vw, 3.75rem); line-height: 1.12; overflow-wrap: anywhere; }
 .home-hero__lead { font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem); }
 @media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
