@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
+- **The category tags on a product page are links**: one opens the shop already filtered to that category (`/shop?category=…`). Only the main product page links; cards, the related products and the admin list stay plain.
 - **The home page is back to its earlier look** (rounded cards, the yellow hero, the ticket with the poster on top); the new design experiments were taken out. The events section keeps the name "More events".
 - **The event page shows the poster and the details picture at the full width of the page** (they were held to a narrow 28 rem column), with their own proportions and no cropping; they stretch with the window.
 - **The product page shows the product's categories** as tags beside the artist name, like the cards, and the related-product cards show theirs. The card tags are a little smaller.

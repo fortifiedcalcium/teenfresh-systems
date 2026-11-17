@@ -148,7 +148,7 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
         <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
           <p class="pd-artist">{{ p.artist }}</p>
           <ul v-if="cardCategories(p).length" class="m-0 flex list-none flex-wrap gap-1 p-0" aria-label="Categories">
-            <li v-for="c in cardCategories(p)" :key="c" class="rounded-md bg-brand-sky px-2 py-0.5 text-xs font-bold text-ink">{{ c }}</li>
+            <li v-for="c in cardCategories(p)" :key="c"><NuxtLink :to="{ path: '/shop', query: { category: c } }" class="block rounded-md bg-brand-sky px-2 py-0.5 text-xs font-bold text-ink no-underline hover:underline">{{ c }}</NuxtLink></li>
           </ul>
         </div>
         <div class="flex items-start gap-2">
