@@ -11,18 +11,7 @@
 .tcard__head { -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000) , radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); mask-composite: intersect; border-radius: 1.5rem 1.5rem 0 0; }
 .tcard__body { -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000); mask-composite: intersect; border-radius: 0 0 1.5rem 1.5rem; }
 .tcard { --tcard-notch: 12px; }
-.tcard__perf { margin: 0 var(--tcard-notch); border-top: 2px dashed var(--brand-sky); }
-/* The featured ticket on a laptop or bigger: poster and title on the left, the details on the right, torn along a vertical line, so the whole ticket fits the first screen. */
-@media (min-width: 1024px) {
-  article.tcard--feature { display: grid; grid-template-columns: minmax(0, 5fr) auto minmax(0, 4fr); }
-  article.tcard--feature .tcard__head { border-radius: 1.5rem 0 0 1.5rem; -webkit-mask: radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); mask-composite: intersect; }
-  article.tcard--feature .tcard__body { border-radius: 0 1.5rem 1.5rem 0; -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000); mask-composite: intersect; padding-top: 1.25rem; }
-  article.tcard--feature .event-facts { grid-template-columns: minmax(0, 1fr); gap: 0.85rem; text-align: left; }   /* one left-aligned column: the four facts use the height the details side has to spare */
-  article.tcard--feature .tcard__body > div:first-child { flex: 1 1 auto; display: flex; flex-direction: column; gap: 0.75rem; }   /* the facts take all the height the poster side sets, so no gap is left above the button */
-  article.tcard--feature .event-facts { flex: 1 1 auto; align-content: space-evenly; }
-  article.tcard--feature .event-facts dd { font-size: 1.0625rem; }
-  article.tcard--feature .tcard__perf { margin: var(--tcard-notch) 0; border-top: 0; border-left: 2px dashed var(--brand-sky); background: var(--white); }
-}
+.tcard__perf { margin: 0 calc(var(--tcard-notch) + 8px); border-top: 2px dashed var(--brand-sky); }
 
 /* Product card */
 .pcard { @apply flex h-full flex-col overflow-hidden bg-white; border-radius: 24px; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
@@ -75,29 +64,21 @@ fieldset.card-soft > legend + * { clear: both; }
 /* Home hero: scales from 360px to 1920px with no horizontal scroll. Padding, type and minimum height follow the viewport width; the text and the
    ticket sit side by side from 1024px and stack below it. min-w-0 lets the grid children shrink instead of pushing the page wider. */
 .home-hero {
-  position: relative; isolation: isolate;
+  position: relative; isolation: isolate; overflow: hidden;
   display: grid; align-items: center; gap: clamp(1.25rem, 1rem + 2.5vw, 3rem);
   min-height: clamp(22rem, 12rem + 28vw, 38rem);
-  padding: clamp(1.25rem, 0.5rem + 3.4vw, 3.5rem) 0;
+  padding: clamp(1.25rem, 0.5rem + 3.4vw, 3.5rem);
+  border-radius: clamp(1.5rem, 1rem + 1.5vw, 2rem);
+  background-color: var(--cream);
   background-size: cover; background-position: center;
 }
 .home-hero > * { min-width: 0; }
-/* With no banner picture the hero is the pink page itself. With one, the picture and its pink veil run the full width of the window. */
-.home-hero--image { clip-path: inset(-7rem -100vmax 0); }   /* the backdrop also runs up behind the navigation bar, to the top of the page */
 .home-hero__title { font-size: clamp(2rem, 1.2rem + 3.4vw, 3.75rem); line-height: 1.12; overflow-wrap: anywhere; }
 .home-hero__lead { font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem); }
-@media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); } }
-.home-hero__bg { position: absolute; top: -7rem; left: 50%; z-index: -2; width: 100vw; height: calc(100% + 7rem); max-width: none; transform: translateX(-50%) scale(1.08); object-fit: cover; filter: blur(22px); }   /* a soft blurred backdrop: no hard edge or visible crop, whatever the picture's shape; the sharp picture is on the ticket */
-/* A pink veil between the picture and the content: the dark text keeps 4.5:1 on any picture, even a black one (checked in scripts/contrast.js). */
-.home-hero__overlay { position: absolute; top: -7rem; bottom: 0; left: 50%; width: 100vw; transform: translateX(-50%); z-index: -1; background-color: color-mix(in srgb, var(--brand-blush) calc(var(--hero-overlay-alpha) * 100%), transparent); }
+@media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.home-hero__bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+/* A cream veil between the picture and the content: the dark text keeps 4.5:1 on any picture, even a black one (checked in scripts/contrast.js). */
+.home-hero__overlay { position: absolute; inset: 0; z-index: -1; background-color: color-mix(in srgb, var(--brand-cream) calc(var(--hero-overlay-alpha) * 100%), transparent); }
 
 /* The label across the bottom of a product thumbnail (for example "Pre-order period ended"): ink on white, so it reads on any photo. */
 .pcard__notice { position: absolute; inset-inline: 0.5rem; bottom: 0.5rem; padding: 0.35rem 0.6rem; border-radius: 0.75rem; background: var(--white); color: var(--ink); font-size: 0.8125rem; font-weight: 800; text-align: center; box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 20%, transparent); }
-
-/* A full-width band inside the centred page column: the colour is painted far past both sides (a box-shadow does not add scrolling) and clipped to the
-   band's own height, so it runs edge to edge with no rounded card around it. */
-.band { background-color: var(--band); box-shadow: 0 0 0 100vmax var(--band); clip-path: inset(0 -100vmax); }
-.band--ivory { --band: var(--brand-ivory); }
-.band--sky { --band: var(--brand-sky); }
-.band--mint { --band: var(--brand-mint); }
-.band--white { --band: var(--white); }

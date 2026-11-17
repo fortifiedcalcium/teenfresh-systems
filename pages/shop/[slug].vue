@@ -134,7 +134,7 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
     <Empty>This product is not available.</Empty>
     <p class="mt-4 text-center"><BaseButton to="/shop" variant="secondary"><IconArrowLeft />Back to the shop</BaseButton></p>
   </section>
-  <section v-else class="band band--white py-6" aria-labelledby="product-title">
+  <section v-else class="rounded-[2rem] bg-white p-4 shadow-[0_6px_20px_color-mix(in_srgb,var(--ink)_12%,transparent)] sm:p-6" aria-labelledby="product-title">
     <nav aria-label="Breadcrumb" class="mb-4">
       <BaseButton to="/shop" variant="ghost" small><IconArrowLeft />Shop</BaseButton>
     </nav>

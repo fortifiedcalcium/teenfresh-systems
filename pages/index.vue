@@ -85,9 +85,6 @@ const featured = computed(() => pickFeatured(events.value || [], home.value.feat
 const heroImage = computed(() => bannerUrl(home.value));
 const others = computed(() => (events.value || []).filter((e) => e.id !== featured.value?.id));
 const headline = computed(() => heroHeadline(home.value, featured.value));
-// the last word of the headline is set in the accent colour, as in the design
-const headlineStart = computed(() => { const w = headline.value.trim().split(/\s+/); return w.length > 1 ? w.slice(0, -1).join(" ") : headline.value; });
-const headlineEnd = computed(() => { const w = headline.value.trim().split(/\s+/); return w.length > 1 ? w[w.length - 1] : ""; });
 const description = computed(() => heroDescription(home.value));
 const optsOf = (p: ProductRow) => dropVersions.value[p.id] || [];
 onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(channel); });
@@ -102,15 +99,15 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
         <div class="home-hero__overlay" aria-hidden="true" />
       </template>
       <div class="space-y-5">
-        <p class="inline-block rounded-full bg-white px-3 py-1 text-xs font-extrabold text-ink shadow-sm">Teenfresh Events</p>
-        <h1 id="home-h" class="home-hero__title">{{ headlineStart }}{{ " " }}<span v-if="headlineEnd" class="text-[color:var(--accent-hover)]">{{ headlineEnd }}</span></h1>
+        <p class="text-sm font-extrabold uppercase tracking-widest text-ink-muted">Teenfresh Events</p>
+        <h1 id="home-h" class="home-hero__title">{{ headline }}</h1>
         <p class="home-hero__lead max-w-prose text-ink-muted">{{ description }}</p>
         <div class="flex flex-wrap gap-3">
-          <BaseButton :to="others.length ? '#events' : '#featured-event'" variant="secondary" class="!border-ink !bg-ink !text-white hover:!bg-ink-muted">See events</BaseButton>
-          <BaseButton v-if="SHOP_ENABLED" to="/shop" variant="secondary" class="!border-white !bg-white hover:!bg-brand-sky">Browse shop</BaseButton>
+          <BaseButton :to="others.length ? '#events' : '#featured-event'" variant="accent"><IconCalendar />See events</BaseButton>
+          <BaseButton v-if="SHOP_ENABLED" to="/shop" variant="secondary"><IconBag />Browse shop</BaseButton>
         </div>
       </div>
-      <div id="featured-event" class="mx-auto w-full max-w-md lg:ml-auto lg:max-w-none">
+      <div id="featured-event" class="mx-auto w-full max-w-md lg:ml-auto">
         <Loading v-if="events === null" label="Loading events…" class="p-12" logo />
         <EventCard v-else-if="featured" :event="featured" :registered="counts[featured.id] ?? 0" :banner-image="banners[featured.id]" :kits="kits[featured.id] || []" :band="0" priority />
         <Empty v-else>No events yet. Check back soon!</Empty>
@@ -118,19 +115,16 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
     </section>
     <Alert v-if="error" tone="bad">{{ error }}</Alert>
 
-    <section v-if="others.length" id="events" :class="['band band--ivory scroll-mt-24 !mt-0 py-8', !(SHOP_ENABLED && drop.length) && '!-mb-6']" aria-labelledby="events-h">
-      <div class="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="events-h" class="text-2xl sm:text-3xl">More events</h2>
-        <p class="text-sm text-ink-muted">Pick an event and reserve your slot.</p>
-      </div>
+    <section v-if="others.length" id="events" class="scroll-mt-24" aria-labelledby="events-h">
+      <h2 id="events-h" class="mb-5 flex items-center gap-2 text-2xl"><IconCalendar />More events</h2>
       <ul class="grid grid-cols-1 auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <li v-for="(e, i) in others" :key="e.id" class="flex"><div class="flex w-full flex-col"><EventCard :event="e" :registered="counts[e.id] ?? 0" :banner-image="banners[e.id]" :kits="kits[e.id] || []" :band="i + 1" compact /></div></li>
+        <li v-for="(e, i) in others" :key="e.id" class="flex"><div class="flex w-full flex-col"><EventCard :event="e" :registered="counts[e.id] ?? 0" :banner-image="banners[e.id]" :kits="kits[e.id] || []" :band="i + 1" /></div></li>
       </ul>
     </section>
 
-    <section v-if="SHOP_ENABLED && drop.length" :class="['band band--sky !-mb-6 !mt-0 py-8']" aria-labelledby="drop-h">
+    <section v-if="SHOP_ENABLED && drop.length" aria-labelledby="drop-h">
       <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="drop-h" class="text-2xl sm:text-3xl">Shop</h2>
+        <h2 id="drop-h" class="flex items-center gap-2 text-2xl"><IconBag />Shop</h2>
         <BaseButton to="/shop" variant="secondary" small>See more</BaseButton>
       </div>
       <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">

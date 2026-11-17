@@ -10,7 +10,7 @@
 
 @layer base {
   html { font-size: 100%; scroll-padding-top: 6rem; /* 2.4.11: sticky headers never hide the focused element */ }
-  body { overflow-x: clip; @apply bg-brand-blush font-sans text-base text-ink antialiased; line-height: 1.5; }
+  body { @apply bg-brand-blush font-sans text-base text-ink antialiased; line-height: 1.5; }
   h1, h2, h3, h4 { @apply font-black text-ink; }   /* titles use the Black weight (900) */
   /* 1.4.1: links are always underlined, never distinguished by colour alone */
   a:not(.btn):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.bbtn):not(.pill-link):not(.public-nav-item):not(.nav-link):not(.social-link):not(.no-underline):not(.bottom-nav-item):not(.scan-fab):not(.error-summary__link):not(.notif-item) { @apply text-link underline underline-offset-2; }
