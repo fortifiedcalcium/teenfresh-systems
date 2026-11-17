@@ -14,7 +14,7 @@
 .tcard__perf { margin: 0 var(--tcard-notch); border-top: 2px dashed var(--brand-sky); }
 /* The featured ticket on a laptop or bigger: poster and title on the left, the details on the right, torn along a vertical line, so the whole ticket fits the first screen. */
 @media (min-width: 1024px) {
-  article.tcard--feature { display: grid; grid-template-columns: minmax(0, 4fr) auto minmax(0, 5fr); }
+  article.tcard--feature { display: grid; grid-template-columns: minmax(0, 5fr) auto minmax(0, 4fr); }
   article.tcard--feature .tcard__head { border-radius: 1.5rem 0 0 1.5rem; -webkit-mask: radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); mask-composite: intersect; }
   article.tcard--feature .tcard__body { border-radius: 0 1.5rem 1.5rem 0; -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000); mask-composite: intersect; padding-top: 1.25rem; }
   article.tcard--feature .tcard__perf { margin: var(--tcard-notch) 0; border-top: 0; border-left: 2px dashed var(--brand-sky); background: var(--white); }
