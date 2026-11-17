@@ -4,7 +4,7 @@ import { chipsFor, productImageUrl, productMatches } from "~/lib/products";
 import { peso } from "~/lib/payment";
 import { productPath } from "~/lib/slug";
 import { groupVariations } from "~/lib/variations";
-import { badgeFor, priceFor, priceText, stockLabel } from "~/lib/productBadge";
+import { badgeFor, priceFor, priceText, stockLabel, cardCategories } from "~/lib/productBadge";
 import { preorderNotice } from "~/lib/preorder";
 import type { ProductRow, VariationRow } from "~/types/shop";
 
@@ -48,8 +48,6 @@ function pick(c: string) {
   announce(`${c}: ${n} ${n === 1 ? "product" : "products"}`);
 }
 const opts = (p: ProductRow) => versions.value[p.id] || [];
-// A pre-order product shows "Pre-Order" as a category too, so one that is only a pre-order (no categories of its own) still has its category line.
-const cardCategories = (p: ProductRow) => [...(p.categories || []), ...(p.pre_order && !(p.categories || []).includes("Pre-Order") ? ["Pre-Order"] : [])];
 </script>
 
 <template>

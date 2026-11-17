@@ -60,3 +60,6 @@ export function stockLabel(p: Partial<Pick<ProductRow, "stock">>, versions: Pick
   const total = counts.reduce((a, b) => a + b, 0);
   return total === 0 ? "Sold out" : total <= LOW_STOCK_AT ? `Only ${total} left` : `${total} in stock`;
 }
+
+/** The category line on a card: the product's categories, plus "Pre-Order" for a pre-order product, so one that is only a pre-order still has one. */
+export const cardCategories = (p: Partial<Pick<ProductRow, "categories" | "pre_order">>): string[] => [...(p.categories || []), ...(p.pre_order && !(p.categories || []).includes("Pre-Order") ? ["Pre-Order"] : [])];

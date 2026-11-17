@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
+- **On the home page, "Shop the drop" is now "Shop"** and its button "See more" (it said "See the whole shop"). Its cards show categories and stock like the shop's.
 - **The shop heading no longer has the line under it** ("Official merch, paid by GCash. Pick a product…").
 
 ### Fixed
