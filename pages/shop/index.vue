@@ -4,7 +4,7 @@ import { chipsFor, productImageUrl, productMatches } from "~/lib/products";
 import { peso } from "~/lib/payment";
 import { productPath } from "~/lib/slug";
 import { groupVariations } from "~/lib/variations";
-import { badgeFor, priceFor, priceText } from "~/lib/productBadge";
+import { badgeFor, priceFor, priceText, stockLabel } from "~/lib/productBadge";
 import { preorderNotice } from "~/lib/preorder";
 import type { ProductRow, VariationRow } from "~/types/shop";
 
@@ -48,6 +48,8 @@ function pick(c: string) {
   announce(`${c}: ${n} ${n === 1 ? "product" : "products"}`);
 }
 const opts = (p: ProductRow) => versions.value[p.id] || [];
+// A pre-order product shows "Pre-Order" as a category too, so one that is only a pre-order (no categories of its own) still has its category line.
+const cardCategories = (p: ProductRow) => [...(p.categories || []), ...(p.pre_order && !(p.categories || []).includes("Pre-Order") ? ["Pre-Order"] : [])];
 </script>
 
 <template>
@@ -64,7 +66,7 @@ const opts = (p: ProductRow) => versions.value[p.id] || [];
     <Empty v-else-if="shown.length === 0">{{ chip === "All" ? "No products yet. Check back soon!" : `No products in ${chip} yet.` }}</Empty>
     <ul v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       <li v-for="(p, i) in shown" :key="p.id">
-        <ProductCard :title="p.title" :artist="p.artist" :categories="p.categories" :to="productPath(p)" :image="productImageUrl(p)" :image-alt="p.image_alt || ''" :tint="i"
+        <ProductCard :title="p.title" :artist="p.artist" :categories="cardCategories(p)" :stock="stockLabel(p, opts(p))" :to="productPath(p)" :image="productImageUrl(p)" :image-alt="p.image_alt || ''" :tint="i"
           :price-label="priceText(priceFor(p.price, opts(p)), peso)" :discount="p.discount_percent > 0 ? p.discount_percent : undefined"
           :badge="badgeFor(p, opts(p))?.label" :badge-tone="badgeFor(p, opts(p))?.tone" :notice="preorderNotice(p)" />
       </li>

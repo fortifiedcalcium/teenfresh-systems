@@ -2,7 +2,15 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period. `2.5.0` makes the banner headline and description editable. `2.6.0` shrinks admin pictures when they are uploaded. `2.6.1` makes that work in Safari. `2.7.0` prices products by their variations and locks the quantity until one is picked. `2.8.0` refuses oversized uploads and stops visitors saving pictures. `2.9.0` compresses every uploaded picture with the Squoosh encoder. `2.10.0` shows a product's categories on its shop card.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period. `2.5.0` makes the banner headline and description editable. `2.6.0` shrinks admin pictures when they are uploaded. `2.6.1` makes that work in Safari. `2.7.0` prices products by their variations and locks the quantity until one is picked. `2.8.0` refuses oversized uploads and stops visitors saving pictures. `2.9.0` compresses every uploaded picture with the Squoosh encoder. `2.10.0` shows a product's categories on its shop card. `2.11.0` adds stock to the card, pre-orders included.
+
+## [2.11.0] - 2026-11-17
+
+No migration.
+
+### Added
+- **Stock on every shop card, pre-order products included**: "12 in stock", "Only 3 left" (5 or fewer) or "Sold out", added up over the versions still on offer. Nothing is shown when no stock count is kept.
+- **A pre-order product shows "Pre-Order" in its category line**, so a product that is only a pre-order (no categories of its own) still has one.
 
 ## [2.10.0] - 2026-11-17
 

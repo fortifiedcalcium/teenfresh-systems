@@ -2,7 +2,7 @@
 import type { Tone } from "~/types/ui";
 
 // White card, 24px radius, a pastel photo area and a small status badge. `to` is the product page.
-withDefaults(defineProps<{ title: string; artist?: string; to: string; priceLabel: string; image?: string | null; imageAlt?: string; badge?: string; badgeTone?: Tone; notice?: string; discount?: number; tint?: number; categories?: string[] }>(), { badgeTone: "new", tint: 0 });
+withDefaults(defineProps<{ title: string; artist?: string; to: string; priceLabel: string; image?: string | null; imageAlt?: string; badge?: string; badgeTone?: Tone; notice?: string; discount?: number; tint?: number; categories?: string[]; stock?: string | null }>(), { badgeTone: "new", tint: 0 });
 const TINTS = ["bg-brand-sky", "bg-brand-blush", "bg-brand-mint", "bg-brand-cream"];
 </script>
 
@@ -23,6 +23,7 @@ const TINTS = ["bg-brand-sky", "bg-brand-blush", "bg-brand-mint", "bg-brand-crea
       <p v-if="artist" class="text-sm text-ink-muted">{{ artist }}</p>
       <h2 class="min-w-0 text-base font-black leading-snug"><NuxtLink :to="to" class="text-ink no-underline">{{ title }}</NuxtLink></h2>
       <p class="mt-auto flex flex-wrap items-baseline gap-x-2 pt-2 text-lg font-bold tabular-nums"><span v-if="discount" class="text-danger"><span class="sr-only">Discount </span>{{ discount }}%</span><span>{{ priceLabel }}</span></p>
+      <p v-if="stock" class="text-sm text-ink-muted">{{ stock }}</p>
     </div>
   </article>
 </template>
