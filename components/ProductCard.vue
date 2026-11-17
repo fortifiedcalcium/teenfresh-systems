@@ -19,10 +19,10 @@ const TINTS = ["bg-brand-sky", "bg-brand-blush", "bg-brand-mint", "bg-brand-crea
       <span v-if="badge" class="absolute left-3 top-3 rounded-full bg-white p-[3px] shadow-sm"><StatusChip :tone="badgeTone">{{ badge }}</StatusChip></span>
     </div>
     <div class="flex flex-1 flex-col gap-1 p-4">
-      <div v-if="artist || categories?.length" class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div v-if="artist || categories?.length" class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
         <p v-if="artist" class="text-sm text-ink-muted">{{ artist }}</p>
         <ul v-if="categories?.length" class="m-0 flex list-none flex-wrap gap-1 p-0" aria-label="Categories">
-          <li v-for="c in categories" :key="c" class="rounded-md bg-brand-sky px-2 py-0.5 text-xs font-bold text-ink">{{ c }}</li>
+          <li v-for="c in categories" :key="c" class="rounded bg-brand-sky px-1.5 py-px text-[0.6875rem] font-bold leading-4 text-ink">{{ c }}</li>
         </ul>
       </div>
       <h2 class="min-w-0 text-base font-black leading-snug"><NuxtLink :to="to" class="text-ink no-underline">{{ title }}</NuxtLink></h2>
