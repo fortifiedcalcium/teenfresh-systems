@@ -19,9 +19,13 @@ const TINTS = ["bg-brand-sky", "bg-brand-blush", "bg-brand-mint", "bg-brand-crea
       <span v-if="badge" class="absolute left-3 top-3 rounded-full bg-white p-[3px] shadow-sm"><StatusChip :tone="badgeTone">{{ badge }}</StatusChip></span>
     </div>
     <div class="flex flex-1 flex-col gap-1 p-4">
-      <p v-if="categories?.length" class="text-xs font-bold uppercase tracking-wide text-ink-muted"><span class="sr-only">Categories: </span>{{ categories.join(" · ") }}</p>
       <p v-if="artist" class="text-sm text-ink-muted">{{ artist }}</p>
-      <h2 class="min-w-0 text-base font-black leading-snug"><NuxtLink :to="to" class="text-ink no-underline">{{ title }}</NuxtLink></h2>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <h2 class="min-w-0 text-base font-black leading-snug"><NuxtLink :to="to" class="text-ink no-underline">{{ title }}</NuxtLink></h2>
+        <ul v-if="categories?.length" class="m-0 flex list-none flex-wrap gap-1 p-0" aria-label="Categories">
+          <li v-for="c in categories" :key="c" class="rounded-md bg-brand-sky px-2 py-0.5 text-xs font-bold text-ink">{{ c }}</li>
+        </ul>
+      </div>
       <p class="mt-auto flex flex-wrap items-baseline gap-x-2 pt-2 text-lg font-bold tabular-nums"><span v-if="discount" class="text-danger"><span class="sr-only">Discount </span>{{ discount }}%</span><span>{{ priceLabel }}</span><span v-if="stock" class="ml-auto text-sm font-normal text-ink-muted">{{ stock }}</span></p>
     </div>
   </article>
