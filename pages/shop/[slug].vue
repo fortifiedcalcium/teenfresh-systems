@@ -224,7 +224,7 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
     <section v-if="related.length" class="mt-8" aria-labelledby="related-title">
       <h2 id="related-title" class="mb-4 text-lg font-bold">Related products</h2>
       <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <li v-for="(r, i) in related" :key="r.id"><ProductCard :title="r.title" :artist="r.artist" :stock="stockLabel(r, relatedVersions[r.id] || [])" :to="productPath(r)" :image="productImageUrl(r)" :image-alt="r.image_alt || ''" :tint="i" :price-label="priceText(priceFor(r.price, relatedVersions[r.id] || []), peso)" /></li>
+        <li v-for="(r, i) in related" :key="r.id"><ProductCard :title="r.title" :artist="r.artist" :categories="cardCategories(r)" :stock="stockLabel(r, relatedVersions[r.id] || [])" :to="productPath(r)" :image="productImageUrl(r)" :image-alt="r.image_alt || ''" :tint="i" :price-label="priceText(priceFor(r.price, relatedVersions[r.id] || []), peso)" /></li>
       </ul>
     </section>
   </section>

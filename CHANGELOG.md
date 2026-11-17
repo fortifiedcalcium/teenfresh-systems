@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
-- **The product page shows the product's categories** as tags beside the artist name, like the cards. The card tags are a little smaller.
+- **The product page shows the product's categories** as tags beside the artist name, like the cards, and the related-product cards show theirs. The card tags are a little smaller.
 - **Categories on a card sit beside the artist name** as filled, rounded-rectangle tags (they were small text above it).
 - **The admin product list shows each product's stock** next to its price ("10 in stock", "Only 3 left", "Sold out", or "In stock" when no count is kept; with variations, every variation's stock added up).
 - **The product form shows "Available stock"** when a product has variations: their stocks added up, live as you type.
