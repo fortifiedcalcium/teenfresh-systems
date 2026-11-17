@@ -110,7 +110,7 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
           <BaseButton v-if="SHOP_ENABLED" to="/shop" variant="secondary" class="!border-white !bg-white hover:!bg-brand-sky">Browse shop</BaseButton>
         </div>
       </div>
-      <div id="featured-event" class="mx-auto w-full max-w-md lg:ml-auto">
+      <div id="featured-event" class="mx-auto w-full max-w-md lg:ml-auto lg:max-w-none">
         <Loading v-if="events === null" label="Loading events…" class="p-12" logo />
         <EventCard v-else-if="featured" :event="featured" :registered="counts[featured.id] ?? 0" :banner-image="banners[featured.id]" :kits="kits[featured.id] || []" :band="0" priority />
         <Empty v-else>No events yet. Check back soon!</Empty>

@@ -12,6 +12,13 @@
 .tcard__body { -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000); mask-composite: intersect; border-radius: 0 0 1.5rem 1.5rem; }
 .tcard { --tcard-notch: 12px; }
 .tcard__perf { margin: 0 var(--tcard-notch); border-top: 2px dashed var(--brand-sky); }
+/* The featured ticket on a laptop or bigger: poster and title on the left, the details on the right, torn along a vertical line, so the whole ticket fits the first screen. */
+@media (min-width: 1024px) {
+  article.tcard--feature { display: grid; grid-template-columns: minmax(0, 4fr) auto minmax(0, 5fr); }
+  article.tcard--feature .tcard__head { border-radius: 1.5rem 0 0 1.5rem; -webkit-mask: radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); mask-composite: intersect; }
+  article.tcard--feature .tcard__body { border-radius: 0 1.5rem 1.5rem 0; -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000); mask-composite: intersect; padding-top: 1.25rem; }
+  article.tcard--feature .tcard__perf { margin: var(--tcard-notch) 0; border-top: 0; border-left: 2px dashed var(--brand-sky); background: var(--white); }
+}
 
 /* Product card */
 .pcard { @apply flex h-full flex-col overflow-hidden bg-white; border-radius: 24px; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
@@ -75,7 +82,7 @@ fieldset.card-soft > legend + * { clear: both; }
 .home-hero--image { clip-path: inset(-7rem -100vmax 0); }   /* the backdrop also runs up behind the navigation bar, to the top of the page */
 .home-hero__title { font-size: clamp(2rem, 1.2rem + 3.4vw, 3.75rem); line-height: 1.12; overflow-wrap: anywhere; }
 .home-hero__lead { font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem); }
-@media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); } }
 .home-hero__bg { position: absolute; top: -7rem; left: 50%; z-index: -2; width: 100vw; height: calc(100% + 7rem); max-width: none; transform: translateX(-50%) scale(1.08); object-fit: cover; filter: blur(22px); }   /* a soft blurred backdrop: no hard edge or visible crop, whatever the picture's shape; the sharp picture is on the ticket */
 /* A pink veil between the picture and the content: the dark text keeps 4.5:1 on any picture, even a black one (checked in scripts/contrast.js). */
 .home-hero__overlay { position: absolute; top: -7rem; bottom: 0; left: 50%; width: 100vw; transform: translateX(-50%); z-index: -1; background-color: color-mix(in srgb, var(--brand-blush) calc(var(--hero-overlay-alpha) * 100%), transparent); }
