@@ -120,7 +120,7 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
 
     <section v-if="others.length" id="events" class="scroll-mt-24 rounded-[2rem] bg-brand-ivory p-6 sm:p-8" aria-labelledby="events-h">
       <div class="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="events-h" class="text-2xl sm:text-3xl">Upcoming events</h2>
+        <h2 id="events-h" class="text-2xl sm:text-3xl">More events</h2>
         <p class="text-sm text-ink-muted">Pick an event and reserve your slot.</p>
       </div>
       <ul class="grid grid-cols-1 auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
