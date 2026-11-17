@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
-- **The home banner picture is no longer cut off**: the hero is as tall as the 16:9 picture is at the window's width, so the whole picture shows.
+- **The home banner picture is no longer cut off**: it is shown whole (not cropped to fill), centred in the hero, with the pink page beside it. This works for a tall poster as well as a wide picture.
 - **The event page shows the poster and the details picture at the full width of the page** (they were held to a narrow 28 rem column), with their own proportions and no cropping; they stretch with the window.
 - **Home page bands touch each other and the footer**: no gap between the hero, the events band, the shop band and the footer. The footer is a flat full-width strip on every page (it had rounded top corners and a gap above it).
 - **The home hero is pink, not yellow**: its banner picture and pink veil run the full width of the window. (The contrast check now measures the pink veil.)
