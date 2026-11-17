@@ -13,7 +13,12 @@ useSeo({ title: "Shop", description: "Official Teenfresh merch: albums, photocar
 const products = ref<ProductRow[] | null>(null);
 const error = ref("");
 const versions = ref<Record<string, VariationRow[]>>({});             // each product's versions, by product id
-const chip = ref("All");
+const route = useRoute();
+const router = useRouter();
+// The chosen category lives in the address (/shop?category=Merchandise), so a product page can link straight to it and the page can be shared.
+const fromQuery = () => (typeof route.query.category === "string" && route.query.category ? route.query.category : "All");
+const chip = ref(fromQuery());
+watch(() => route.query.category, () => { chip.value = fromQuery(); });
 const announce = useAnnounce();
 
 async function fetchShop() {
@@ -44,6 +49,7 @@ const chips = computed(() => chipsFor(categories.value));
 const shown = computed(() => (products.value || []).filter((p) => productMatches(p, chip.value)));
 function pick(c: string) {
   chip.value = c;
+  router.replace({ query: c === "All" ? {} : { category: c } });
   const n = (products.value || []).filter((p) => productMatches(p, c)).length;
   announce(`${c}: ${n} ${n === 1 ? "product" : "products"}`);
 }
