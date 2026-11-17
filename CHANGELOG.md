@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
-- **The category tags on a product page are links**: one opens the shop already filtered to that category (the address is `/shop?category=…`, and picking a chip updates it, so a filtered shop can be shared).
+- **The category tags on a product page are links**: one opens the shop already filtered to that category (`/shop?category=…`). Only the main product page links; cards, the related products and the admin list stay plain..
 - **The product page shows the product's categories** as tags beside the artist name, like the cards, and the related-product cards show theirs. The card tags are a little smaller.
 - **Categories on a card sit beside the artist name** as filled, rounded-rectangle tags (they were small text above it).
 - **The admin product list shows each product's stock** next to its price ("10 in stock", "Only 3 left", "Sold out", or "In stock" when no count is kept; with variations, every variation's stock added up).
