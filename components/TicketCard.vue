@@ -13,8 +13,8 @@ const titleId = `tc-${useId()}`;
 
 <template>
   <article class="tcard flex h-full flex-col" :aria-labelledby="titleId">
-    <div class="tcard__head overflow-hidden bg-white">
-      <slot name="media"><img v-if="image" :src="image" :alt="imageAlt || ''" :loading="priority ? 'eager' : 'lazy'" :fetchpriority="priority ? 'high' : undefined" decoding="async" width="1600" height="900" :class="priority ? 'h-auto max-h-[36rem] w-full object-contain' : 'aspect-video w-full object-cover'"></slot>
+    <div class="tcard__head overflow-hidden bg-white" :style="priority ? { backgroundColor: 'var(--brand-sky)' } : undefined">
+      <slot name="media"><img v-if="image" :src="image" :alt="imageAlt || ''" :loading="priority ? 'eager' : 'lazy'" :fetchpriority="priority ? 'high' : undefined" decoding="async" width="1600" height="900" :class="priority ? 'mx-auto h-auto max-h-[clamp(12rem,42vh,32rem)] w-auto max-w-full object-contain' : 'aspect-video w-full object-cover'"></slot>
       <div :class="['flex flex-col-reverse items-start gap-2 text-ink', compact ? 'p-4' : 'p-5 pb-6 sm:flex-row sm:justify-between sm:gap-3', bandClass]">
         <div class="min-w-0">
           <h2 :id="titleId" :title="title" :class="['text-lg font-black leading-snug', !compact && 'line-clamp-2']">{{ title }}</h2>

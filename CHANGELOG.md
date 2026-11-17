@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
+- **The featured ticket on the home page fits the first screen**: its picture is capped to 42% of the window's height (between 12 and 32 rem), shown whole and centred on a sky-blue backing, so the title, date and Register button are in view without scrolling on a laptop, and it stacks under the text on a phone.
 - **The home hero looks right with any banner picture**: the picture is a soft blurred backdrop edge to edge (no hard crop line), and the featured ticket shows the picture whole and sharp, so a poster's title is never cut. The backdrop also runs up behind the navigation bar, so no plain strip is left above it. The page no longer scrolls sideways.
 - **The event page shows the poster and the details picture at the full width of the page** (they were held to a narrow 28 rem column), with their own proportions and no cropping; they stretch with the window.
 - **Home page bands touch each other and the footer**: no gap between the hero, the events band, the shop band and the footer. The footer is a flat full-width strip on every page (it had rounded top corners and a gap above it).
