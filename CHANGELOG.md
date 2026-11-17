@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
+- **The "More events" and "Shop" bands on the home page touch each other** with no gap between them.
 - **The dashed divider on the event cards runs right up to the notches** (it used to stop 8px short of each).
 - **Every event card crops its photo to the same 16:9 frame**, so a card is no longer taller or shorter because of the picture's own size (the featured card used to show the whole picture). In admin the banner slot is now called "Event card photo (home page banner)" and says it should be 16:9, 1600 x 900 px and that any other size is cropped.
 - **The home page's "Upcoming events" cards are compact, like the design**: no photo or barcode, just the status, the title, the date and time, the venue and the button. Their coloured header is as tall as its own content (the title is not cut to two lines and there is no subtitle), so the divider sits where the content ends instead of at a fixed height.
