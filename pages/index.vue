@@ -118,7 +118,7 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
     </section>
     <Alert v-if="error" tone="bad">{{ error }}</Alert>
 
-    <section v-if="others.length" id="events" :class="['band band--ivory scroll-mt-24 py-8', !(SHOP_ENABLED && drop.length) && '-mb-6']" aria-labelledby="events-h">
+    <section v-if="others.length" id="events" :class="['band band--ivory scroll-mt-24 !mt-0 py-8', !(SHOP_ENABLED && drop.length) && '!-mb-6']" aria-labelledby="events-h">
       <div class="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 id="events-h" class="text-2xl sm:text-3xl">More events</h2>
         <p class="text-sm text-ink-muted">Pick an event and reserve your slot.</p>
@@ -128,7 +128,7 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
       </ul>
     </section>
 
-    <section v-if="SHOP_ENABLED && drop.length" :class="['band band--sky -mb-6 py-8', others.length && '!mt-0']" aria-labelledby="drop-h">
+    <section v-if="SHOP_ENABLED && drop.length" :class="['band band--sky !-mb-6 !mt-0 py-8']" aria-labelledby="drop-h">
       <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 id="drop-h" class="text-2xl sm:text-3xl">Shop</h2>
         <BaseButton to="/shop" variant="secondary" small>See more</BaseButton>

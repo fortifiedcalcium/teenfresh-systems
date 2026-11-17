@@ -72,13 +72,13 @@ export const FORBIDDEN = [
 const CLASS_TOKEN = { ink: "ink", "ink-muted": "ink-muted", link: "link", danger: "danger", success: "success", "warning-ink": "warning-ink", white: "white",
   "brand-cream": "brand-cream", "brand-blue": "brand-blue", "brand-coral": "brand-coral", "brand-ivory": "brand-ivory", "brand-sky": "brand-sky", "brand-blush": "brand-blush", "brand-mint": "brand-mint" };
 
-/** The hero overlay is the cream colour at --hero-overlay-alpha over the banner picture. Dark text is hardest to read where the picture is
+/** The hero overlay is the blush (pink) colour at --hero-overlay-alpha over the banner picture. Dark text is hardest to read where the picture is
  *  black, so that is the worst case; a white picture is the lightest case. Both become tokens for the pairs below. */
 export function heroOverlayTokens(tokens) {
   const css = fs.readFileSync(path.join(ROOT, "assets/css/tokens.css"), "utf8");
   const a = parseFloat(css.match(/--hero-overlay-alpha:\s*([0-9.]+)/)?.[1] ?? "NaN");
   if (!(a > 0 && a <= 1)) return {};
-  const over = (under) => "#" + [1, 3, 5].map((i) => Math.round(a * parseInt(tokens["brand-cream"].slice(i, i + 2), 16) + (1 - a) * under).toString(16).padStart(2, "0")).join("");
+  const over = (under) => "#" + [1, 3, 5].map((i) => Math.round(a * parseInt(tokens["brand-blush"].slice(i, i + 2), 16) + (1 - a) * under).toString(16).padStart(2, "0")).join("");
   return { "hero-over-black": over(0), "hero-over-white": over(255) };
 }
 

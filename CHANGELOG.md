@@ -9,6 +9,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
+- **Home page bands touch each other and the footer**: no gap between the hero, the events band, the shop band and the footer. The footer is a flat full-width strip on every page (it had rounded top corners and a gap above it).
+- **The home hero is pink, not yellow**: its banner picture and pink veil run the full width of the window. (The contrast check now measures the pink veil.)
 - **The same full-width bands on the other pages**: the shop heading (mint), the product page (white) and the home hero are edge-to-edge bands now, not rounded cards.
 - **The "More events" and "Shop" bands on the home page are full-width colour bands** (cream and sky blue), not rounded cards, and they touch each other with no gap.
 - **The dashed divider on the event cards runs right up to the notches** (it used to stop 8px short of each).

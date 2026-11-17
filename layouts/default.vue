@@ -63,7 +63,7 @@ onBeforeUnmount(() => stopUnlock());
         <li v-else><NuxtLink to="/login" class="public-nav-item"><IconLogIn /><span class="public-nav-item__label">Sign in</span></NuxtLink></li>
       </ul>
     </nav>
-    <footer class="mt-8 rounded-t-[2rem] bg-brand-cream pb-24 pt-6 md:pb-6">
+    <footer class="bg-brand-cream pb-24 pt-6 md:pb-6">
       <div class="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 text-center sm:flex-row sm:justify-between sm:text-left">
         <nav aria-label="Social media" class="social-row">
           <ul class="social-icons">

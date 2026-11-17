@@ -64,21 +64,21 @@ fieldset.card-soft > legend + * { clear: both; }
 /* Home hero: scales from 360px to 1920px with no horizontal scroll. Padding, type and minimum height follow the viewport width; the text and the
    ticket sit side by side from 1024px and stack below it. min-w-0 lets the grid children shrink instead of pushing the page wider. */
 .home-hero {
-  position: relative; isolation: isolate; overflow: hidden;
+  position: relative; isolation: isolate;
   display: grid; align-items: center; gap: clamp(1.25rem, 1rem + 2.5vw, 3rem);
   min-height: clamp(22rem, 12rem + 28vw, 38rem);
   padding: clamp(1.25rem, 0.5rem + 3.4vw, 3.5rem) 0;
   background-size: cover; background-position: center;
 }
 .home-hero > * { min-width: 0; }
-/* With no banner picture the hero is the pink page itself. With one, its cream veil is painted full width, like .band. */
-.home-hero--image { background-color: var(--brand-cream); box-shadow: 0 0 0 100vmax var(--brand-cream); clip-path: inset(0 -100vmax); }
+/* With no banner picture the hero is the pink page itself. With one, the picture and its pink veil run the full width of the window. */
+.home-hero--image { clip-path: inset(0 -100vmax); }
 .home-hero__title { font-size: clamp(2rem, 1.2rem + 3.4vw, 3.75rem); line-height: 1.12; overflow-wrap: anywhere; }
 .home-hero__lead { font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem); }
 @media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-.home-hero__bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
-/* A cream veil between the picture and the content: the dark text keeps 4.5:1 on any picture, even a black one (checked in scripts/contrast.js). */
-.home-hero__overlay { position: absolute; inset: 0; z-index: -1; background-color: color-mix(in srgb, var(--brand-cream) calc(var(--hero-overlay-alpha) * 100%), transparent); }
+.home-hero__bg { position: absolute; top: 0; left: 50%; z-index: -2; width: 100vw; height: 100%; max-width: none; transform: translateX(-50%); object-fit: cover; }   /* the picture runs the full width of the window */
+/* A pink veil between the picture and the content: the dark text keeps 4.5:1 on any picture, even a black one (checked in scripts/contrast.js). */
+.home-hero__overlay { position: absolute; top: 0; bottom: 0; left: 50%; width: 100vw; transform: translateX(-50%); z-index: -1; background-color: color-mix(in srgb, var(--brand-blush) calc(var(--hero-overlay-alpha) * 100%), transparent); }
 
 /* The label across the bottom of a product thumbnail (for example "Pre-order period ended"): ink on white, so it reads on any photo. */
 .pcard__notice { position: absolute; inset-inline: 0.5rem; bottom: 0.5rem; padding: 0.35rem 0.6rem; border-radius: 0.75rem; background: var(--white); color: var(--ink); font-size: 0.8125rem; font-weight: 800; text-align: center; box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 20%, transparent); }
