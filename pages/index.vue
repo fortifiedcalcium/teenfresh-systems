@@ -5,7 +5,7 @@ import { SHOP_ENABLED } from "~/lib/features";
 import { productImageUrl } from "~/lib/products";
 import { peso } from "~/lib/payment";
 import { productPath } from "~/lib/slug";
-import { badgeFor, priceFor, priceText } from "~/lib/productBadge";
+import { badgeFor, cardCategories, priceFor, priceText, stockLabel } from "~/lib/productBadge";
 import { preorderNotice } from "~/lib/preorder";
 import { groupVariations } from "~/lib/variations";
 import { bannerAlt, bannerUrl, heroDescription, heroHeadline, NO_HOME_SETTINGS, pickFeatured } from "~/lib/homeSettings";
@@ -124,12 +124,12 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
 
     <section v-if="SHOP_ENABLED && drop.length" aria-labelledby="drop-h">
       <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="drop-h" class="flex items-center gap-2 text-2xl"><IconBag />Shop the drop</h2>
-        <BaseButton to="/shop" variant="secondary" small>See the whole shop</BaseButton>
+        <h2 id="drop-h" class="flex items-center gap-2 text-2xl"><IconBag />Shop</h2>
+        <BaseButton to="/shop" variant="secondary" small>See more</BaseButton>
       </div>
       <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <li v-for="(p, i) in drop" :key="p.id">
-          <ProductCard :title="p.title" :artist="p.artist" :to="productPath(p)" :image="productImageUrl(p)" :image-alt="p.image_alt || ''" :tint="i"
+          <ProductCard :title="p.title" :artist="p.artist" :categories="cardCategories(p)" :stock="stockLabel(p, optsOf(p))" :to="productPath(p)" :image="productImageUrl(p)" :image-alt="p.image_alt || ''" :tint="i"
             :price-label="priceText(priceFor(p.price, optsOf(p)), peso)" :discount="p.discount_percent > 0 ? p.discount_percent : undefined"
             :badge="badgeFor(p, optsOf(p))?.label" :badge-tone="badgeFor(p, optsOf(p))?.tone" :notice="preorderNotice(p)" />
         </li>

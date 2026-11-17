@@ -2,11 +2,11 @@
 import { supabase } from "~/lib/supabaseClient";
 import { INFO_SECTIONS, productImageUrl } from "~/lib/products";
 import { peso } from "~/lib/payment";
-import { groupVariations, inStock, normalizeLayers, stockNote, variationLabel } from "~/lib/variations";
+import { groupVariations, inStock, normalizeLayers, variationLabel } from "~/lib/variations";
 import { MAX_QTY } from "~/lib/orders";
 import { findByRef, productPath } from "~/lib/slug";
 import { lineKey } from "~/lib/cartLine";
-import { badgeFor, isSoldOut, priceFor, priceText } from "~/lib/productBadge";
+import { badgeFor, isSoldOut, priceFor, priceText, stockLabel, cardCategories } from "~/lib/productBadge";
 import { preorderBuyable, preorderNotice, preorderState } from "~/lib/preorder";
 
 definePageMeta({ middleware: ["shop"] });
@@ -86,6 +86,8 @@ const unit = computed(() => (chosen.value?.price != null ? Number(chosen.value.p
 const shownPrice = computed(() => priceFor(p.value.price, layered.value && matching.value.length ? matching.value : variations.value));
 const left = computed(() => (chosen.value ? chosen.value.stock : variations.value.length === 0 ? p.value.stock : null));        // what is left of what is being bought, null = not counted
 const maxQty = computed(() => (left.value != null ? Math.max(1, Math.min(MAX_QTY, left.value)) : MAX_QTY));                    // no more than what is left
+// Stock is always shown when a count is kept, pre-orders included: the chosen version's count, else the total over the versions on offer.
+const stockText = computed(() => (chosen.value ? stockLabel({}, [chosen.value]) : stockLabel(p.value, variations.value)));
 const preorderDay = (iso: string) => new Date(`${iso}T00:00:00+08:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "Asia/Manila" });
 const poState = computed(() => preorderState(p.value));
 const qtyLocked = computed(() => variations.value.length > 0 && !selectedId.value);        // pick a version first; then the quantity (a product with no versions is never locked)
@@ -143,7 +145,12 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
       </div>
 
       <div class="pd-info">
-        <p class="pd-artist">{{ p.artist }}</p>
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p class="pd-artist">{{ p.artist }}</p>
+          <ul v-if="cardCategories(p).length" class="m-0 flex list-none flex-wrap gap-1 p-0" aria-label="Categories">
+            <li v-for="c in cardCategories(p)" :key="c"><NuxtLink :to="{ path: '/shop', query: { category: c } }" class="block rounded-md bg-brand-sky px-2 py-0.5 text-xs font-bold text-ink no-underline hover:underline">{{ c }}</NuxtLink></li>
+          </ul>
+        </div>
         <div class="flex items-start gap-2">
           <h1 id="product-title" class="pd-title min-w-0 flex-1">{{ p.title }}</h1>
           <span v-if="badge" class="mt-1"><StatusChip :tone="badge.tone">{{ badge.label }}</StatusChip></span>
@@ -152,6 +159,7 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
         <p class="pd-price">
           <span v-if="p.discount_percent > 0" class="text-danger"><span class="sr-only">Discount </span>{{ p.discount_percent }}%</span>
           <span><template v-if="!chosen && variations.length">{{ priceText(shownPrice, peso) }}</template><template v-else>{{ peso(unit) }}</template></span>
+          <span v-if="stockText" role="status" class="ml-auto text-sm font-bold" :class="soldOutAll ? 'text-danger' : 'text-ink-muted'">{{ stockText }}</span>
         </p>
 
         <div v-if="p.pre_order" class="pd-status">
@@ -183,7 +191,6 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
           <p v-if="pickError" id="pick-err" role="alert" class="field-msg"><span class="error-icon error-icon--sm" aria-hidden="true">!</span>{{ layered && missing.length ? `Choose ${missing.join(" and ")} first.` : "Choose a version first." }}</p>
         </div>
         <p v-if="soldOutAll" role="status" class="rounded-lg border border-danger bg-brand-ivory px-3 py-2 font-bold text-danger">{{ variations.length ? "Sold out. Every version is sold out for now." : "Sold out for now." }}</p>
-        <p v-if="stockNote({ stock: left })" role="status" class="text-sm font-bold">{{ stockNote({ stock: left }) }}</p>
         <div class="pd-option">
           <p id="opt-label" class="pd-label">Select option</p>
           <div class="pd-option-row" role="group" aria-labelledby="opt-label">
@@ -217,7 +224,7 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
     <section v-if="related.length" class="mt-8" aria-labelledby="related-title">
       <h2 id="related-title" class="mb-4 text-lg font-bold">Related products</h2>
       <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <li v-for="(r, i) in related" :key="r.id"><ProductCard :title="r.title" :artist="r.artist" :to="productPath(r)" :image="productImageUrl(r)" :image-alt="r.image_alt || ''" :tint="i" :price-label="priceText(priceFor(r.price, relatedVersions[r.id] || []), peso)" /></li>
+        <li v-for="(r, i) in related" :key="r.id"><ProductCard :title="r.title" :artist="r.artist" :categories="cardCategories(r)" :stock="stockLabel(r, relatedVersions[r.id] || [])" :to="productPath(r)" :image="productImageUrl(r)" :image-alt="r.image_alt || ''" :tint="i" :price-label="priceText(priceFor(r.price, relatedVersions[r.id] || []), peso)" /></li>
       </ul>
     </section>
   </section>

@@ -6,7 +6,7 @@ import { peso } from "~/lib/payment";
 import { COMBOS_MAX, LAYERS_MAX, LAYER_VALUES_MAX, buildCombos, finalVariations, groupVariations, normalizeLayers, validateLayers } from "~/lib/variations";
 import { blankProduct, productToForm } from "~/lib/productForm";
 import { preorderState } from "~/lib/preorder";
-import { isSoldOut } from "~/lib/productBadge";
+import { isSoldOut, stockLabel } from "~/lib/productBadge";
 
 // Admin: add, edit, hide and delete the products on the public Shop page.
 definePageMeta({ middleware: ["shop"] });
@@ -162,6 +162,14 @@ async function remove() {
 const shownImage = computed(() => preview.value || (form.value?.image_path ? productImageUrl(form.value) : null));
 const summaryErrors = computed(() => Object.fromEntries(Object.entries(errors.value).map(([k, message]) => [`p-${k}`, message])));
 const versionsOf = (p) => versions.value[p.id] || [];
+// "Available stock" in the form: every version's stock added up as it is typed (versions that are hidden or not counted add nothing); null when there are no versions
+const availableStock = computed(() => {
+  if (!form.value) return null;
+  const list = finalVariations(form.value);
+  if (list.length === 0) return null;
+  const counted = list.filter((v) => v.active !== false && String(v.stock ?? "").trim() !== "" && Number.isFinite(Number(v.stock)));
+  return counted.length === 0 ? "Not counted" : String(counted.reduce((a, v) => a + Number(v.stock), 0));
+});
 const hasVariations = computed(() => form.value ? form.value.layers.length > 0 || form.value.variations.length > 0 : false);
 const allSold = (p) => isSoldOut(p, versionsOf(p));
 
@@ -192,7 +200,7 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
         <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-link bg-brand-ivory text-link" aria-hidden="true"><IconImage /></div>
         <div class="min-w-0 flex-1">
           <h2 class="break-words text-base font-black">{{ p.title }}</h2>
-          <p class="text-sm text-ink-muted">{{ p.artist }} · {{ peso(p.price) }}{{ p.discount_percent > 0 ? ` · ${p.discount_percent}% off` : "" }}</p>
+          <p class="text-sm text-ink-muted">{{ p.artist }} · {{ peso(p.price) }}{{ p.discount_percent > 0 ? ` · ${p.discount_percent}% off` : "" }} · <span class="font-bold">{{ stockLabel(p, versionsOf(p)) }}</span><span v-if="versionsOf(p).length > 0" class="text-ink-muted"> (all variations)</span></p>
           <p class="mt-1 flex flex-wrap gap-1">
             <span :class="['badge', p.active ? 'badge-ok' : 'badge-neutral']">{{ p.active ? "Visible" : "Hidden" }}</span>
             <span v-if="p.pre_order" class="badge badge-info">{{ preorderState(p) === "ended" ? "Pre-order ended" : preorderState(p) === "upcoming" ? "Pre-order not open yet" : "Pre-order" }}</span>
@@ -307,6 +315,8 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
             </div>
           </div>
         </fieldset>
+
+        <p v-if="availableStock" role="status" class="rounded-lg bg-brand-ivory px-3 py-2 font-bold">Available stock: <span class="tabular-nums">{{ availableStock }}</span> <span class="font-normal text-ink-muted">(all variations added up)</span></p>
 
         <Field v-if="form.layers.length === 0 && form.variations.length === 0" id="p-stock" v-slot="a" label="Stock" :error="errors.stock" hint="How many you have. Leave it empty if you do not count it; 0 means sold out. With variations, count the stock on each variation instead.">
           <input v-bind="a" v-model="form.stock" class="input w-40" inputmode="numeric">

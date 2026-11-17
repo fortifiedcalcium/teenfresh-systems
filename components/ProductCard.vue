@@ -2,7 +2,7 @@
 import type { Tone } from "~/types/ui";
 
 // White card, 24px radius, a pastel photo area and a small status badge. `to` is the product page.
-withDefaults(defineProps<{ title: string; artist?: string; to: string; priceLabel: string; image?: string | null; imageAlt?: string; badge?: string; badgeTone?: Tone; notice?: string; discount?: number; tint?: number }>(), { badgeTone: "new", tint: 0 });
+withDefaults(defineProps<{ title: string; artist?: string; to: string; priceLabel: string; image?: string | null; imageAlt?: string; badge?: string; badgeTone?: Tone; notice?: string; discount?: number; tint?: number; categories?: string[]; stock?: string | null }>(), { badgeTone: "new", tint: 0 });
 const TINTS = ["bg-brand-sky", "bg-brand-blush", "bg-brand-mint", "bg-brand-cream"];
 </script>
 
@@ -19,9 +19,14 @@ const TINTS = ["bg-brand-sky", "bg-brand-blush", "bg-brand-mint", "bg-brand-crea
       <span v-if="badge" class="absolute left-3 top-3 rounded-full bg-white p-[3px] shadow-sm"><StatusChip :tone="badgeTone">{{ badge }}</StatusChip></span>
     </div>
     <div class="flex flex-1 flex-col gap-1 p-4">
-      <p v-if="artist" class="text-sm text-ink-muted">{{ artist }}</p>
+      <div v-if="artist || categories?.length" class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        <p v-if="artist" class="text-sm text-ink-muted">{{ artist }}</p>
+        <ul v-if="categories?.length" class="m-0 flex list-none flex-wrap gap-1 p-0" aria-label="Categories">
+          <li v-for="c in categories" :key="c" class="rounded bg-brand-sky px-1.5 py-px text-[0.6875rem] font-bold leading-4 text-ink">{{ c }}</li>
+        </ul>
+      </div>
       <h2 class="min-w-0 text-base font-black leading-snug"><NuxtLink :to="to" class="text-ink no-underline">{{ title }}</NuxtLink></h2>
-      <p class="mt-auto flex flex-wrap items-baseline gap-x-2 pt-2 text-lg font-bold tabular-nums"><span v-if="discount" class="text-danger"><span class="sr-only">Discount </span>{{ discount }}%</span><span>{{ priceLabel }}</span></p>
+      <p class="mt-auto flex flex-wrap items-baseline gap-x-2 pt-2 text-lg font-bold tabular-nums"><span v-if="discount" class="text-danger"><span class="sr-only">Discount </span>{{ discount }}%</span><span>{{ priceLabel }}</span><span v-if="stock" class="ml-auto text-sm font-normal text-ink-muted">{{ stock }}</span></p>
     </div>
   </article>
 </template>

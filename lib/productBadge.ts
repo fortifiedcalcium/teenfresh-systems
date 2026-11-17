@@ -50,3 +50,16 @@ export function fromPrice(price: number | string, versions: Pick<VariationRow, "
   const r = priceFor(price, versions);
   return r.range ? r.amount : null;
 }
+
+/** The stock line on a shop card, pre-order products included: "12 in stock", "Only 3 left" or "Sold out". Stock is added up over the versions still on
+ *  offer (or is the product's own count when it has none); "In stock" when no count is kept (such a product is never sold out). */
+export function stockLabel(p: Partial<Pick<ProductRow, "stock">>, versions: Pick<VariationRow, "stock" | "active">[] = []): string {
+  const on = live(versions) as Pick<VariationRow, "stock" | "active">[];
+  const counts = (on.length > 0 ? on.map((v) => v.stock) : [p.stock ?? null]).filter((s): s is number => s != null);
+  if (counts.length === 0) return "In stock";   // no count kept: it is never sold out, so it is on offer
+  const total = counts.reduce((a, b) => a + b, 0);
+  return total === 0 ? "Sold out" : total <= LOW_STOCK_AT ? `Only ${total} left` : `${total} in stock`;
+}
+
+/** The category line on a card: the product's categories, plus "Pre-Order" for a pre-order product, so one that is only a pre-order still has one. */
+export const cardCategories = (p: Partial<Pick<ProductRow, "categories" | "pre_order">>): string[] => [...(p.categories || []), ...(p.pre_order && !(p.categories || []).includes("Pre-Order") ? ["Pre-Order"] : [])];

@@ -4,7 +4,7 @@ import { chipsFor, productImageUrl, productMatches } from "~/lib/products";
 import { peso } from "~/lib/payment";
 import { productPath } from "~/lib/slug";
 import { groupVariations } from "~/lib/variations";
-import { badgeFor, priceFor, priceText } from "~/lib/productBadge";
+import { badgeFor, priceFor, priceText, stockLabel, cardCategories } from "~/lib/productBadge";
 import { preorderNotice } from "~/lib/preorder";
 import type { ProductRow, VariationRow } from "~/types/shop";
 
@@ -13,7 +13,11 @@ useSeo({ title: "Shop", description: "Official Teenfresh merch: albums, photocar
 const products = ref<ProductRow[] | null>(null);
 const error = ref("");
 const versions = ref<Record<string, VariationRow[]>>({});             // each product's versions, by product id
-const chip = ref("All");
+const route = useRoute();
+// A product page links here with /shop?category=Merchandise, which opens the shop already filtered. Picking a chip here does not change the address.
+const fromQuery = () => (typeof route.query.category === "string" && route.query.category ? route.query.category : "All");
+const chip = ref(fromQuery());
+watch(() => route.query.category, () => { chip.value = fromQuery(); });
 const announce = useAnnounce();
 
 async function fetchShop() {
@@ -54,7 +58,6 @@ const opts = (p: ProductRow) => versions.value[p.id] || [];
   <section class="space-y-5" aria-labelledby="shop-title">
     <div class="rounded-[2rem] bg-brand-mint p-6 sm:p-8">
       <h1 id="shop-title" class="mb-1 flex items-center gap-2 text-3xl sm:text-4xl"><IconBag /><span>Teenfresh's products <span aria-hidden="true">⭐</span></span></h1>
-      <p class="max-w-prose text-ink-muted">Official merch, paid by GCash. Pick a product to see its versions and add it to your cart.</p>
     </div>
     <div class="shop-chips" role="group" aria-label="Filter products">
       <button v-for="c in chips" :key="c" type="button" class="shop-chip" :aria-pressed="chip === c" @click="pick(c)">{{ c }}</button>
@@ -64,7 +67,7 @@ const opts = (p: ProductRow) => versions.value[p.id] || [];
     <Empty v-else-if="shown.length === 0">{{ chip === "All" ? "No products yet. Check back soon!" : `No products in ${chip} yet.` }}</Empty>
     <ul v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       <li v-for="(p, i) in shown" :key="p.id">
-        <ProductCard :title="p.title" :artist="p.artist" :to="productPath(p)" :image="productImageUrl(p)" :image-alt="p.image_alt || ''" :tint="i"
+        <ProductCard :title="p.title" :artist="p.artist" :categories="cardCategories(p)" :stock="stockLabel(p, opts(p))" :to="productPath(p)" :image="productImageUrl(p)" :image-alt="p.image_alt || ''" :tint="i"
           :price-label="priceText(priceFor(p.price, opts(p)), peso)" :discount="p.discount_percent > 0 ? p.discount_percent : undefined"
           :badge="badgeFor(p, opts(p))?.label" :badge-tone="badgeFor(p, opts(p))?.tone" :notice="preorderNotice(p)" />
       </li>

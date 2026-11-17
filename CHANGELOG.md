@@ -2,7 +2,41 @@
 
 All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
-`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period. `2.5.0` makes the banner headline and description editable. `2.6.0` shrinks admin pictures when they are uploaded. `2.6.1` makes that work in Safari. `2.7.0` prices products by their variations and locks the quantity until one is picked. `2.8.0` refuses oversized uploads and stops visitors saving pictures. `2.9.0` compresses every uploaded picture with the Squoosh encoder.
+`1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period. `2.5.0` makes the banner headline and description editable. `2.6.0` shrinks admin pictures when they are uploaded. `2.6.1` makes that work in Safari. `2.7.0` prices products by their variations and locks the quantity until one is picked. `2.8.0` refuses oversized uploads and stops visitors saving pictures. `2.9.0` compresses every uploaded picture with the Squoosh encoder. `2.10.0` shows a product's categories on its shop card. `2.11.0` adds stock to the card, pre-orders included. `2.11.1` shows stock on the product page too, beside the price, and on every card.
+
+## [2.11.1] - 2026-11-17
+
+No migration.
+
+### Changed
+- **The category tags on a product page are links**: one opens the shop already filtered to that category (`/shop?category=…`). Only the main product page links; cards, the related products and the admin list stay plain.
+- **The home page is back to its earlier look** (rounded cards, the yellow hero, the ticket with the poster on top); the new design experiments were taken out. The events section keeps the name "More events".
+- **The event page shows the poster and the details picture at the full width of the page** (they were held to a narrow 28 rem column), with their own proportions and no cropping; they stretch with the window.
+- **The product page shows the product's categories** as tags beside the artist name, like the cards, and the related-product cards show theirs. The card tags are a little smaller.
+- **Categories on a card sit beside the artist name** as filled, rounded-rectangle tags (they were small text above it).
+- **The admin product list shows each product's stock** next to its price ("10 in stock", "Only 3 left", "Sold out", or "In stock" when no count is kept; with variations, every variation's stock added up).
+- **The product form shows "Available stock"** when a product has variations: their stocks added up, live as you type.
+- **On the home page, "Shop the drop" is now "Shop"** and its button "See more" (it said "See the whole shop"). Its cards show categories and stock like the shop's.
+- **The shop heading no longer has the line under it** ("Official merch, paid by GCash. Pick a product…").
+
+### Fixed
+- **Every card shows its stock** ("In stock" when no count is kept), on the same row as the price, at its right edge; the "related" cards too.
+- **The product page now always shows the stock**, when a count is kept ("12 in stock", "Only 3 left"), pre-orders included. Before it appeared only at 5 or fewer. With versions it shows the chosen version's count, else the total.
+
+## [2.11.0] - 2026-11-17
+
+No migration.
+
+### Added
+- **Stock on every shop card, pre-order products included**: "12 in stock", "Only 3 left" (5 or fewer) or "Sold out", added up over the versions still on offer. Nothing is shown when no stock count is kept.
+- **A pre-order product shows "Pre-Order" in its category line**, so a product that is only a pre-order (no categories of its own) still has one.
+
+## [2.10.0] - 2026-11-17
+
+No migration.
+
+### Added
+- **Shop product cards show their categories** in small capitals above the product name (several are separated by "·"). A product with no categories shows nothing extra.
 
 ## [2.9.0] - 2026-11-15
 
