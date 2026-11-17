@@ -6,7 +6,7 @@ import { peso } from "~/lib/payment";
 import { COMBOS_MAX, LAYERS_MAX, LAYER_VALUES_MAX, buildCombos, finalVariations, groupVariations, normalizeLayers, validateLayers } from "~/lib/variations";
 import { blankProduct, productToForm } from "~/lib/productForm";
 import { preorderState } from "~/lib/preorder";
-import { isSoldOut } from "~/lib/productBadge";
+import { isSoldOut, stockLabel } from "~/lib/productBadge";
 
 // Admin: add, edit, hide and delete the products on the public Shop page.
 definePageMeta({ middleware: ["shop"] });
@@ -192,7 +192,7 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
         <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-link bg-brand-ivory text-link" aria-hidden="true"><IconImage /></div>
         <div class="min-w-0 flex-1">
           <h2 class="break-words text-base font-black">{{ p.title }}</h2>
-          <p class="text-sm text-ink-muted">{{ p.artist }} · {{ peso(p.price) }}{{ p.discount_percent > 0 ? ` · ${p.discount_percent}% off` : "" }}</p>
+          <p class="text-sm text-ink-muted">{{ p.artist }} · {{ peso(p.price) }}{{ p.discount_percent > 0 ? ` · ${p.discount_percent}% off` : "" }} · <span class="font-bold">{{ stockLabel(p, versionsOf(p)) }}</span></p>
           <p class="mt-1 flex flex-wrap gap-1">
             <span :class="['badge', p.active ? 'badge-ok' : 'badge-neutral']">{{ p.active ? "Visible" : "Hidden" }}</span>
             <span v-if="p.pre_order" class="badge badge-info">{{ preorderState(p) === "ended" ? "Pre-order ended" : preorderState(p) === "upcoming" ? "Pre-order not open yet" : "Pre-order" }}</span>

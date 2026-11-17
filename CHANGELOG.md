@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
+- **The admin product list shows each product's stock** next to its price ("10 in stock", "Only 3 left", "Sold out", or "In stock" when no count is kept; with variations, the total).
 - **On the home page, "Shop the drop" is now "Shop"** and its button "See more" (it said "See the whole shop"). Its cards show categories and stock like the shop's.
 - **The shop heading no longer has the line under it** ("Official merch, paid by GCash. Pick a product…").
 
