@@ -10,7 +10,7 @@ export const SLOTS = {
   poster:       { label: "Event poster",          ratio: "3 / 4",  w: 1200, h: 1600, recommended: "3:4 portrait, 1200 x 1600 px",                  placeholder: "Event poster image coming soon",       where: "Top of the registration form and the event page" },
   details_card: { label: "Event details card",    ratio: "3 / 4",  w: 1200, h: 1600, recommended: "3:4 portrait, 1200 x 1600 px",                  placeholder: "Event details image coming soon",      where: "\"Event details\" section of the registration form" },
   gcash_qr:     { label: "GCash QR code",         ratio: "8 / 15", w: 1080, h: 2025, recommended: "tall, about 8:15, for example 1080 x 2025 px", placeholder: "GCash QR code image coming soon",      where: "Payment step of the registration form" },
-  banner:       { label: "Home page banner",      ratio: "16 / 9", w: 1600, h: 900,  recommended: "16:9, 1600 x 900 px",                           placeholder: "Event banner image coming soon",       where: "Event card on the home page" },
+  banner:       { label: "Event card photo (home page banner)",      ratio: "16 / 9", w: 1600, h: 900,  recommended: "16:9, 1600 x 900 px. This is the photo on every event card; any other size is cropped to the 16:9 frame",                           placeholder: "Event banner image coming soon",       where: "Event card on the home page" },
   email_banner: { label: "Confirmation email banner", ratio: "4 / 1", w: 1600, h: 400, recommended: "4:1, 1600 x 400 px (falls back to the home page banner)", placeholder: "Email banner image coming soon", where: "Top of the confirmation email" },
 };
 export const SLOT_KEYS = Object.keys(SLOTS);
