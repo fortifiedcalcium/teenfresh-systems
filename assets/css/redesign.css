@@ -82,3 +82,9 @@ fieldset.card-soft > legend + * { clear: both; }
 
 /* The label across the bottom of a product thumbnail (for example "Pre-order period ended"): ink on white, so it reads on any photo. */
 .pcard__notice { position: absolute; inset-inline: 0.5rem; bottom: 0.5rem; padding: 0.35rem 0.6rem; border-radius: 0.75rem; background: var(--white); color: var(--ink); font-size: 0.8125rem; font-weight: 800; text-align: center; box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 20%, transparent); }
+
+/* A full-width band inside the centred page column: the colour is painted far past both sides (a box-shadow does not add scrolling) and clipped to the
+   band's own height, so it runs edge to edge with no rounded card around it. */
+.band { background-color: var(--band); box-shadow: 0 0 0 100vmax var(--band); clip-path: inset(0 -100vmax); }
+.band--ivory { --band: var(--brand-ivory); }
+.band--sky { --band: var(--brand-sky); }
