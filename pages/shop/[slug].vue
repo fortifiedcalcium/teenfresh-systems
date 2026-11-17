@@ -6,7 +6,7 @@ import { groupVariations, inStock, normalizeLayers, variationLabel } from "~/lib
 import { MAX_QTY } from "~/lib/orders";
 import { findByRef, productPath } from "~/lib/slug";
 import { lineKey } from "~/lib/cartLine";
-import { badgeFor, isSoldOut, priceFor, priceText, stockLabel } from "~/lib/productBadge";
+import { badgeFor, isSoldOut, priceFor, priceText, stockLabel, cardCategories } from "~/lib/productBadge";
 import { preorderBuyable, preorderNotice, preorderState } from "~/lib/preorder";
 
 definePageMeta({ middleware: ["shop"] });
@@ -145,7 +145,12 @@ function onBuy() { if (!canBuy.value || needPick()) return; addToCart(); navigat
       </div>
 
       <div class="pd-info">
-        <p class="pd-artist">{{ p.artist }}</p>
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p class="pd-artist">{{ p.artist }}</p>
+          <ul v-if="cardCategories(p).length" class="m-0 flex list-none flex-wrap gap-1 p-0" aria-label="Categories">
+            <li v-for="c in cardCategories(p)" :key="c" class="rounded-md bg-brand-sky px-2 py-0.5 text-xs font-bold text-ink">{{ c }}</li>
+          </ul>
+        </div>
         <div class="flex items-start gap-2">
           <h1 id="product-title" class="pd-title min-w-0 flex-1">{{ p.title }}</h1>
           <span v-if="badge" class="mt-1"><StatusChip :tone="badge.tone">{{ badge.label }}</StatusChip></span>
