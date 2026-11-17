@@ -11,7 +11,7 @@
 .tcard__head { -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000) , radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 100%, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 100%, #0000 98%, #000); mask-composite: intersect; border-radius: 1.5rem 1.5rem 0 0; }
 .tcard__body { -webkit-mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000); -webkit-mask-composite: source-in; mask: radial-gradient(circle var(--tcard-notch) at 0 0, #0000 98%, #000), radial-gradient(circle var(--tcard-notch) at 100% 0, #0000 98%, #000); mask-composite: intersect; border-radius: 0 0 1.5rem 1.5rem; }
 .tcard { --tcard-notch: 12px; }
-.tcard__perf { margin: 0 calc(var(--tcard-notch) + 8px); border-top: 2px dashed var(--brand-sky); }
+.tcard__perf { margin: 0 var(--tcard-notch); border-top: 2px dashed var(--brand-sky); }
 
 /* Product card */
 .pcard { @apply flex h-full flex-col overflow-hidden bg-white; border-radius: 24px; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
