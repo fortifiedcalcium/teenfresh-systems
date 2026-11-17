@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 No migration.
 
 ### Changed
+- **The same full-width bands on the other pages**: the shop heading (mint), the product page (white) and the home hero are edge-to-edge bands now, not rounded cards.
 - **The "More events" and "Shop" bands on the home page are full-width colour bands** (cream and sky blue), not rounded cards, and they touch each other with no gap.
 - **The dashed divider on the event cards runs right up to the notches** (it used to stop 8px short of each).
 - **Every event card crops its photo to the same 16:9 frame**, so a card is no longer taller or shorter because of the picture's own size (the featured card used to show the whole picture). In admin the banner slot is now called "Event card photo (home page banner)" and says it should be 16:9, 1600 x 900 px and that any other size is cropped.

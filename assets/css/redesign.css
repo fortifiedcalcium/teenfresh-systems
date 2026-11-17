@@ -67,12 +67,12 @@ fieldset.card-soft > legend + * { clear: both; }
   position: relative; isolation: isolate; overflow: hidden;
   display: grid; align-items: center; gap: clamp(1.25rem, 1rem + 2.5vw, 3rem);
   min-height: clamp(22rem, 12rem + 28vw, 38rem);
-  padding: clamp(1.25rem, 0.5rem + 3.4vw, 3.5rem);
-  border-radius: clamp(1.5rem, 1rem + 1.5vw, 2rem);
-  background-color: var(--cream);
+  padding: clamp(1.25rem, 0.5rem + 3.4vw, 3.5rem) 0;
   background-size: cover; background-position: center;
 }
 .home-hero > * { min-width: 0; }
+/* With no banner picture the hero is the pink page itself. With one, its cream veil is painted full width, like .band. */
+.home-hero--image { background-color: var(--brand-cream); box-shadow: 0 0 0 100vmax var(--brand-cream); clip-path: inset(0 -100vmax); }
 .home-hero__title { font-size: clamp(2rem, 1.2rem + 3.4vw, 3.75rem); line-height: 1.12; overflow-wrap: anywhere; }
 .home-hero__lead { font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem); }
 @media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
@@ -88,3 +88,5 @@ fieldset.card-soft > legend + * { clear: both; }
 .band { background-color: var(--band); box-shadow: 0 0 0 100vmax var(--band); clip-path: inset(0 -100vmax); }
 .band--ivory { --band: var(--brand-ivory); }
 .band--sky { --band: var(--brand-sky); }
+.band--mint { --band: var(--brand-mint); }
+.band--white { --band: var(--white); }

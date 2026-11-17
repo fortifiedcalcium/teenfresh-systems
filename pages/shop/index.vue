@@ -56,7 +56,7 @@ const opts = (p: ProductRow) => versions.value[p.id] || [];
 
 <template>
   <section class="space-y-5" aria-labelledby="shop-title">
-    <div class="rounded-[2rem] bg-brand-mint p-6 sm:p-8">
+    <div class="band band--mint py-8">
       <h1 id="shop-title" class="mb-1 flex items-center gap-2 text-3xl sm:text-4xl"><IconBag /><span>Teenfresh's products <span aria-hidden="true">⭐</span></span></h1>
     </div>
     <div class="shop-chips" role="group" aria-label="Filter products">
