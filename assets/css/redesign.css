@@ -127,11 +127,14 @@ fieldset.card-soft > legend + * { clear: both; }
 .evt-head .hero2__stickers { margin-top: 0.875rem; }
 .evt-head__panel { margin-top: 1rem; padding: 1.25rem 1.5rem; }
 
-/* Event page: the poster as a tilted photocard with a pastel backdrop behind it and a slots badge on top, like the prototype. */
-.evt-poster-stage { position: relative; padding: 0.5rem 1.5rem 1.5rem; }
-.evt-poster-stage::before { content: ""; position: absolute; inset: 1.5rem 2.25rem 0.5rem; background: var(--brand-cream); border-radius: 2rem; rotate: -2.5deg; z-index: -1; }
+/* Event page: the poster as a tilted photocard with a pastel backdrop behind it and a slots badge on top, like the prototype.
+   The stage's top padding leaves room for the badge to sit mostly above the poster's corner, like a pin, rather than
+   sitting squarely over the artwork — on a narrow screen especially, the poster is most of the viewport width, so without
+   that headroom the badge would cover a real part of the picture instead of just overlapping its edge. */
+.evt-poster-stage { position: relative; padding: 2.25rem 1.5rem 1.5rem; }
+.evt-poster-stage::before { content: ""; position: absolute; inset: 3.25rem 2.25rem 0.5rem; background: var(--brand-cream); border-radius: 2rem; rotate: -2.5deg; z-index: -1; }
 .evt-poster { width: min(100%, 24rem); margin: 0 auto; }
-.evt-slots-badge { position: absolute; right: clamp(0.25rem, 3vw, 1.25rem); top: 0; z-index: 2; width: clamp(4.5rem, 4rem + 2vw, 6rem); height: clamp(4.5rem, 4rem + 2vw, 6rem); border-radius: 9999px; background: var(--accent); color: var(--white); border: 3px solid var(--white); display: grid; place-items: center; text-align: center; rotate: 10deg; box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 30%, transparent); }
+.evt-slots-badge { position: absolute; right: clamp(0.25rem, 3vw, 1.25rem); top: 0; z-index: 2; width: clamp(4rem, 3.25rem + 3vw, 6rem); height: clamp(4rem, 3.25rem + 3vw, 6rem); border-radius: 9999px; background: var(--accent); color: var(--white); border: 3px solid var(--white); display: grid; place-items: center; text-align: center; rotate: 10deg; box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 30%, transparent); }
 .evt-slots-badge strong { display: block; font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem); font-weight: 900; line-height: 1; }
 .evt-slots-badge span { display: block; font-size: 0.625rem; font-weight: 800; line-height: 1.2; }
 .evt-layout { display: grid; gap: 1.75rem; align-items: start; }
