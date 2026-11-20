@@ -136,8 +136,8 @@ fieldset.card-soft > legend + * { clear: both; }
    the card, which (since the card and the circular badge are tilted at different angles) looked like a rendering glitch. */
 .evt-poster-stage { position: relative; padding: 6.5rem 1.5rem 1.5rem; }
 .evt-poster-stage::before { content: ""; position: absolute; inset: 7.5rem 2.25rem 0.5rem; background: var(--brand-cream); border-radius: 2rem; rotate: -2.5deg; z-index: -1; }
-.evt-poster-frame { display: contents; }
-.evt-poster { width: min(100%, 24rem); margin: 0 auto; }
+.evt-poster-frame { position: relative; width: min(100%, 24rem); margin: 0 auto; }
+.evt-poster { width: 100%; }
 .evt-slots-badge { position: absolute; right: 0; top: 0; translate: 0 -100%; z-index: 2; width: clamp(4rem, 3.25rem + 3vw, 6rem); height: clamp(4rem, 3.25rem + 3vw, 6rem); border-radius: 9999px; background: var(--accent); color: var(--white); border: 3px solid var(--white); display: grid; place-items: center; text-align: center; rotate: 10deg; box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 30%, transparent); }
 .evt-slots-badge strong { display: block; font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem); font-weight: 900; line-height: 1; }
 .evt-slots-badge span { display: block; font-size: 0.625rem; font-weight: 800; line-height: 1.2; }
@@ -148,7 +148,7 @@ fieldset.card-soft > legend + * { clear: both; }
 @media (min-width: 1024px) {
   .evt-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: stretch; }
   .evt-poster-stage { display: flex; justify-content: center; }
-  .evt-poster-frame { display: block; position: relative; height: 100%; }
+  .evt-poster-frame { width: auto; margin: 0; height: 100%; }
   .evt-poster { display: flex; width: auto; height: 100%; margin: 0; }
   .evt-poster > * { height: 100%; }
 }
