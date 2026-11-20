@@ -138,7 +138,7 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
         </div>
         <div class="flex gap-4 sm:px-7 sm:first:pl-0 sm:last:pr-0">
           <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-ink bg-brand-cream font-black">3</span>
-          <div><h3 class="text-lg font-black">Get your QR ticket</h3><p class="mt-1 text-ink-muted">It arrives by email once your payment is checked.</p></div>
+          <div><h3 class="text-lg font-black">Get your QR ticket</h3><p class="mt-1 text-ink-muted">View your QR ticket on your account once your payment is checked. We'll also email you updates.</p></div>
         </div>
       </div>
     </section>

@@ -98,6 +98,7 @@ fieldset.card-soft > legend + * { clear: both; }
 .hero2__stickers li:nth-child(even) { rotate: 1.25deg; }
 
 .hero2__card { display: grid; justify-items: center; }
+@media (max-width: 1023px) { .hero2__card { order: -1; } }   /* on a phone or tablet the poster comes first, then the event's details */
 .photocard { position: relative; width: min(100%, 22rem); padding: 0.625rem; background: var(--white); border-radius: 1.5rem; rotate: var(--tilt, 2deg); box-shadow: 0 18px 36px -10px color-mix(in srgb, var(--ink) 38%, transparent), 0 4px 10px color-mix(in srgb, var(--ink) 14%, transparent); overflow: hidden; }
 .photocard__img { display: block; width: 100%; height: auto; max-height: min(34rem, 70vh); object-fit: contain; border-radius: 1.0625rem; background: var(--brand-ivory); }
 .photocard__img--empty { display: grid; place-items: center; aspect-ratio: 4 / 5; padding: 1.5rem; text-align: center; font-weight: 900; font-size: 1.5rem; }
