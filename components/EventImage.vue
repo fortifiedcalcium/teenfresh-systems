@@ -44,11 +44,11 @@ const pick = (e) => { upload(e.target.files?.[0]); e.target.value = ""; };
   <template v-else>
     <!-- The picture keeps its own proportions: full width, height follows the image (no cropping, no letterboxing).
          width/height only reserve room until the file has loaded; then the real dimensions take over. -->
-    <div :class="['overflow-hidden rounded-lg border border-link bg-brand-sky', fill ? 'flex h-full items-center justify-center' : '']">
-      <button v-if="lightbox" type="button" :class="fill ? 'flex h-full min-w-0 items-center justify-center' : 'block w-full'" :aria-label="`View larger: ${alt}`" aria-haspopup="dialog" @click="open = true">
-        <img :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" :class="fill ? 'block h-full w-full object-contain' : 'block h-auto w-full'" @error="failed = true">
+    <div :class="['overflow-hidden rounded-lg border border-link bg-brand-sky', fill ? 'inline-flex h-full' : '']">
+      <button v-if="lightbox" type="button" :class="fill ? 'block h-full' : 'block w-full'" :aria-label="`View larger: ${alt}`" aria-haspopup="dialog" @click="open = true">
+        <img :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" :class="fill ? 'block h-full w-auto' : 'block h-auto w-full'" @error="failed = true">
       </button>
-      <img v-else :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" :class="fill ? 'block h-full w-full object-contain' : 'block h-auto w-full'" @error="failed = true">
+      <img v-else :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" :class="fill ? 'block h-full w-auto' : 'block h-auto w-full'" @error="failed = true">
     </div>
     <Lightbox v-if="open" :url="url" :alt="alt" :title="spec.label" @close="open = false" />
   </template>

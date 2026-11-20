@@ -128,27 +128,29 @@ fieldset.card-soft > legend + * { clear: both; }
 .evt-head__panel { margin-top: 1rem; padding: 1.25rem 1.5rem; }
 
 /* Event page: the poster as a tilted photocard with a pastel backdrop behind it and a slots badge on top, like the prototype.
-   The stage's top padding is tall enough for the whole badge, not just part of it: the badge floats fully above the poster's
-   corner with no overlap, rather than partly sitting on the card. An overlap looked like a rendering glitch rather than a
-   design choice, since the card is tilted at its own angle and the circular badge is tilted at a different one — the two
-   roundings never line up, so any overlap shows a sliver of the card's straight corner peeking from behind the circle. */
+   The badge is positioned against `.evt-poster-frame`, a wrapper that hugs the photocard's own rendered box, not against the
+   wider stage: the picture inside is a portrait, so at a height-driven size its frame can render narrower than the stage
+   around it (object-contain doesn't stretch it to fill), and a badge pinned to the stage's edge would then float well past
+   the frame's real corner instead of sitting on it. The stage's top padding is tall enough for the whole badge, and the
+   badge translates up by its own height, so it floats fully above the frame with no overlap — rather than partly sitting on
+   the card, which (since the card and the circular badge are tilted at different angles) looked like a rendering glitch. */
 .evt-poster-stage { position: relative; padding: 6.5rem 1.5rem 1.5rem; }
 .evt-poster-stage::before { content: ""; position: absolute; inset: 7.5rem 2.25rem 0.5rem; background: var(--brand-cream); border-radius: 2rem; rotate: -2.5deg; z-index: -1; }
+.evt-poster-frame { display: contents; }
 .evt-poster { width: min(100%, 24rem); margin: 0 auto; }
-.evt-slots-badge { position: absolute; right: clamp(0.25rem, 3vw, 1.25rem); top: 0; z-index: 2; width: clamp(4rem, 3.25rem + 3vw, 6rem); height: clamp(4rem, 3.25rem + 3vw, 6rem); border-radius: 9999px; background: var(--accent); color: var(--white); border: 3px solid var(--white); display: grid; place-items: center; text-align: center; rotate: 10deg; box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 30%, transparent); }
+.evt-slots-badge { position: absolute; right: 0; top: 0; translate: 0 -100%; z-index: 2; width: clamp(4rem, 3.25rem + 3vw, 6rem); height: clamp(4rem, 3.25rem + 3vw, 6rem); border-radius: 9999px; background: var(--accent); color: var(--white); border: 3px solid var(--white); display: grid; place-items: center; text-align: center; rotate: 10deg; box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 30%, transparent); }
 .evt-slots-badge strong { display: block; font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem); font-weight: 900; line-height: 1; }
 .evt-slots-badge span { display: block; font-size: 0.625rem; font-weight: 800; line-height: 1.2; }
 .evt-layout { display: grid; gap: 1.75rem; align-items: start; }
 /* From 1024px the poster grows to the full height of the facts column beside it, down to the Register button, instead of
-   stopping at its own natural size: a visitor sees the whole poster at the biggest size the layout allows. */
+   stopping at its own natural size: a visitor sees the whole poster at the biggest size the layout allows. The frame (and
+   so the badge pinned to it) shrinks to whatever width that height produces, and sits centered in the stage. */
 @media (min-width: 1024px) {
   .evt-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: stretch; }
-  .evt-poster-stage { display: flex; }
-  /* The 24rem cap is for phones and tablets, where it keeps the poster from looking oversized; from here the column itself
-     is the limit, so the poster fills its width instead of sitting undersized with empty space beside it (the picture's own
-     fill:height-100%/object-contain still keeps it uncropped at whatever size that ends up being). */
-  .evt-poster { display: flex; width: 100%; height: 100%; }
-  .evt-poster > * { flex: 1; min-width: 0; height: 100%; }
+  .evt-poster-stage { display: flex; justify-content: center; }
+  .evt-poster-frame { display: block; position: relative; height: 100%; }
+  .evt-poster { display: flex; width: auto; height: 100%; margin: 0; }
+  .evt-poster > * { height: 100%; }
 }
 
 /* A dashed divider inside a soft panel, for a facts strip that reads like a ticket (register page, kit summary). */
