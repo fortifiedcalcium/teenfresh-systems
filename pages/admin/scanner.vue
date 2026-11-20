@@ -69,6 +69,7 @@ const p = computed(() => result.value && PANEL[result.value.result]);
 <template>
   <div class="mx-auto max-w-2xl space-y-6">
     <h1 class="flex items-center gap-2 text-2xl"><IconScan />QR Scanner</h1>
+    <AdminSwitch group="attendees" />
 
     <section aria-labelledby="scan-h" class="space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">

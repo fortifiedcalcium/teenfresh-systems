@@ -1,7 +1,8 @@
 /* Shop page (src/pages/attendee/Shop.jsx). Colours come from tokens.css only; text is never below 14px. */
 @layer components {
-  .shop-chips { @apply mb-6 flex gap-2 overflow-x-auto pb-1; scrollbar-width: thin; }
-  .shop-chip { @apply min-h-target shrink-0 rounded-full border border-link bg-white px-4 py-1 text-sm font-semibold text-ink hover:bg-brand-ivory; }
+  .shop-chips { @apply mb-6 flex flex-wrap gap-2.5 pb-1; }
+  .shop-chip { @apply min-h-target shrink-0 rounded-full border-2 border-ink bg-white px-4 py-1 text-sm font-bold text-ink hover:bg-brand-cream; box-shadow: 0 3px 8px color-mix(in srgb, var(--ink) 14%, transparent); }
+  .shop-chip:nth-child(4n+2) { background: var(--brand-mint); } .shop-chip:nth-child(4n+3) { background: var(--brand-sky); } .shop-chip:nth-child(4n+4) { background: var(--brand-cream); } .shop-chip:nth-child(4n+5) { background: var(--brand-blush); }
   .shop-chip[aria-pressed="true"] { @apply border-ink bg-ink text-brand-ivory hover:bg-ink; }
 
   .shop-grid { @apply grid grid-cols-1 gap-x-5 gap-y-8 xs:grid-cols-2 lg:grid-cols-4; }

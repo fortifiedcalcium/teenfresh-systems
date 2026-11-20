@@ -27,6 +27,7 @@ const cols = [
 <template>
   <div class="space-y-4">
     <h1 class="flex items-center gap-2 text-2xl font-black"><IconHistory />Change log</h1>
+    <AdminSwitch group="settings" />
     <p class="text-sm text-ink-muted">Who changed what across the whole system, events and shop, newest first (the latest 1,000 changes). Names, addresses, contact details and payment references are recorded as “changed” without their values. Entries cannot be edited or deleted.</p>
     <Alert v-if="failed" tone="bad"><strong>The change log is not set up yet.</strong> Run <code>004_change_log.sql</code> and then <code>025_universal_change_log.sql</code> in the Supabase SQL Editor for this project, then reload.</Alert>
     <FilterBar :active-count="area ? 1 : 0">

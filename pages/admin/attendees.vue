@@ -109,6 +109,7 @@ function askDelete() { const s = sel.value; confirm.value = { title: "Delete thi
       <h1 class="flex items-center gap-2 text-2xl"><IconUsers />Attendees</h1>
       <div class="flex flex-wrap gap-2"><button type="button" class="btn-secondary" :disabled="busy || !rows" @click="resendFailed"><IconSend />Resend all failed</button><TopBarAction btn-class="btn-primary" :icon="IconDownload" label="Export Excel" short="Export" :disabled="!shown.length" @click="exportExcel" /></div>
     </div>
+    <AdminSwitch group="attendees" />
     <FilterBar :active-count="[fStatus, fPay, fAttend, fEmail].filter(Boolean).length">
       <template #search><input ref="searchEl" v-model="q" class="input w-full md:w-72" placeholder="Search name, X, email, ticket, contact" aria-label="Search attendees"></template>
       <select v-model="fStatus" class="input max-w-[13rem]" aria-label="Registration status"><option value="">All registrations</option><option value="confirmed">Confirmed</option><option value="pending_verification">Pending verification</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option></select>

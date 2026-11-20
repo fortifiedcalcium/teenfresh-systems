@@ -14,7 +14,13 @@ const titleId = `tc-${useId()}`;
 <template>
   <article class="tcard flex h-full flex-col" :aria-labelledby="titleId">
     <div class="tcard__head overflow-hidden bg-white">
-      <slot name="media"><img v-if="image" :src="image" :alt="imageAlt || ''" :loading="priority ? 'eager' : 'lazy'" :fetchpriority="priority ? 'high' : undefined" decoding="async" width="1600" height="900" :class="priority ? 'h-auto max-h-[36rem] w-full object-contain' : 'aspect-video w-full object-cover'"></slot>
+      <slot name="media">
+        <!-- The whole picture is always shown (a poster's printed text is never cropped); any space left over is filled with a blurred copy of it. -->
+        <div v-if="image" class="relative isolate overflow-hidden bg-brand-ivory">
+          <img :src="image" alt="" aria-hidden="true" loading="lazy" decoding="async" class="absolute inset-0 -z-10 h-full w-full scale-125 object-cover blur-2xl">
+          <img :src="image" :alt="imageAlt || ''" :loading="priority ? 'eager' : 'lazy'" :fetchpriority="priority ? 'high' : undefined" decoding="async" width="1600" height="900" :class="priority ? 'mx-auto h-auto max-h-[28rem] w-auto max-w-full' : 'mx-auto aspect-video h-full w-full object-contain'">
+        </div>
+      </slot>
       <div :class="['flex flex-col-reverse items-start gap-2 p-5 pb-6 text-ink sm:flex-row sm:justify-between sm:gap-3', bandClass]">
         <div class="min-w-0">
           <h2 :id="titleId" :title="title" class="line-clamp-2 text-lg font-black leading-snug">{{ title }}</h2>

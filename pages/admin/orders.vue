@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Old address: the shop orders live on the Payments page now.
-await navigateTo({ path: "/admin/payments", query: { tab: "shop" } }, { replace: true });
+// Shop orders have their own page under the Shop group (they used to be a tab of Payments). An old Payments link with ?tab=shop lands here.
 </script>
 
-<template><div /></template>
+<template><ShopOrders /></template>
