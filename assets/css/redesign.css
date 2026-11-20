@@ -141,7 +141,7 @@ fieldset.card-soft > legend + * { clear: both; }
 /* From 1024px the poster grows to the full height of the facts column beside it, down to the Register button, instead of
    stopping at its own natural size: a visitor sees the whole poster at the biggest size the layout allows. */
 @media (min-width: 1024px) {
-  .evt-layout { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 2.5rem; align-items: stretch; }
+  .evt-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: stretch; }
   .evt-poster-stage { display: flex; }
   /* The 24rem cap is for phones and tablets, where it keeps the poster from looking oversized; from here the column itself
      is the limit, so the poster fills its width instead of sitting undersized with empty space beside it (the picture's own

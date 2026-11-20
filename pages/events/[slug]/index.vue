@@ -90,7 +90,7 @@ useSeo({
     <p class="text-ink-muted">This event may have ended or the address is wrong.</p>
     <BaseButton to="/" variant="secondary"><IconArrowLeft />Back to events</BaseButton>
   </div>
-  <div v-else class="mx-auto max-w-5xl space-y-6">
+  <div v-else class="mx-auto max-w-7xl space-y-6">
     <nav aria-label="Breadcrumb"><BaseButton to="/" variant="ghost" small><IconArrowLeft />All events</BaseButton></nav>
 
     <div class="evt-layout">
