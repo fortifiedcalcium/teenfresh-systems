@@ -67,38 +67,54 @@ const moreDetails = computed(() => [["Submitted", fmtDateTime(p.value.created_at
 </script>
 
 <template>
-  <ReviewShell :inline="inline" :title="`Payment of ${peso(paid)} from ${payment.sender_name}`" @close="emit('close')">
-    <div :class="['grid gap-5', inline ? '' : 'lg:grid-cols-2']">
-      <section aria-labelledby="rcpt-h" class="space-y-3">
-        <h3 id="rcpt-h" class="text-lg">Receipt</h3>
-        <PaymentReceipt v-if="payment.receipt_path" :path="payment.receipt_path" :label="`GCash receipt, reference ${payment.reference_number}`" />
-        <Alert v-else tone="warn">The receipt file was deleted{{ payment.receipt_deleted_at ? ` on ${fmtDateTime(payment.receipt_deleted_at)}` : "" }}.</Alert>
-        <details v-if="payment.receipt_history?.length > 0"><summary class="min-h-target cursor-pointer py-2 font-semibold">Earlier receipts ({{ payment.receipt_history.length }})</summary><div class="space-y-4"><PaymentReceipt v-for="(path, i) in payment.receipt_history" :key="path" :path="path" :label="`Earlier receipt ${Number(i) + 1}, reference ${payment.reference_history?.[i] || 'unknown'}`" /></div></details>
+  <ReviewShell :inline="inline" :title="`Payment of ${peso(paid)} from ${payment.sender_name}`" heading="Review payment" :subtitle="`${payment.sender_name} · ${forms.length} form${forms.length === 1 ? '' : 's'}`" @close="emit('close')">
+    <div class="space-y-4">
+      <section aria-labelledby="rcpt-h">
+        <h3 id="rcpt-h" class="sr-only">Receipt</h3>
+        <div class="pay-receipt">
+          <PaymentReceipt v-if="payment.receipt_path" :path="payment.receipt_path" :label="`GCash receipt, reference ${payment.reference_number}`" />
+          <Alert v-else tone="warn">The receipt file was deleted{{ payment.receipt_deleted_at ? ` on ${fmtDateTime(payment.receipt_deleted_at)}` : "" }}.</Alert>
+          <p v-if="payment.receipt_path" class="pay-receipt__hint">Tap to enlarge</p>
+        </div>
       </section>
 
-      <section aria-labelledby="det-h" class="space-y-3">
-        <h3 id="det-h" class="text-lg">Details</h3>
-        <dl class="space-y-1 text-sm">
+      <dl class="pay-sums">
+        <div><dt>Expected</dt><dd>{{ peso(expected) }}</dd></div>
+        <div><dt>Paid</dt><dd :class="short ? 'text-danger' : ''">{{ peso(paid) }}</dd></div>
+      </dl>
+
+      <Alert v-if="short && reviewable" tone="warn">The amount paid ({{ peso(paid) }}) is lower than expected ({{ peso(expected) }}). Convenience or transaction fees are not covered by the kit price.</Alert>
+      <Alert v-if="paid > expected && expected > 0" tone="info">The amount is higher than expected ({{ peso(expected) }}). It may cover more forms the person has not submitted yet.</Alert>
+      <Alert v-if="dupes.length > 0" tone="bad">This reference number also appears on {{ dupes.length }} other payment(s). Check that the receipt is not reused.</Alert>
+
+      <div v-if="reviewable && !action" class="sheet-actions space-y-2">
+        <button type="button" class="pay-btn pay-btn--accent" @click="action = 'verified'"><IconCheckCircle />Verify and send ticket</button>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" class="pay-btn pay-btn--ghost" @click="action = 'underpaid'"><IconAlert />Mark as short</button>
+          <button type="button" class="pay-btn pay-btn--danger" @click="action = 'rejected'"><IconXCircle />Reject</button>
+        </div>
+      </div>
+      <div v-if="!reviewable" class="border-t border-brand-sky pt-4"><button type="button" class="btn-secondary" :disabled="busy" @click="resendNotice"><IconSend />Resend the email for this decision</button></div>
+
+      <details class="pay-more">
+        <summary>More details</summary>
+        <div class="mt-3 space-y-4">
+          <dl class="space-y-1 text-sm">
           <div class="flex flex-wrap justify-between gap-2"><dt class="font-semibold">Status</dt><dd class="text-right"><Badge :tone="TONE[payment.status]">{{ LABEL[payment.status] }}</Badge></dd></div>
           <div v-for="[k, v] in details" :key="k" class="flex flex-wrap justify-between gap-2"><dt class="font-semibold">{{ k }}</dt><dd class="text-right">{{ v }}</dd></div>
           <div class="flex flex-wrap justify-between gap-2"><dt class="font-semibold">Reference</dt><dd class="text-right"><span class="font-mono">{{ payment.reference_number }}</span></dd></div>
           <div v-for="[k, v] in moreDetails" :key="k" class="flex flex-wrap justify-between gap-2"><dt class="font-semibold">{{ k }}</dt><dd class="text-right">{{ v }}</dd></div>
         </dl>
-        <div><p class="font-semibold">Linked forms</p>
+
+          <details v-if="payment.receipt_history?.length > 0"><summary class="min-h-target cursor-pointer py-2 font-semibold">Earlier receipts ({{ payment.receipt_history.length }})</summary><div class="space-y-4"><PaymentReceipt v-for="(path, i) in payment.receipt_history" :key="path" :path="path" :label="`Earlier receipt ${Number(i) + 1}, reference ${payment.reference_history?.[i] || 'unknown'}`" /></div></details>
+
+          <div><p class="font-semibold">Linked forms</p>
           <ul class="mt-1 space-y-1 text-sm"><li v-for="r in payment.registrations || []" :key="r.id" class="flex flex-wrap items-center justify-between gap-2 rounded border border-brand-sky p-2"><span>{{ r.name }} <span class="text-ink-muted">@{{ r.x_username }}</span><span v-if="r.kit_name" class="block text-ink-muted">{{ kitLabel(r.kit_name, r.kit_quantity) }} = {{ peso(r.total_amount) }}</span><template v-if="r.facebook_url"> · <a :href="r.facebook_url" target="_blank" rel="noopener noreferrer">Facebook <span class="sr-only">of {{ r.name }} (opens in a new tab)</span></a></template></span><span class="flex gap-2"><Badge :tone="r.status === 'confirmed' ? 'ok' : r.status === 'pending_verification' ? 'warn' : 'bad'">{{ r.status.replace("_", " ") }}</Badge><span v-if="r.ticket_number" class="font-mono">{{ r.ticket_number }}</span></span></li></ul>
         </div>
-        <Alert v-if="short && reviewable" tone="warn">The amount paid ({{ peso(paid) }}) is lower than expected ({{ peso(expected) }}). Convenience or transaction fees are not covered by the kit price.</Alert>
-        <Alert v-if="paid > expected && expected > 0" tone="info">The amount is higher than expected ({{ peso(expected) }}). It may cover more forms the person has not submitted yet.</Alert>
-        <Alert v-if="dupes.length > 0" tone="bad">This reference number also appears on {{ dupes.length }} other payment(s). Check that the receipt is not reused.</Alert>
-      </section>
-    </div>
 
-    <div v-if="reviewable && !action" class="sheet-actions mt-5 flex flex-wrap gap-2">
-      <button type="button" class="btn-primary" @click="action = 'verified'"><IconCheckCircle />Verify payment</button>
-      <button type="button" class="btn-secondary" @click="action = 'underpaid'"><IconAlert />Mark underpaid</button>
-      <button type="button" class="btn-danger" @click="action = 'rejected'"><IconXCircle />Reject payment</button>
+        </div>
+      </details>
     </div>
-    <div v-if="!reviewable" class="mt-5 border-t border-brand-sky pt-4"><button type="button" class="btn-secondary" :disabled="busy" @click="resendNotice"><IconSend />Resend the email for this decision</button></div>
 
     <ConfirmDialog v-if="action" :title="confirmTitle" :tone="action === 'rejected' ? 'danger' : 'primary'" :confirm-label="confirmLabel" :busy="busy" @cancel="cancelAction" @confirm="decide">
       <div class="space-y-3">

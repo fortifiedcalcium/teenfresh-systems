@@ -14,6 +14,7 @@ No migration.
 - **On a laptop (1024 px and up) the event poster fills its column** down to the Register button, whole and uncropped, and the page is wider with an even poster/facts split.
 - **The home page gets a "How it works" section**, and past events are tilted photocard rows.
 - **The sign-in and sign-up pages show the next event's poster** beside the form on wide screens (plain centred card on phones or with no upcoming poster).
+- **The admin Payments page follows the new design**: a big title with "Check receipts and verify tickets.", the event picker beside it, summary chips (slots taken, waiting for review, payments short, checked in), a white list card with a To review / All / Verified switch and a search box, and a "Review payment" panel beside it with the receipt, Expected and Paid, and the buttons "Verify and send ticket", "Mark as short" and "Reject". The first payment is open by default on a tablet or laptop. The Forms and Submitted columns moved into the panel's "More details"; Export Excel is still there, and Underpaid and Rejected payments are under All.
 - **The admin sidebar is dark** with light links and a pale pill on the current page; the scanner has its own accent button at the bottom.
 - **`npm run deploy:staging`** builds against the dev Supabase project (`.env.development`) and deploys to the `staging` branch; `npm run deploy` still deploys to production.
 

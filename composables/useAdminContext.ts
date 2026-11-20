@@ -9,6 +9,8 @@ export const adminEvents = events;
 export const adminEventId = eventId;
 export const adminPending = pending;
 
+export const selectAdminEvent = (id) => { eventId.value = id; try { localStorage.setItem("admin_event", id); } catch { /* ignore */ } };
+
 export function useAdminContext() {
   const event = computed(() => events.value?.find((e) => e.id === eventId.value) || events.value?.[0] || null);
   return { events, event, pending, reloadEvents: () => reloader() };

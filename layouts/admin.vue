@@ -48,7 +48,9 @@ watch(() => route.path, (p) => {
   requestAnimationFrame(() => window.scrollTo(0, y));
 });
 
-function select(id) { adminEventId.value = id; try { localStorage.setItem("admin_event", id); } catch { /* ignore */ } }
+const select = selectAdminEvent;
+// The Payments page has its own picker beside the title (like the design), so the bar is hidden there.
+const ownPicker = computed(() => route.path === "/admin/payments" && route.query.tab !== "shop");
 </script>
 
 <template>
@@ -57,7 +59,7 @@ function select(id) { adminEventId.value = id; try { localStorage.setItem("admin
     <AdminSidebar :email="profile?.email" :pending="adminPending" :notes="notes" @sign-out="signOut" />
     <div class="min-w-0 flex-1">
       <AdminTopBar :notes="notes" />
-      <section v-if="!onShopPage" aria-label="Event selection" class="flex flex-wrap items-center gap-2 border-b border-brand-sky bg-white/60 px-4 py-3">
+      <section v-if="!onShopPage && !ownPicker" aria-label="Event selection" class="flex flex-wrap items-center gap-2 border-b border-brand-sky bg-white/60 px-4 py-3">
         <label for="event-select" class="text-sm font-semibold">Event</label>
         <select id="event-select" class="input max-w-md" :value="event?.id || ''" :disabled="!adminEvents?.length" @change="select(($event.target as HTMLInputElement).value)">
           <option v-for="e in adminEvents" :key="e.id" :value="e.id">{{ e.title }}</option>
