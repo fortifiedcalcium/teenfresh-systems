@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { supabase } from "~/lib/supabaseClient";
-import { eventStatus } from "~/lib/availability";
+import { eventStatus, fmtDate } from "~/lib/availability";
 import { SHOP_ENABLED } from "~/lib/features";
 import { productImageUrl } from "~/lib/products";
 import { peso } from "~/lib/payment";
-import { productPath } from "~/lib/slug";
+import { eventPath, productPath } from "~/lib/slug";
 import { badgeFor, cardCategories, priceFor, priceText, stockLabel } from "~/lib/productBadge";
 import { preorderNotice } from "~/lib/preorder";
 import { groupVariations } from "~/lib/variations";
@@ -84,6 +84,10 @@ onMounted(async () => {
 const featured = computed(() => pickFeatured(events.value || [], home.value.featured_event_id, (e) => eventStatus(e, counts.value[e.id] ?? 0).canRegister));
 const heroImage = computed(() => bannerUrl(home.value));
 const others = computed(() => (events.value || []).filter((e) => e.id !== featured.value?.id));
+// Other events people can still join keep their ticket; the ones that are over become a quiet list, newest first.
+const isOpen = (e: EventRow) => eventStatus(e, counts.value[e.id] ?? 0).canRegister;
+const moreOpen = computed(() => others.value.filter(isOpen));
+const past = computed(() => others.value.filter((e) => !isOpen(e)).sort((a, b) => b.event_date.localeCompare(a.event_date)));
 const headline = computed(() => heroHeadline(home.value, featured.value));
 const description = computed(() => heroDescription(home.value));
 const optsOf = (p: ProductRow) => dropVersions.value[p.id] || [];
@@ -98,27 +102,34 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
         <img :src="heroImage" :alt="bannerAlt(home)" class="home-hero__bg" fetchpriority="high" decoding="async">
         <div class="home-hero__overlay" aria-hidden="true" />
       </template>
-      <div class="space-y-5">
-        <p class="text-sm font-extrabold uppercase tracking-widest text-ink-muted">Teenfresh Events</p>
-        <h1 id="home-h" class="home-hero__title">{{ headline }}</h1>
-        <p class="home-hero__lead max-w-prose text-ink-muted">{{ description }}</p>
-        <div class="flex flex-wrap gap-3">
-          <BaseButton :to="others.length ? '#events' : '#featured-event'" variant="accent"><IconCalendar />See events</BaseButton>
-          <BaseButton v-if="SHOP_ENABLED" to="/shop" variant="secondary"><IconBag />Browse shop</BaseButton>
+      <HomeHero v-if="featured" :event="featured" :registered="counts[featured.id] ?? 0" :banner="banners[featured.id]" :kits="kits[featured.id] || []" :headline="headline" :description="description" :shop="SHOP_ENABLED" />
+      <template v-else>
+        <div class="space-y-5">
+          <h1 id="home-h" class="home-hero__title">{{ headline }}</h1>
+          <p class="home-hero__lead max-w-prose text-ink-muted">{{ description }}</p>
         </div>
-      </div>
-      <div id="featured-event" class="mx-auto w-full max-w-md lg:ml-auto">
-        <Loading v-if="events === null" label="Loading events…" class="p-12" logo />
-        <EventCard v-else-if="featured" :event="featured" :registered="counts[featured.id] ?? 0" :banner-image="banners[featured.id]" :kits="kits[featured.id] || []" :band="0" priority />
-        <Empty v-else>No events yet. Check back soon!</Empty>
-      </div>
+        <div id="featured-event" class="mx-auto w-full max-w-md lg:ml-auto">
+          <Loading v-if="events === null" label="Loading events…" class="p-12" logo />
+          <Empty v-else>No events yet. Check back soon!</Empty>
+        </div>
+      </template>
     </section>
     <Alert v-if="error" tone="bad">{{ error }}</Alert>
 
-    <section v-if="others.length" id="events" class="scroll-mt-24" aria-labelledby="events-h">
+    <section v-if="moreOpen.length" id="events" class="scroll-mt-24" aria-labelledby="events-h">
       <h2 id="events-h" class="mb-5 flex items-center gap-2 text-2xl"><IconCalendar />More events</h2>
       <ul class="grid grid-cols-1 auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <li v-for="(e, i) in others" :key="e.id" class="flex"><div class="flex w-full flex-col"><EventCard :event="e" :registered="counts[e.id] ?? 0" :banner-image="banners[e.id]" :kits="kits[e.id] || []" :band="i + 1" /></div></li>
+        <li v-for="(e, i) in moreOpen" :key="e.id" class="flex"><div class="flex w-full flex-col"><EventCard :event="e" :registered="counts[e.id] ?? 0" :banner-image="banners[e.id]" :kits="kits[e.id] || []" :band="i + 1" /></div></li>
+      </ul>
+    </section>
+
+    <section v-if="past.length" :id="moreOpen.length ? undefined : 'events'" class="scroll-mt-24" aria-labelledby="past-h">
+      <h2 id="past-h" class="mb-3 text-xl">Past events</h2>
+      <ul class="card-soft divide-y divide-brand-sky">
+        <li v-for="e in past" :key="e.id" class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3">
+          <div class="min-w-0"><p class="font-bold">{{ e.title }}</p><p class="text-sm text-ink-muted">{{ fmtDate(e.event_date) }}</p></div>
+          <BaseButton :to="eventPath(e)" variant="ghost" small :aria-label="`View ${e.title}`">View event</BaseButton>
+        </li>
       </ul>
     </section>
 

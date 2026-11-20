@@ -57,7 +57,8 @@ const opts = (p: ProductRow) => versions.value[p.id] || [];
 <template>
   <section class="space-y-5" aria-labelledby="shop-title">
     <div class="rounded-[2rem] bg-brand-mint p-6 sm:p-8">
-      <h1 id="shop-title" class="mb-1 flex items-center gap-2 text-3xl sm:text-4xl"><IconBag /><span>Teenfresh's products <span aria-hidden="true">⭐</span></span></h1>
+      <h1 id="shop-title" class="hero2__title mb-1 flex items-center gap-3 text-4xl sm:text-5xl"><IconBag /><span>Teenfresh's products <span aria-hidden="true">⭐</span></span></h1>
+      <p class="mt-1 text-lg text-ink-muted">Kits and merch for the events.</p>
     </div>
     <div class="shop-chips" role="group" aria-label="Filter products">
       <button v-for="c in chips" :key="c" type="button" class="shop-chip" :aria-pressed="chip === c" @click="pick(c)">{{ c }}</button>

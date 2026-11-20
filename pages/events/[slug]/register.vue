@@ -5,9 +5,9 @@ import { callFunction, friendlyError } from "~/lib/api";
 import { stepSchemaFor } from "~/lib/validation";
 import { zodErrors } from "~/lib/zodErrors";
 import { contactLinkList } from "~/lib/contactLinks";
-import { eventStatus } from "~/lib/availability";
+import { eventStatus, fmtDate, fmtTimeRange } from "~/lib/availability";
 import { findByRef, registerPath } from "~/lib/slug";
-import { fetchEventImages } from "~/lib/eventImages";
+import { fetchEventImages, imageUrl } from "~/lib/eventImages";
 import { normalizeFacebook, normalizePhone, normalizeReference, normalizeX, orderTotal, parseAmount, peso, receiptPath, reusablePayments, balanceLeft, validateReceiptFile, formatBytes } from "~/lib/payment";
 
 definePageMeta({ middleware: ["auth"] });
@@ -153,6 +153,7 @@ async function submitAll() {
 function another() { Object.assign(v, { ...DEFAULTS, email: user.value?.email || "" }); file.value = null; done.value = null; emailState.value = "idle"; serverError.value = ""; go("info"); }
 
 const st = computed(() => (event.value ? eventStatus(event.value, registered.value) : null));
+const poster = computed(() => imageUrl(images.value.poster));
 const reviewSections = computed(() => {
   const out: [string, string, [string, any][]][] = [
     ["info", "Event info and terms", [["Email", v.email], ["Terms and Conditions", "Agreed"]]],
@@ -197,12 +198,13 @@ const emailText = computed(() => (emailState.value === "sending" ? "Sending your
     <Alert tone="bad"><strong>{{ st.label }}.</strong> {{ st.reason }} <NuxtLink to="/">Back to events</NuxtLink></Alert>
   </div>
 
-  <div v-else class="mx-auto max-w-3xl space-y-4">
+  <div v-else class="mx-auto max-w-6xl space-y-4">
     <h1 class="flex items-center gap-2 text-2xl"><IconTicket />Register</h1>
     <EventHeader :event="event" :st="st" :kits="kits" />
     <Stepper :steps="steps" :current="stepIndex" />
 
-    <form class="card space-y-5 p-5" novalidate aria-labelledby="step-heading" @submit.prevent>
+    <div class="grid items-start gap-7 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)]">
+    <form class="card-soft space-y-5 p-5 sm:p-7" novalidate aria-labelledby="step-heading" @submit.prevent>
       <h2 id="step-heading" ref="headingEl" tabindex="-1" class="text-xl">{{ steps[stepIndex].label }}</h2>
       <ErrorSummary v-if="current !== 'review'" :key="current" :errors="shownErrors" :labels="FIELD_LABELS" :focus-signal="focusSignal" :field-ids="FIELD_IDS" />
 
@@ -314,5 +316,25 @@ const emailText = computed(() => (emailState.value === "sending" ? "Sending your
         <button v-else type="button" class="btn-primary" @click="onNext"><IconArrowRight />{{ current === steps[steps.length - 2].key ? "Review registration" : "Next" }}</button>
       </div>
     </form>
+
+    <aside aria-label="Your ticket" class="reg-ticket card-soft">
+      <div class="reg-ticket__head">
+        <div class="photocard" style="width: 5.75rem; padding: 0.375rem; flex: none; --tilt: -3deg">
+          <img v-if="poster" :src="poster" alt="" class="photocard__img" width="1600" height="2000">
+          <div v-else class="photocard__img photocard__img--empty" style="font-size: 0.8125rem"><span>{{ event.title }}</span></div>
+        </div>
+        <div class="min-w-0"><p class="text-xs font-black uppercase tracking-wide text-ink-muted">Your ticket</p><h2 class="text-lg leading-tight">{{ event.title }}</h2></div>
+      </div>
+      <div class="panel-perf" />
+      <dl class="grid gap-2.5 px-6 pb-2 pt-5 text-sm">
+        <div class="flex justify-between gap-3"><dt class="text-ink-muted">Date</dt><dd class="font-bold">{{ fmtDate(event.event_date) }}</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-ink-muted">Time</dt><dd class="font-bold">{{ fmtTimeRange(event.event_date, event.ends_at) }}</dd></div>
+        <div v-if="event.venue" class="flex justify-between gap-3"><dt class="text-ink-muted">Venue</dt><dd class="font-bold">{{ event.venue }}</dd></div>
+        <div v-if="kitMode && order.kit" class="flex justify-between gap-3"><dt class="text-ink-muted">Kit</dt><dd class="font-bold">{{ order.kit.name }}</dd></div>
+      </dl>
+      <div v-if="paid" class="reg-ticket__total"><span class="font-bold">Total to pay</span><strong>{{ peso(total) }}</strong></div>
+      <p class="px-6 pb-5 text-sm text-ink-muted">Your registration is confirmed after we check your payment.</p>
+    </aside>
+    </div>
   </div>
 </template>

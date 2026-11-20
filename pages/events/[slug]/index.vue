@@ -90,19 +90,30 @@ useSeo({
     <p class="text-ink-muted">This event may have ended or the address is wrong.</p>
     <BaseButton to="/" variant="secondary"><IconArrowLeft />Back to events</BaseButton>
   </div>
-  <div v-else class="mx-auto max-w-3xl space-y-5">
+  <div v-else class="mx-auto max-w-5xl space-y-6">
     <nav aria-label="Breadcrumb"><BaseButton to="/" variant="ghost" small><IconArrowLeft />All events</BaseButton></nav>
-    <EventHeader :event="event" :st="st!" :kits="kits" as-h1 :required-note="false" />
 
-    <section class="rounded-[1.75rem] bg-white p-5 shadow-[0_6px_20px_color-mix(in_srgb,var(--ink)_12%,transparent)]" aria-labelledby="slots-h">
-      <h2 id="slots-h" class="mb-3 text-lg">Slots</h2>
-      <AvailabilityBar :registered="Math.min(registered, event.capacity)" :capacity="event.capacity" :label="`Slots taken for ${event.title}`" />
-      <p class="mt-2 text-sm font-semibold">{{ st!.key === "closed" ? "Registration is closed" : `${st!.slotsLeft} of ${event.capacity} slots left` }}</p>
-      <p v-if="!st!.canRegister" class="mt-1 text-sm text-danger">Registration is unavailable. {{ st!.reason }}</p>
-      <div class="mt-4"><BaseButton v-if="st!.canRegister" :to="registerPath(event)" variant="accent" block><IconTicket />Register for this event</BaseButton></div>
-    </section>
+    <div class="evt-layout">
+      <div v-if="images.poster || isAdmin" class="evt-poster-stage">
+        <div class="photocard evt-poster" style="--tilt: 2deg">
+          <EventImage slot-key="poster" :event="event" :image="images.poster" @changed="load" />
+        </div>
+        <div v-if="st && st.canRegister && st.slotsLeft > 0" class="evt-slots-badge"><strong>{{ st.slotsLeft }}</strong><span>of {{ event.capacity }}<br>slots left</span></div>
+      </div>
 
-    <section v-if="images.poster || isAdmin" class="space-y-2" aria-labelledby="poster-h"><h2 id="poster-h" class="text-lg">Event poster</h2><EventImage slot-key="poster" :event="event" :image="images.poster" class="w-full" @changed="load" /></section>
+      <div class="space-y-5">
+        <EventHeader :event="event" :st="st!" :kits="kits" as-h1 :required-note="false" />
+
+        <section class="card-soft p-5" aria-labelledby="slots-h">
+          <h2 id="slots-h" class="mb-3 text-lg">Slots</h2>
+          <AvailabilityBar :registered="Math.min(registered, event.capacity)" :capacity="event.capacity" :label="`Slots taken for ${event.title}`" />
+          <p class="mt-2 text-sm font-semibold">{{ st!.key === "closed" ? "Registration is closed" : `${st!.slotsLeft} of ${event.capacity} slots left` }}</p>
+          <p v-if="!st!.canRegister" class="mt-1 text-sm text-danger">Registration is unavailable. {{ st!.reason }}</p>
+          <div class="mt-4"><BaseButton v-if="st!.canRegister" :to="registerPath(event)" variant="accent" block><IconTicket />Register for this event</BaseButton></div>
+        </section>
+      </div>
+    </div>
+
     <section v-if="images.details_card || event.kit_inclusions?.length || isAdmin" class="space-y-2" aria-labelledby="details-h"><h2 id="details-h" class="text-lg">Event details</h2><EventImage v-if="images.details_card || isAdmin" slot-key="details_card" :event="event" :image="images.details_card" class="w-full" @changed="load" />
       <div v-if="event.kit_inclusions?.length" class="rounded-2xl bg-brand-ivory p-4 text-sm"><p class="font-semibold">Kit inclusions</p><ul class="mt-1 list-disc pl-5"><li v-for="k in event.kit_inclusions" :key="k">{{ k }}</li></ul></div>
     </section>
