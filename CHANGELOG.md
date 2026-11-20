@@ -11,14 +11,18 @@ No migration.
 ### Changed
 - **The Keepsake look reaches the event page, the register page and the shop**: the poster is a tilted photocard on a pastel backdrop, the facts sit in a soft panel, the register steps are a ticket strip with a "your ticket" summary and running total, and the shop header and category chips follow the same style.
 - **The slots badge is a sticker on the poster's top-right corner**, with the number and "of N slots left" stacked tight in the middle of the circle. It is now the only place the slot count is shown on the event page (the header sticker and the "Slots" progress section are gone); the Register panel is just the button, or the reason it is unavailable.
+- **Event cards show the poster edge to edge** across the top of the card, like the shop's product cards, instead of a small tilted card on a coloured background. The frame is 4:5 for every poster, so a row of cards lines up; only a sliver of a poster's edges can be trimmed.
 - **On a laptop (1024 px and up) the event poster fills its column** down to the Register button, whole and uncropped, and the page is wider with an even poster/facts split.
 - **The home page gets a "How it works" section**, and past events are tilted photocard rows.
 - **The sign-in and sign-up pages show the next event's poster** beside the form on wide screens (plain centred card on phones or with no upcoming poster).
 - **The admin Payments page follows the new design**: a big title with "Check receipts and verify tickets.", the event picker beside it, summary chips (slots taken, waiting for review, payments short, checked in), a white list card with a To review / All / Verified switch and a search box, and a "Review payment" panel beside it with the receipt, Expected and Paid, and the buttons "Verify and send ticket", "Mark as short" and "Reject". The first payment is open by default on a tablet or laptop. The Forms and Submitted columns moved into the panel's "More details"; Export Excel is still there, and Underpaid and Rejected payments are under All.
+- **The admin menu has 7 items instead of 11**: related pages share one item, and the pages inside it are a pill switch under the page title (the same look as the Payments status switch): Events (Events, Home page), Shop (Products, Orders), Attendees (Attendees, Attendance, QR Scanner) and Settings (Admin users, Change log). Dashboard, Payments and Email stay as they are. **Shop orders left the Payments page** and are now Shop > Orders (`/admin/orders`); Payments shows event payments only. Old `/admin/payments?tab=shop` links and the shop notifications go to the new place.
 - **The admin sidebar is dark** with light links and a pale pill on the current page; the scanner has its own accent button at the bottom.
 - **`npm run deploy:staging`** builds against the dev Supabase project (`.env.development`) and deploys to the `staging` branch; `npm run deploy` still deploys to production.
 
 ### Fixed
+- **The home page has two clear lists: "Upcoming events" and "Past events"** (the first was called "More events"). An event is upcoming until it is over, and past after that.
+- **An event whose registration is closed stays in the upcoming list** on the home page until the event is over (its end time, else its start), and its ticket says "Registration closed". It used to drop into "Past events" as soon as registration closed or sold out, even though people still visit to see it.
 - **Each account has its own saved cart**: it was kept under one fixed key, so every account signed in on the same browser (and signed-out visitors) shared one cart.
 
 ## [2.11.1] - 2026-11-17

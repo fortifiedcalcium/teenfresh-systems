@@ -2,11 +2,11 @@
  *  admin is on the site (null = the admin caused it themselves, for example by confirming a payment, so no toast). */
 export const NOTE_TYPES = [
   { key: "event_payments", label: "Event payments to review", to: "/admin/payments", toast: "A new event payment is waiting for review" },
-  { key: "order_payments", label: "Shop orders to check", to: "/admin/payments?tab=shop", toast: "A new shop order is waiting for a payment check", shop: true },
-  { key: "extra_payments", label: "Extra payments to check", to: "/admin/payments?tab=shop", toast: "A shopper sent an extra payment to check", shop: true },
-  { key: "shipping_payments", label: "Shipping fee payments to check", to: "/admin/payments?tab=shop", toast: "A shipping fee payment is waiting to be checked", shop: true },
-  { key: "set_fee", label: "Orders waiting for a shipping fee", to: "/admin/payments?tab=shop", toast: null, shop: true },
-  { key: "ready_to_ship", label: "Orders ready to ship", to: "/admin/payments?tab=shop", toast: null, shop: true },
+  { key: "order_payments", label: "Shop orders to check", to: "/admin/orders", toast: "A new shop order is waiting for a payment check", shop: true },
+  { key: "extra_payments", label: "Extra payments to check", to: "/admin/orders", toast: "A shopper sent an extra payment to check", shop: true },
+  { key: "shipping_payments", label: "Shipping fee payments to check", to: "/admin/orders", toast: "A shipping fee payment is waiting to be checked", shop: true },
+  { key: "set_fee", label: "Orders waiting for a shipping fee", to: "/admin/orders", toast: null, shop: true },
+  { key: "ready_to_ship", label: "Orders ready to ship", to: "/admin/orders", toast: null, shop: true },
 ];
 
 /** The types whose count went up between two readings (and so deserve a toast). Nothing before the first reading. */

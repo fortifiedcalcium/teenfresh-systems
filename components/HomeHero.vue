@@ -25,7 +25,7 @@ const when = computed(() => [props.event.venue, props.event.registration_deadlin
         <li class="sticker bg-brand-mint"><IconCalendar />{{ fmtDate(event.event_date) }}</li>
         <li class="sticker bg-brand-sky"><IconClock />{{ fmtTimeRange(event.event_date, event.ends_at) }}</li>
         <li v-if="(kits?.length || 0) > 0 || fee > 0 || event.price_info" class="sticker bg-brand-cream">
-          <IconTicket /><KitPrices v-if="(kits?.length || 0) > 0" :kits="kits || []" /><NoWrap v-else-if="fee > 0">{{ peso(fee) }}</NoWrap><template v-else>{{ event.price_info }}</template>
+          <IconTicket /><KitPrices v-if="(kits?.length || 0) > 0" :kits="kits || []" /><template v-else-if="fee > 0"><NoWrap>{{ peso(fee) }}</NoWrap><span v-if="event.fee_note" class="sticker__note">({{ event.fee_note }})</span></template><template v-else>{{ event.price_info }}</template>
         </li>
         <li class="sticker bg-brand-blush"><IconUsers />{{ slots }}</li>
       </ul>

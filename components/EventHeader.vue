@@ -19,7 +19,7 @@ const paid = computed(() => fee.value > 0 || props.kits.length > 0);
     <ul class="hero2__stickers" aria-label="Event facts">
       <li class="sticker bg-brand-mint"><IconCalendar />{{ fmtDate(event.event_date) }}</li>
       <li class="sticker bg-brand-sky"><IconClock />{{ fmtTimeRange(event.event_date, event.ends_at) }}</li>
-      <li v-if="paid" class="sticker bg-brand-cream"><IconWallet />{{ kits.length ? peso(Math.min(...kits.map((k) => Number(k.unit_price)))) : peso(fee) }}</li>
+      <li v-if="paid" class="sticker bg-brand-cream"><IconWallet /><span>{{ kits.length ? peso(Math.min(...kits.map((k) => Number(k.unit_price)))) : peso(fee) }}</span><span v-if="event.fee_note" class="sticker__note">({{ event.fee_note }})</span></li>
       <li v-if="slotsSticker && st?.canRegister && st.slotsLeft > 0" class="sticker bg-brand-blush"><IconUsers />{{ st.slotsLeft }} slots left</li>
     </ul>
     <p v-if="paid" class="mt-1 font-black">1 Form = 1 Entry</p>

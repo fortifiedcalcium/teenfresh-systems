@@ -7,8 +7,8 @@ import { typesForLocation } from "~/lib/notifications";
 // The switch is pure CSS (lg:), so there is no user-agent sniffing and the hidden navigation is display:none.
 // Loads the events once and shares the selected one with every admin page through useAdminContext().
 // The shop has nothing to do with events, so its pages do not show the event picker: Shop products, and the "shop" tab of Payments and Email.
-const SHOP_PAGES = ["/admin/products"];
-const HUB_PAGES = ["/admin/payments", "/admin/emails"];
+const SHOP_PAGES = ["/admin/products", "/admin/orders"];
+const HUB_PAGES = ["/admin/emails"];
 
 const { profile, signOut } = useAuth();
 const route = useRoute();
@@ -50,7 +50,7 @@ watch(() => route.path, (p) => {
 
 const select = selectAdminEvent;
 // The Payments page has its own picker beside the title (like the design), so the bar is hidden there.
-const ownPicker = computed(() => route.path === "/admin/payments" && route.query.tab !== "shop");
+const ownPicker = computed(() => route.path === "/admin/payments");
 </script>
 
 <template>

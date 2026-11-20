@@ -1,5 +1,5 @@
 import { SHOP_ENABLED } from "./features";
-import { IconChecklist, IconDashboard, IconScanLine, IconSearch, IconUser, IconCalendar, IconWallet, IconMail, IconShield, IconHistory, IconUsers, IconScan, IconBag, IconImage } from "./icons";
+import { IconChecklist, IconDashboard, IconScanLine, IconSearch, IconUser, IconCalendar, IconWallet, IconMail, IconShield, IconUsers, IconBag } from "./icons";
 
 /** Which pathnames highlight which bottom-bar tab. Profile also covers the pages that have no tab of their own. */
 export const matchers = {
@@ -18,27 +18,25 @@ export const TABS: { key: string; label: string; to: string; icon: any; fab?: bo
   { key: "profile", label: "Profile", to: "/admin/profile", icon: IconUser },
 ];
 
-/** Everything, for the desktop sidebar. */
-const SHOP_PATHS = ["/admin/products"];
-
-const ALL_PAGES: [string, string, any, boolean?, string?][] = [
-  ["/admin", "Dashboard", IconDashboard, true],
-  ["/admin/events", "Events", IconCalendar],
-  ["/admin/home", "Home page", IconImage],
-  ["/admin/products", "Shop products", IconBag],
-  ["/admin/payments", "Payments", IconWallet, false, "pending"],
-  ["/admin/attendees", "Attendees", IconUsers],
-  ["/admin/scanner", "QR Scanner", IconScan],
-  ["/admin/tracker", "Attendance", IconChecklist],
-  ["/admin/emails", "Email", IconMail],
-  ["/admin/users", "Admin users", IconShield],
-  ["/admin/changelog", "Change log", IconHistory],
+/** The sidebar groups related pages under one item; inside a group the pages are a pill switch under the page title (AdminSwitch).
+ *  `to` is the group's first page. `shop` groups are left out when the shop is off. */
+export const GROUPS: { key: string; label: string; icon: any; end?: boolean; badge?: string; shop?: boolean; pages: [string, string][] }[] = [
+  { key: "dashboard", label: "Dashboard", icon: IconDashboard, end: true, pages: [["/admin", "Dashboard"]] },
+  { key: "events", label: "Events", icon: IconCalendar, pages: [["/admin/events", "Events"], ["/admin/home", "Home page"]] },
+  { key: "shop", label: "Shop", icon: IconBag, shop: true, pages: [["/admin/products", "Products"], ["/admin/orders", "Orders"]] },
+  { key: "payments", label: "Payments", icon: IconWallet, badge: "pending", pages: [["/admin/payments", "Payments"]] },
+  { key: "attendees", label: "Attendees", icon: IconUsers, pages: [["/admin/attendees", "Attendees"], ["/admin/tracker", "Attendance"], ["/admin/scanner", "QR Scanner"]] },
+  { key: "email", label: "Email", icon: IconMail, pages: [["/admin/emails", "Email"]] },
+  { key: "settings", label: "Settings", icon: IconShield, pages: [["/admin/users", "Admin users"], ["/admin/changelog", "Change log"]] },
 ];
-export const SIDEBAR = ALL_PAGES.filter(([to]: any[]) => SHOP_ENABLED || !SHOP_PATHS.includes(to));
+const inGroup = (g, p) => g.pages.some(([to]) => (to === "/admin" ? p === "/admin" || p === "/admin/" : p === to || p.startsWith(to + "/")));
+export const groupOf = (pathname) => GROUPS.find((g) => inGroup(g, pathname)) || null;
+export const SIDEBAR_GROUPS = GROUPS.filter((g) => SHOP_ENABLED || !g.shop);
+export const isGroupActive = (g, pathname) => inGroup(g, pathname);
 
 /** Page titles for the mobile top bar, and where its back button goes. */
 export const TITLES = [
-  ["/admin/profile", "Profile"], ["/admin/events", "Events", "/admin/profile"], ["/admin/home", "Home page", "/admin/profile"], ["/admin/products", "Shop products", "/admin/profile"], ["/admin/payments", "Payments", "/admin/profile"],
+  ["/admin/profile", "Profile"], ["/admin/events", "Events", "/admin/profile"], ["/admin/home", "Home page", "/admin/profile"], ["/admin/products", "Shop products", "/admin/profile"], ["/admin/orders", "Shop orders", "/admin/profile"], ["/admin/payments", "Payments", "/admin/profile"],
   ["/admin/emails", "Email", "/admin/profile"], ["/admin/users", "Admin users", "/admin/profile"], ["/admin/changelog", "Change log", "/admin/profile"],
   ["/admin/attendees", "Attendees"], ["/admin/scanner", "QR Scanner"], ["/admin/tracker", "Attendance"], ["/admin", "Dashboard"],
 ];

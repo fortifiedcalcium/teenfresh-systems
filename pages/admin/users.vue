@@ -28,6 +28,7 @@ const cols = [
 <template>
   <div class="space-y-4">
     <h1 class="flex items-center gap-2 text-2xl font-black"><IconShield />Admin users</h1>
+    <AdminSwitch group="settings" />
     <FilterBar :active-count="role ? 1 : 0">
       <template #search><input v-model="q" class="input w-full md:w-72" placeholder="Search name or email" aria-label="Search users"></template>
       <select v-model="role" class="input max-w-[10rem]" aria-label="Role filter"><option value="">All roles</option><option value="admin">Admins</option><option value="attendee">Attendees</option></select>

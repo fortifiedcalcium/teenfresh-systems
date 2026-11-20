@@ -85,10 +85,11 @@ onMounted(async () => {
 const featured = computed(() => pickFeatured(events.value || [], home.value.featured_event_id, (e) => eventStatus(e, counts.value[e.id] ?? 0).canRegister));
 const heroImage = computed(() => bannerUrl(home.value));
 const others = computed(() => (events.value || []).filter((e) => e.id !== featured.value?.id));
-// Other events people can still join keep their ticket; the ones that are over become a quiet list, newest first.
-const isOpen = (e: EventRow) => eventStatus(e, counts.value[e.id] ?? 0).canRegister;
-const moreOpen = computed(() => others.value.filter(isOpen));
-const past = computed(() => others.value.filter((e) => !isOpen(e)).sort((a, b) => b.event_date.localeCompare(a.event_date)));
+// An event stays in the upcoming list until it is over (its end time, else its start), even when registration is closed or sold out:
+// people still come to see it, and the ticket says "Registration closed". Only events that are over become the quiet list, newest first.
+const isOver = (e: EventRow) => new Date(e.ends_at || e.event_date).getTime() <= Date.now();
+const moreOpen = computed(() => others.value.filter((e) => !isOver(e)));
+const past = computed(() => others.value.filter(isOver).sort((a, b) => b.event_date.localeCompare(a.event_date)));
 const headline = computed(() => heroHeadline(home.value, featured.value));
 const description = computed(() => heroDescription(home.value));
 const optsOf = (p: ProductRow) => dropVersions.value[p.id] || [];
@@ -118,7 +119,7 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
     <Alert v-if="error" tone="bad">{{ error }}</Alert>
 
     <section v-if="moreOpen.length" id="events" class="scroll-mt-24" aria-labelledby="events-h">
-      <h2 id="events-h" class="mb-5 flex items-center gap-2 text-2xl"><IconCalendar />More events</h2>
+      <h2 id="events-h" class="mb-5 flex items-center gap-2 text-2xl"><IconCalendar />Upcoming events</h2>
       <ul class="grid grid-cols-1 auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <li v-for="(e, i) in moreOpen" :key="e.id" class="flex"><div class="flex w-full flex-col"><EventCard :event="e" :registered="counts[e.id] ?? 0" :banner-image="banners[e.id]" :kits="kits[e.id] || []" :band="i + 1" /></div></li>
       </ul>

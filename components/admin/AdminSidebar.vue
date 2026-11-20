@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import type { PropType } from "vue";
-import { SIDEBAR } from "~/lib/adminNav";
+import { SIDEBAR_GROUPS, isGroupActive } from "~/lib/adminNav";
 import logo from "~/assets/logo/teenfresh-logo.png";
 
 // Desktop navigation (1024px and up): 240px (260px at 1536+), collapsible to an icon rail. Hidden below 1024px
 // with display:none, so it is not in the accessibility tree while the bottom bar is. `notes` is { counts, unread, onRead, onReadAll }.
 defineProps({ email: String, pending: { type: Number, default: 0 }, notes: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, default: () => ({}) } });
 const emit = defineEmits(["signOut"]);
-// The scanner gets its own button at the bottom (the one thing an admin reaches for at the door), so it is left out of the regular list.
-const links = SIDEBAR.filter(([to]) => to !== "/admin/scanner");
+// Related pages share one item (see GROUPS in lib/adminNav); the pages inside a group are a pill switch under each page title.
+// The scanner also has its own button at the bottom (the one thing an admin reaches for at the door).
+const route = useRoute();
 const KEY = "admin_sidebar_collapsed";
 const collapsed = ref(false);
 onMounted(() => { try { collapsed.value = localStorage.getItem(KEY) === "1"; } catch { /* ignore */ } });
@@ -28,10 +29,10 @@ function toggle() { collapsed.value = !collapsed.value; try { localStorage.setIt
       <div :class="['mb-3 flex', collapsed ? 'justify-center' : 'px-1']"><NotificationBell :counts="notes.counts" :unread="notes.unread" align="left" :icon-only="collapsed" @read="notes.onRead" @read-all="notes.onReadAll" /></div>
       <nav aria-label="Admin">
         <ul id="admin-nav-list" class="space-y-1">
-          <li v-for="[to, text, Icon, end, badge] in links" :key="to">
-            <NuxtLink :to="to" :exact="end" :class="['nav-link flex w-full', collapsed ? 'justify-center px-0' : '']" :title="collapsed ? text : undefined">
-              <component :is="Icon" /><span :class="collapsed ? 'sr-only' : ''">{{ text }}</span>
-              <span v-if="badge === 'pending' && pending > 0" class="ml-auto rounded-full bg-brand-coral px-2 text-xs font-extrabold text-ink"><span aria-hidden="true">{{ pending > 99 ? "99+" : pending }}</span><span class="sr-only"> {{ pending }} payments pending verification</span></span>
+          <li v-for="g in SIDEBAR_GROUPS" :key="g.key">
+            <NuxtLink :to="g.pages[0][0]" :exact="g.end" :aria-current="isGroupActive(g, route.path) ? 'page' : undefined" :class="['nav-link flex w-full', collapsed ? 'justify-center px-0' : '']" :title="collapsed ? g.label : undefined">
+              <component :is="g.icon" /><span :class="collapsed ? 'sr-only' : ''">{{ g.label }}</span>
+              <span v-if="g.badge === 'pending' && pending > 0" class="ml-auto rounded-full bg-brand-coral px-2 text-xs font-extrabold text-ink"><span aria-hidden="true">{{ pending > 99 ? "99+" : pending }}</span><span class="sr-only"> {{ pending }} payments pending verification</span></span>
             </NuxtLink>
           </li>
         </ul>
