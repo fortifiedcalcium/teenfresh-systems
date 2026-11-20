@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { supabase } from "~/lib/supabaseClient";
 import { eventStatus, fmtDate } from "~/lib/availability";
+import { imageUrl } from "~/lib/eventImages";
 import { SHOP_ENABLED } from "~/lib/features";
 import { productImageUrl } from "~/lib/products";
 import { peso } from "~/lib/payment";
@@ -123,11 +124,33 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
       </ul>
     </section>
 
+    <section aria-labelledby="how-h">
+      <h2 id="how-h" class="mb-5 text-2xl">How it works</h2>
+      <div class="card-soft grid gap-6 p-6 sm:grid-cols-3 sm:gap-0 sm:divide-x-2 sm:divide-dashed sm:divide-brand-sky sm:p-7">
+        <div class="flex gap-4 sm:px-7 sm:first:pl-0 sm:last:pr-0">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-ink bg-brand-mint font-black">1</span>
+          <div><h3 class="text-lg font-black">Fill in the form</h3><p class="mt-1 text-ink-muted">Your details and your kit, in a few short steps.</p></div>
+        </div>
+        <div class="flex gap-4 sm:px-7 sm:first:pl-0 sm:last:pr-0">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-ink bg-brand-sky font-black">2</span>
+          <div><h3 class="text-lg font-black">Pay by GCash</h3><p class="mt-1 text-ink-muted">Upload your receipt. We check it for you.</p></div>
+        </div>
+        <div class="flex gap-4 sm:px-7 sm:first:pl-0 sm:last:pr-0">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-ink bg-brand-cream font-black">3</span>
+          <div><h3 class="text-lg font-black">Get your QR ticket</h3><p class="mt-1 text-ink-muted">It arrives by email once your payment is checked.</p></div>
+        </div>
+      </div>
+    </section>
+
     <section v-if="past.length" :id="moreOpen.length ? undefined : 'events'" class="scroll-mt-24" aria-labelledby="past-h">
       <h2 id="past-h" class="mb-3 text-xl">Past events</h2>
-      <ul class="card-soft divide-y divide-brand-sky">
-        <li v-for="e in past" :key="e.id" class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3">
-          <div class="min-w-0"><p class="font-bold">{{ e.title }}</p><p class="text-sm text-ink-muted">{{ fmtDate(e.event_date) }}</p></div>
+      <ul class="space-y-3">
+        <li v-for="(e, i) in past" :key="e.id" class="card-soft flex flex-wrap items-center gap-4 p-3.5">
+          <div class="photocard shrink-0" style="width: 4.5rem; padding: 0.3125rem; border-radius: 1rem" :style="{ '--tilt': i % 2 ? '3deg' : '-3deg' }">
+            <img v-if="imageUrl(banners[e.id])" :src="imageUrl(banners[e.id])" alt="" class="photocard__img" style="border-radius: 0.6875rem">
+            <div v-else class="photocard__img photocard__img--empty" style="font-size: 0.625rem"><span>{{ e.title }}</span></div>
+          </div>
+          <div class="min-w-0 flex-1"><p class="font-black">{{ e.title }}</p><p class="text-sm text-ink-muted">{{ fmtDate(e.event_date) }}</p><Badge tone="bad" class="mt-1.5">{{ eventStatus(e, counts[e.id] ?? 0).label }}</Badge></div>
           <BaseButton :to="eventPath(e)" variant="ghost" small :aria-label="`View ${e.title}`">View event</BaseButton>
         </li>
       </ul>
