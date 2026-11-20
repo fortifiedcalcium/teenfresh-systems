@@ -134,13 +134,13 @@ fieldset.card-soft > legend + * { clear: both; }
    the frame's real corner instead of sitting on it. The stage's top padding is tall enough for the whole badge, and the
    badge translates up by its own height, so it floats fully above the frame with no overlap — rather than partly sitting on
    the card, which (since the card and the circular badge are tilted at different angles) looked like a rendering glitch. */
-.evt-poster-stage { position: relative; padding: 6.5rem 1.5rem 1.5rem; }
-.evt-poster-stage::before { content: ""; position: absolute; inset: 7.5rem 2.25rem 0.5rem; background: var(--brand-cream); border-radius: 2rem; rotate: -2.5deg; z-index: -1; }
+.evt-poster-stage { position: relative; padding: 3.5rem 1.75rem 1.5rem; }
+.evt-poster-stage::before { content: ""; position: absolute; inset: 1rem 0.75rem 2.5rem 1.25rem; background: var(--brand-cream); border-radius: 2rem; rotate: -2.5deg; z-index: -1; }
 .evt-poster-frame { position: relative; width: min(100%, 24rem); margin: 0 auto; }
 .evt-poster { width: 100%; }
-.evt-slots-badge { position: absolute; right: 0; top: 0; translate: 0 -100%; z-index: 2; width: clamp(4rem, 3.25rem + 3vw, 6rem); height: clamp(4rem, 3.25rem + 3vw, 6rem); border-radius: 9999px; background: var(--accent); color: var(--white); border: 3px solid var(--white); display: grid; place-items: center; text-align: center; rotate: 10deg; box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 30%, transparent); }
-.evt-slots-badge strong { display: block; font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem); font-weight: 900; line-height: 1; }
-.evt-slots-badge span { display: block; font-size: 0.625rem; font-weight: 800; line-height: 1.2; }
+.evt-slots-badge { position: absolute; right: 0; top: 0; translate: 25% -35%; z-index: 2; width: clamp(5.5rem, 4.5rem + 5vw, 6.5rem); height: clamp(5.5rem, 4.5rem + 5vw, 6.5rem); border-radius: 9999px; background: var(--accent); color: var(--white); border: 3px solid var(--white); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; text-align: center; rotate: 10deg; box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 30%, transparent); }
+.evt-slots-badge strong { display: block; font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem); font-weight: 900; line-height: 0.9; }
+.evt-slots-badge span { display: block; font-size: 0.75rem; font-weight: 800; line-height: 1.1; }
 .evt-layout { display: grid; gap: 1.75rem; align-items: start; }
 /* From 1024px the poster grows to the full height of the facts column beside it, down to the Register button, instead of
    stopping at its own natural size: a visitor sees the whole poster at the biggest size the layout allows. The frame (and
