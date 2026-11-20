@@ -96,20 +96,18 @@ useSeo({
     <div class="evt-layout">
       <div v-if="images.poster || isAdmin" class="evt-poster-stage">
         <div class="photocard evt-poster" style="--tilt: 2deg">
-          <EventImage slot-key="poster" :event="event" :image="images.poster" @changed="load" />
+          <EventImage slot-key="poster" :event="event" :image="images.poster" fill @changed="load" />
         </div>
         <div v-if="st && st.canRegister && st.slotsLeft > 0" class="evt-slots-badge"><strong>{{ st.slotsLeft }}</strong><span>of {{ event.capacity }}<br>slots left</span></div>
       </div>
 
       <div class="space-y-5">
-        <EventHeader :event="event" :st="st!" :kits="kits" as-h1 :required-note="false" />
+        <EventHeader :event="event" :st="st!" :kits="kits" as-h1 :required-note="false" :slots-sticker="false" />
 
-        <section class="card-soft p-5" aria-labelledby="slots-h">
-          <h2 id="slots-h" class="mb-3 text-lg">Slots</h2>
-          <AvailabilityBar :registered="Math.min(registered, event.capacity)" :capacity="event.capacity" :label="`Slots taken for ${event.title}`" />
-          <p class="mt-2 text-sm font-semibold">{{ st!.key === "closed" ? "Registration is closed" : `${st!.slotsLeft} of ${event.capacity} slots left` }}</p>
-          <p v-if="!st!.canRegister" class="mt-1 text-sm text-danger">Registration is unavailable. {{ st!.reason }}</p>
-          <div class="mt-4"><BaseButton v-if="st!.canRegister" :to="registerPath(event)" variant="accent" block><IconTicket />Register for this event</BaseButton></div>
+        <section class="card-soft p-5">
+          <!-- The slot count already shows on the poster badge; this stays just the call to action, so it doesn't repeat. -->
+          <p v-if="!st!.canRegister" class="text-sm font-semibold text-danger">{{ st!.reason }}</p>
+          <BaseButton v-else :to="registerPath(event)" variant="accent" block><IconTicket />Register for this event</BaseButton>
         </section>
       </div>
     </div>

@@ -5,7 +5,9 @@ import { imageUrl, SLOTS, uploadEventImage } from "~/lib/eventImages";
 // One image slot of an event. Shows the uploaded image at its own size and proportions, or a placeholder with the
 // slot's recommended aspect ratio when there is none or it fails to load. Admins get an "Upload image" button on the placeholder
 // (not with `readOnly`, e.g. on an attendee's own ticket). `image` is the event_images row for the slot (or undefined).
-const props = defineProps({ slotKey: { type: String, required: true }, event: Object as PropType<Record<string, any>>, image: Object as PropType<Record<string, any>>, lightbox: { type: Boolean, default: true }, readOnly: Boolean });
+// `fill`: the picture grows to the height of its container (which must set one) instead of only following its own width. Still the
+// whole picture, never cropped: width follows along so the proportions stay correct, same as it does the other way around by default.
+const props = defineProps({ slotKey: { type: String, required: true }, event: Object as PropType<Record<string, any>>, image: Object as PropType<Record<string, any>>, lightbox: { type: Boolean, default: true }, readOnly: Boolean, fill: Boolean });
 const emit = defineEmits(["changed"]);
 const { isAdmin } = useAuth();
 const toast = useToast();
@@ -42,11 +44,11 @@ const pick = (e) => { upload(e.target.files?.[0]); e.target.value = ""; };
   <template v-else>
     <!-- The picture keeps its own proportions: full width, height follows the image (no cropping, no letterboxing).
          width/height only reserve room until the file has loaded; then the real dimensions take over. -->
-    <div class="overflow-hidden rounded-lg border border-link bg-brand-sky">
-      <button v-if="lightbox" type="button" class="block w-full" :aria-label="`View larger: ${alt}`" aria-haspopup="dialog" @click="open = true">
-        <img :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" class="block h-auto w-full" @error="failed = true">
+    <div :class="['overflow-hidden rounded-lg border border-link bg-brand-sky', fill ? 'flex h-full items-center justify-center' : '']">
+      <button v-if="lightbox" type="button" :class="fill ? 'flex h-full min-w-0 items-center justify-center' : 'block w-full'" :aria-label="`View larger: ${alt}`" aria-haspopup="dialog" @click="open = true">
+        <img :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" :class="fill ? 'block h-full w-full object-contain' : 'block h-auto w-full'" @error="failed = true">
       </button>
-      <img v-else :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" class="block h-auto w-full" @error="failed = true">
+      <img v-else :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" :class="fill ? 'block h-full w-full object-contain' : 'block h-auto w-full'" @error="failed = true">
     </div>
     <Lightbox v-if="open" :url="url" :alt="alt" :title="spec.label" @close="open = false" />
   </template>

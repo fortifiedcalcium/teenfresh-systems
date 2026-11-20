@@ -135,7 +135,14 @@ fieldset.card-soft > legend + * { clear: both; }
 .evt-slots-badge strong { display: block; font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem); font-weight: 900; line-height: 1; }
 .evt-slots-badge span { display: block; font-size: 0.625rem; font-weight: 800; line-height: 1.2; }
 .evt-layout { display: grid; gap: 1.75rem; align-items: start; }
-@media (min-width: 1024px) { .evt-layout { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 2.5rem; } }
+/* From 1024px the poster grows to the full height of the facts column beside it, down to the Register button, instead of
+   stopping at its own natural size: a visitor sees the whole poster at the biggest size the layout allows. */
+@media (min-width: 1024px) {
+  .evt-layout { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 2.5rem; align-items: stretch; }
+  .evt-poster-stage { display: flex; }
+  .evt-poster { display: flex; height: 100%; }
+  .evt-poster > * { flex: 1; min-width: 0; height: 100%; }
+}
 
 /* A dashed divider inside a soft panel, for a facts strip that reads like a ticket (register page, kit summary). */
 .panel-perf { margin: 0 1.25rem; border-top: 2px dashed var(--brand-sky); }
