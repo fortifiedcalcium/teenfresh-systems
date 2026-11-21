@@ -12,11 +12,9 @@
 .ticket-grid { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 640px)  { .ticket-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .ticket-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1536px) { .ticket-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
 .ticket-li { display: flex; min-width: 0; width: 100%; max-width: 420px; margin-inline: auto; }
 @media (min-width: 640px) { .ticket-li { max-width: none; } }
-@media (min-width: 1536px) { .ticket-li { max-width: 360px; } }
 
 .ticket {
   --notch: var(--ticket-notch); --edge: 1.5px; --corner: 16px; --perf-inset: var(--ticket-pad);
