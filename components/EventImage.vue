@@ -7,7 +7,8 @@ import { imageUrl, SLOTS, uploadEventImage } from "~/lib/eventImages";
 // (not with `readOnly`, e.g. on an attendee's own ticket). `image` is the event_images row for the slot (or undefined).
 // `fill`: the picture grows to the height of its container (which must set one) instead of only following its own width. Still the
 // whole picture, never cropped: width follows along so the proportions stay correct, same as it does the other way around by default.
-const props = defineProps({ slotKey: { type: String, required: true }, event: Object as PropType<Record<string, any>>, image: Object as PropType<Record<string, any>>, lightbox: { type: Boolean, default: true }, readOnly: Boolean, fill: Boolean });
+// `priority`: the main picture of a page (the event poster) loads at once and first, instead of lazily like the pictures further down.
+const props = defineProps({ slotKey: { type: String, required: true }, event: Object as PropType<Record<string, any>>, image: Object as PropType<Record<string, any>>, lightbox: { type: Boolean, default: true }, readOnly: Boolean, fill: Boolean, priority: Boolean });
 const emit = defineEmits(["changed"]);
 const { isAdmin } = useAuth();
 const toast = useToast();
@@ -46,9 +47,9 @@ const pick = (e) => { upload(e.target.files?.[0]); e.target.value = ""; };
          width/height only reserve room until the file has loaded; then the real dimensions take over. -->
     <div :class="['overflow-hidden rounded-lg border border-link bg-brand-sky', fill ? 'inline-flex h-full' : '']">
       <button v-if="lightbox" type="button" :class="fill ? 'block h-full' : 'block w-full'" :aria-label="`View larger: ${alt}`" aria-haspopup="dialog" @click="open = true">
-        <img :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" :class="fill ? 'block h-full w-auto' : 'block h-auto w-full'" @error="failed = true">
+        <img :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" :loading="priority ? 'eager' : 'lazy'" :fetchpriority="priority ? 'high' : undefined" decoding="async" :class="fill ? 'block h-full w-auto' : 'block h-auto w-full'" @error="failed = true">
       </button>
-      <img v-else :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" loading="lazy" decoding="async" :class="fill ? 'block h-full w-auto' : 'block h-auto w-full'" @error="failed = true">
+      <img v-else :src="url" :alt="alt" :data-allow-save="slotKey === 'gcash_qr' || undefined" :width="spec.w" :height="spec.h" :loading="priority ? 'eager' : 'lazy'" :fetchpriority="priority ? 'high' : undefined" decoding="async" :class="fill ? 'block h-full w-auto' : 'block h-auto w-full'" @error="failed = true">
     </div>
     <Lightbox v-if="open" :url="url" :alt="alt" :title="spec.label" @close="open = false" />
   </template>

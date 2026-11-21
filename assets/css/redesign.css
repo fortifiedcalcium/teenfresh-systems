@@ -142,15 +142,12 @@ fieldset.card-soft > legend + * { clear: both; }
 .evt-slots-badge strong { display: block; font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem); font-weight: 900; line-height: 0.9; }
 .evt-slots-badge span { display: block; font-size: 0.75rem; font-weight: 800; line-height: 1.1; }
 .evt-layout { display: grid; gap: 1.75rem; align-items: start; }
-/* From 1024px the poster grows to the full height of the facts column beside it, down to the Register button, instead of
-   stopping at its own natural size: a visitor sees the whole poster at the biggest size the layout allows. The frame (and
-   so the badge pinned to it) shrinks to whatever width that height produces, and sits centered in the stage. */
+/* From 1024px the poster sits in the left column at that column's full width (3:4, never cropped). Its size follows the column's width, not the
+   picture's own size, so it is the same size the moment the page appears and after the file has loaded (it used to be squeezed to the facts
+   column's height until the picture arrived, then jump bigger). The frame still hugs the card, so the slots badge stays on its corner. */
 @media (min-width: 1024px) {
-  .evt-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: stretch; }
-  .evt-poster-stage { display: flex; justify-content: center; }
-  .evt-poster-frame { width: auto; margin: 0; height: 100%; }
-  .evt-poster { display: flex; width: auto; height: 100%; margin: 0; }
-  .evt-poster > * { height: 100%; }
+  .evt-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+  .evt-poster-frame { width: 100%; }
 }
 
 /* A dashed divider inside a soft panel, for a facts strip that reads like a ticket (register page, kit summary). */
