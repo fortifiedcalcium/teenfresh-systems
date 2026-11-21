@@ -29,9 +29,9 @@ test.describe("axe: wcag2a / wcag2aa / wcag21aa / wcag22aa on every route", () =
     await page.setViewportSize({ width: 800, height: 900 }); // two columns
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "IVE's Kim Gaeul Cupsleeve Event hosted by Teenfresh" })).toBeVisible();
-    await expect(page.locator("#featured-event article, #events article")).toHaveCount(3);   // the featured event in the hero, and two more below it
+    await expect(page.locator(".hero2")).toBeVisible();                              // the featured event in the hero (not a card), and two more below it
     const cards = page.locator("#events article");
-    await expect(cards).toHaveCount(2);                                            // a sold-out event and a closed one
+    await expect(cards).toHaveCount(2);                                            // a sold-out event and a closed one (both still upcoming, so they stay in this list)
     await page.waitForLoadState("networkidle");
     const sizes = await cards.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }));
     expect(new Set(sizes.map((s) => s[1])).size, JSON.stringify(sizes)).toBe(1);

@@ -206,7 +206,7 @@ test.describe("pages at phone and tablet widths", () => {
     await page.getByRole("button", { name: /Review/ }).first().click();
     await expect(page.getByRole("dialog")).toHaveCount(0);                                  // not a modal
     await expect(page.getByRole("region", { name: /Payment of/ })).toBeVisible();
-    await expect(page.getByRole("list", { name: /Payments/ })).toBeVisible();               // the list stays on the left
+    await expect(page.getByRole("table", { name: /Payments/ })).toBeVisible();              // the list (a table) stays on the left
   });
   test("the dashboard has 2 stat columns on phones and 4 from 768px", async ({ page, as }) => {
     await as("admin"); await page.goto("/admin");

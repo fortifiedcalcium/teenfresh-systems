@@ -6,7 +6,7 @@ const noSideScroll = (page) => page.evaluate(() => document.documentElement.scro
 
 test.describe("home banner", () => {
   for (const [w, h] of [[360, 740], [768, 900], [1024, 800], [1440, 900], [1920, 1080]]) {
-    test(`${w}px: scales with no sideways scroll; text and ticket ${w >= 1024 ? "side by side" : "stacked"}`, async ({ page, as }) => {
+    test(`${w}px: scales with no sideways scroll; ${w >= 1024 ? "text and poster side by side" : "poster first, then the text"}`, async ({ page, as }) => {
       await as(null);
       await page.setViewportSize({ width: w, height: h });
       await page.goto("/");
@@ -14,10 +14,10 @@ test.describe("home banner", () => {
       expect(await noSideScroll(page)).toBe(true);
       const hero = page.locator(".home-hero");
       const text = await hero.getByRole("heading", { level: 1 }).boundingBox();
-      const ticket = await hero.locator("#featured-event").boundingBox();
+      const ticket = await hero.locator(".hero2__card").boundingBox();
       const box = await hero.boundingBox();
       expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(w);
-      if (w >= 1024) expect(ticket.x).toBeGreaterThan(text.x + text.width * 0.5); else expect(ticket.y).toBeGreaterThan(text.y + text.height);
+      if (w >= 1024) expect(ticket.x).toBeGreaterThan(text.x + text.width * 0.5); else expect(ticket.y + ticket.height).toBeLessThanOrEqual(text.y + 1);   // below 1024px the poster comes first
     });
   }
   test("the banner picture sits behind a semi-transparent overlay and has its alt text; the headline stays readable", async ({ page, as }) => {
