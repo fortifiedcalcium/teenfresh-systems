@@ -97,7 +97,7 @@ useSeo({
       <div v-if="images.poster || isAdmin" class="evt-poster-stage">
         <div class="evt-poster-frame">
           <div class="photocard evt-poster" style="--tilt: 2deg">
-            <EventImage slot-key="poster" :event="event" :image="images.poster" fill @changed="load" />
+            <EventImage slot-key="poster" :event="event" :image="images.poster" priority @changed="load" />
           </div>
           <div v-if="st && st.canRegister && st.slotsLeft > 0" class="evt-slots-badge"><strong>{{ st.slotsLeft }}</strong><span>of {{ event.capacity }}<br>slots left</span></div>
         </div>

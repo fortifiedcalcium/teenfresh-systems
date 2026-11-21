@@ -43,7 +43,7 @@ const when = computed(() => [props.event.venue, props.event.registration_deadlin
     <div class="hero2__card">
       <div class="photocard">
         <ComingSoonBanner v-if="event.banner_coming_soon" ratio="4 / 5" class="photocard__img" />
-        <img v-else-if="poster" :src="poster" :alt="banner?.alt_text || event.title" class="photocard__img" fetchpriority="high" decoding="async" width="1600" height="2000">
+        <img v-else-if="poster" :src="poster" :alt="banner?.alt_text || event.title" class="photocard__img" fetchpriority="high" decoding="async" width="1200" height="1600">
         <div v-else class="photocard__img photocard__img--empty"><span>{{ event.title }}</span></div>
       </div>
     </div>
