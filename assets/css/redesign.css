@@ -185,9 +185,9 @@ fieldset.card-soft > legend + * { clear: both; }
 .pay-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .pay-title { font-size: clamp(1.875rem, 1.4rem + 1.6vw, 2.5rem); font-weight: 900; line-height: 1.1; color: var(--ink); }
 .pay-sub { margin-top: 0.25rem; font-size: 1.125rem; color: var(--ink-muted); }
-.pay-event { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.pay-event { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; max-width: 100%; }
 .pay-event label { font-weight: 800; }
-.pay-event select { width: auto; min-width: 14rem; max-width: 24rem; min-height: 3.25rem; border: 2px solid var(--link); border-radius: 9999px; padding-inline: 1.25rem; background-color: var(--white); font-size: 1.0625rem; }
+.pay-event select { width: min(24rem, 100%); min-width: min(14rem, 100%); min-height: 3.25rem; border: 2px solid var(--link); border-radius: 9999px; padding-inline: 1.25rem; background-color: var(--white); font-size: 1.0625rem; }
 .pay-chips { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
 .pay-chip { display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0.25rem 1rem; border: 2px solid currentColor; border-radius: 9999px; font-size: 0.9375rem; font-weight: 800; }
 .pay-chip--slots { color: var(--ink); }

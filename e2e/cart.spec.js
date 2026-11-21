@@ -1,7 +1,8 @@
 import { test, expect, scan, formatViolations } from "./fixtures.js";
 
 // The cart (a ticket stub) and the checkout summary, with two ÖRBITAL (Version A) in the cart.
-const withCart = async (page) => page.addInitScript(() => { try { localStorage.setItem("teenfresh-cart", JSON.stringify([{ id: "pa", vid: "va", qty: 2 }])); } catch { /* no storage */ } });
+// Each account has its own saved cart ("teenfresh-cart:<user id>"); visitors who are signed out share "teenfresh-cart:guest". The test user is u1.
+const withCart = async (page, who = "guest") => page.addInitScript((key) => { try { localStorage.setItem(key, JSON.stringify([{ id: "pa", vid: "va", qty: 2 }])); } catch { /* no storage */ } }, `teenfresh-cart:${who}`);
 
 for (const width of [360, 1280]) {
   test(`cart at ${width}px: lines, total, change the quantity, no sideways scroll, axe clean`, async ({ page, as }) => {
@@ -20,7 +21,7 @@ for (const width of [360, 1280]) {
 }
 
 test("checkout: summary of the order, GCash details, and the place-order button", async ({ page, as }) => {
-  await as("user"); await withCart(page);
+  await as("user"); await withCart(page, "u1");
   await page.goto("/checkout");
   await expect(page.getByRole("heading", { level: 1, name: "Checkout" })).toBeVisible();
   const summary = page.getByLabel("Order summary");
