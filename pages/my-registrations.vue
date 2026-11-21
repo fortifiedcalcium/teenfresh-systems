@@ -42,11 +42,11 @@ function done() { resubmit.value = null; load(); }
 
 <template>
   <Loading v-if="rows === null" label="Loading your registrations…" class="p-12" logo />
-  <div v-else>
+  <div v-else class="2xl:-mx-32">   <!-- on very wide screens the page grows 8rem each side for four tickets in a row; the heading grows with it so both share one left edge -->
     <h1 class="mb-4 flex items-center gap-2 text-2xl"><IconTicket />My registrations</h1>
     <Alert v-if="error" tone="bad" class="mb-3">{{ error }}</Alert>
     <Empty v-if="rows.length === 0">You haven't registered for any event yet. <NuxtLink to="/">Browse events</NuxtLink></Empty>
-    <ul v-else class="ticket-grid 2xl:-mx-32 pb-[env(safe-area-inset-bottom)]">
+    <ul v-else class="ticket-grid pb-[env(safe-area-inset-bottom)]">
       <li v-for="r in rows" :key="r.id" class="ticket-li">
         <Ticket :status="kindOf(r)" :labelled-by="`reg-title-${r.id}`">
           <template #image><EventImage slot-key="banner" :event="{ id: r.event_id, title: r.events?.title, banner_coming_soon: r.events?.banner_coming_soon }" :image="banners[r.event_id]" :lightbox="false" read-only class="!rounded-none !border-0" /></template>
