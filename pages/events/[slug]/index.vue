@@ -104,7 +104,7 @@ useSeo({
       </div>
 
       <div class="space-y-5">
-        <EventHeader :event="event" :st="st!" :kits="kits" as-h1 :required-note="false" :slots-sticker="false" />
+        <EventHeader :event="event" :st="st!" :kits="kits" as-h1 :required-note="false" :slots-sticker="false" countdown />
 
         <section class="card-soft p-5">
           <!-- The slot count already shows on the poster badge; this stays just the call to action, so it doesn't repeat. -->

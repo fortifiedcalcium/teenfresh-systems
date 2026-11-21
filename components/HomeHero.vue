@@ -30,6 +30,8 @@ const when = computed(() => [props.event.venue, props.event.registration_deadlin
         <li class="sticker bg-brand-blush"><IconUsers />{{ slots }}</li>
       </ul>
 
+      <EventCountdown :event="event" />
+
       <div class="flex flex-wrap gap-3">
         <BaseButton v-if="st.canRegister" :to="eventPath(event)" variant="accent" :aria-label="`Register for ${event.title}`"><IconTicket />Register</BaseButton>
         <BaseButton v-else :to="eventPath(event)" variant="secondary"><IconInfo />View event</BaseButton>

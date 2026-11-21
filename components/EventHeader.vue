@@ -6,7 +6,7 @@ import { peso } from "~/lib/payment";
 // The event's key facts as real text (never only inside a poster image).
 // `slotsSticker` is off on the event page, which already shows the slot count as a badge on the poster and again in its own Slots section:
 // the sticker there would be a third copy of the same number. The register page has neither, so it keeps the sticker (the default).
-const props = defineProps({ event: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true }, st: Object as PropType<Record<string, any>>, kits: { type: Array as PropType<any[]> as PropType<any[]>, default: () => [] }, asH1: Boolean, requiredNote: { type: Boolean, default: true }, slotsSticker: { type: Boolean, default: true } });
+const props = defineProps({ event: { type: Object as PropType<Record<string, any>> as PropType<Record<string, any>>, required: true }, st: Object as PropType<Record<string, any>>, kits: { type: Array as PropType<any[]> as PropType<any[]>, default: () => [] }, asH1: Boolean, requiredNote: { type: Boolean, default: true }, slotsSticker: { type: Boolean, default: true }, countdown: Boolean });
 const fee = computed(() => Number(props.event.registration_fee));
 const paid = computed(() => fee.value > 0 || props.kits.length > 0);
 </script>
@@ -22,6 +22,7 @@ const paid = computed(() => fee.value > 0 || props.kits.length > 0);
       <li v-if="paid" class="sticker bg-brand-cream"><IconWallet /><span>{{ kits.length ? peso(Math.min(...kits.map((k) => Number(k.unit_price)))) : peso(fee) }}</span><span v-if="event.fee_note" class="sticker__note">({{ event.fee_note }})</span></li>
       <li v-if="slotsSticker && st?.canRegister && st.slotsLeft > 0" class="sticker bg-brand-blush"><IconUsers />{{ st.slotsLeft }} slots left</li>
     </ul>
+    <EventCountdown v-if="countdown" :event="event" />
     <p v-if="paid" class="mt-1 font-black">1 Form = 1 Entry</p>
 
     <div class="card-soft evt-head__panel">

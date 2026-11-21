@@ -13,6 +13,7 @@ No migration.
 - **The slots badge is a sticker on the poster's top-right corner**, with the number and "of N slots left" stacked tight in the middle of the circle. It is now the only place the slot count is shown on the event page (the header sticker and the "Slots" progress section are gone); the Register panel is just the button, or the reason it is unavailable.
 - **Event cards show the poster edge to edge** across the top of the card, like the shop's product cards, instead of a small tilted card on a coloured background. The frame is 4:5 for every poster, so a row of cards lines up; only a sliver of a poster's edges can be trimmed.
 - **On a laptop (1024 px and up) the event poster fills its column** down to the Register button, whole and uncropped, and the page is wider with an even poster/facts split.
+- **A countdown to the event's start** on the event page and in the home hero: four sticker tiles (days, hours, minutes, seconds). When the event has started it says "Happening now" until its end time, then disappears. Screen readers hear one sentence that updates each minute.
 - **The home page says the QR ticket is in your account** (step 3 of "How it works" and the intro line), with the email as a follow-up for updates, not the only way to get it.
 - **On a phone or tablet the home page shows the poster first**, then the event's title, facts and buttons (on a laptop the details stay on the left and the poster on the right).
 - **The home page gets a "How it works" section**, and past events are tilted photocard rows.
