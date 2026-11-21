@@ -1,44 +1,46 @@
 <script setup lang="ts">
-import { eventStatus, fmtDate, fmtDeadline, fmtTimeRange, STATUS_TONE } from "~/lib/availability";
+import { eventStatus, fmtDate, fmtDeadline, fmtTimeRange } from "~/lib/availability";
 import { peso } from "~/lib/payment";
 import { eventPath } from "~/lib/slug";
 import { imageUrl } from "~/lib/eventImages";
 import type { EventRow, ImageRow, KitRow } from "~/types/db";
-import type { Tone } from "~/types/ui";
 
-// One event as a concert ticket: photo, pastel header with the title and status, a compact grid (date, time, fee, slots left), the slots bar,
-// a barcode strip and the Register button.
-const props = withDefaults(defineProps<{ event: EventRow; registered: number; bannerImage?: ImageRow; kits?: Pick<KitRow, "unit_price">[]; band?: number; priority?: boolean }>(), { kits: () => [], band: 0 });
+// One event as a keepsake card: the poster fills the top of the card edge to edge (like the shop's product cards),
+// the facts are stickers, and the action is one button. The poster's frame is 4:5, so a row of cards lines up and only a sliver of the edges is trimmed.
+const props = withDefaults(defineProps<{ event: EventRow; registered: number; bannerImage?: ImageRow; kits?: Pick<KitRow, "unit_price">[]; band?: number }>(), { kits: () => [], band: 0 });
 const st = computed(() => eventStatus(props.event, props.registered));
 const fee = computed(() => Number(props.event.registration_fee));
-const taken = computed(() => Math.min(props.registered, props.event.capacity));
-const soon = computed(() => Boolean(props.event.banner_coming_soon));   // an admin switched the banner to "Coming soon"
-const image = computed(() => (soon.value ? null : imageUrl(props.bannerImage)));
-const explainId = `explain-${useId()}`;
-const slotsText = computed(() => (st.value.key === "closed" ? "Closed" : `${st.value.slotsLeft} of ${props.event.capacity}`));
-const feeNote = computed(() => (props.event.fee_note ? `(${props.event.fee_note})` : ""));
+const poster = computed(() => (props.event.banner_coming_soon ? null : imageUrl(props.bannerImage)));
+const titleId = `kc-${useId()}`;
+const slots = computed(() => (st.value.canRegister ? `${st.value.slotsLeft} of ${props.event.capacity} slots left` : st.value.label));
+const deadline = computed(() => (st.value.canRegister && props.event.registration_deadline ? `Register by ${fmtDeadline(props.event.registration_deadline)}` : ""));
 </script>
 
 <template>
-  <TicketCard :title="event.title" :subtitle="event.subtitle || undefined" :image="image" :image-alt="bannerImage?.alt_text || ''" :band="band" :priority="priority" :status-label="st.label" :status-tone="(STATUS_TONE as Record<string, Tone>)[st.key]" :barcode="event.slug || event.id">
-    <template v-if="soon" #media><ComingSoonBanner /></template>
-    <dl class="event-facts">
-      <div><dt>Date</dt><dd>{{ fmtDate(event.event_date) }}</dd></div>
-      <div><dt>Time</dt><dd>{{ fmtTimeRange(event.event_date, event.ends_at) }}</dd></div>
-      <div>
-        <dt>{{ kits.length > 0 ? "Kits" : "Fee" }}</dt>
-        <dd><KitPrices v-if="kits.length > 0" :kits="kits" /><NoWrap v-else-if="fee > 0">{{ peso(fee) }}</NoWrap><template v-else>{{ event.price_info || "Free" }}</template><span v-if="feeNote && (kits.length > 0 || fee > 0)" class="event-facts__note">{{ feeNote }}</span></dd>
-      </div>
-      <div><dt>Slots left</dt><dd>{{ slotsText }}</dd></div>
-    </dl>
-    <div class="mt-3 space-y-2">
-      <AvailabilityBar :registered="taken" :capacity="event.capacity" :label="`Slots taken for ${event.title}`" />
-      <p v-if="event.venue || event.registration_deadline" class="text-xs text-ink-muted">{{ event.venue }}<template v-if="event.venue && event.registration_deadline"> · </template><template v-if="event.registration_deadline">Registration closes {{ fmtDeadline(event.registration_deadline) }}</template></p>
-      <p v-if="!st.canRegister" :id="explainId" class="text-sm text-danger">Registration is unavailable. {{ st.reason }}</p>
+  <article class="kcard" :aria-labelledby="titleId">
+    <div class="kcard__media">
+      <ComingSoonBanner v-if="event.banner_coming_soon" ratio="4 / 5" class="kcard__img" />
+      <img v-else-if="poster" :src="poster" :alt="bannerImage?.alt_text || ''" class="kcard__img" loading="lazy" decoding="async" width="1600" height="2000">
+      <div v-else class="kcard__img kcard__img--empty"><span>{{ event.title }}</span></div>
     </div>
-    <template #action>
-      <BaseButton v-if="st.canRegister" :to="eventPath(event)" variant="accent" block :aria-label="`Register for ${event.title}`"><IconTicket />Register</BaseButton>
-      <BaseButton v-else :to="eventPath(event)" variant="secondary" block :aria-describedby="explainId"><IconInfo />View event</BaseButton>
-    </template>
-  </TicketCard>
+    <div class="kcard__body">
+      <div>
+        <h2 :id="titleId" :title="event.title" class="line-clamp-2 text-xl font-black leading-snug">{{ event.title }}</h2>
+        <p v-if="event.subtitle" class="line-clamp-2 text-ink-muted">{{ event.subtitle }}</p>
+      </div>
+      <ul class="hero2__stickers" aria-label="Event details">
+        <li class="sticker sticker--sm bg-brand-mint"><IconCalendar />{{ fmtDate(event.event_date) }}</li>
+        <li class="sticker sticker--sm bg-brand-sky"><IconClock />{{ fmtTimeRange(event.event_date, event.ends_at) }}</li>
+        <li v-if="kits.length > 0 || fee > 0 || event.price_info" class="sticker sticker--sm bg-brand-cream">
+          <IconTicket /><KitPrices v-if="kits.length > 0" :kits="kits" /><template v-else-if="fee > 0"><NoWrap>{{ peso(fee) }}</NoWrap><span v-if="event.fee_note" class="sticker__note">({{ event.fee_note }})</span></template><template v-else>{{ event.price_info }}</template>
+        </li>
+        <li class="sticker sticker--sm bg-brand-blush"><IconUsers />{{ slots }}</li>
+      </ul>
+      <p v-if="event.venue || deadline" class="text-sm text-ink-muted">{{ [event.venue, deadline].filter(Boolean).join(" · ") }}</p>
+      <div class="mt-auto">
+        <BaseButton v-if="st.canRegister" :to="eventPath(event)" variant="accent" block :aria-label="`Register for ${event.title}`"><IconTicket />Register</BaseButton>
+        <BaseButton v-else :to="eventPath(event)" variant="secondary" block><IconInfo />View event</BaseButton>
+      </div>
+    </div>
+  </article>
 </template>

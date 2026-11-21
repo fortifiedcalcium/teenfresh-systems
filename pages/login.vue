@@ -3,6 +3,7 @@ import { IconLogIn } from "~/lib/icons";
 import { rememberDestination } from "~/lib/destination";
 
 definePageMeta({ layout: "blank" });
+const decor = useAuthDecor();
 const { user, loading, signIn, signInWithGoogle, sessionEnded } = useAuth();
 const route = useRoute();
 const from = computed(() => (typeof route.query.from === "string" && route.query.from.startsWith("/") ? route.query.from : "/"));
@@ -31,7 +32,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <AuthShell :icon="IconLogIn" title="Sign in" subtitle="Sign in to register for events and see your tickets.">
+  <AuthShell :icon="IconLogIn" title="Sign in" subtitle="Sign in to register for events and see your tickets." :decor="decor">
     <Alert v-if="sessionEnded" tone="warn" class="mb-4">Your session ended. Please sign in again to continue.</Alert>
     <form class="space-y-4" novalidate @submit.prevent="onSubmit">
       <ErrorSummary :errors="errors" :focus-signal="focusSignal" :extra="error" :labels="{ email: 'Email', password: 'Password' }" />

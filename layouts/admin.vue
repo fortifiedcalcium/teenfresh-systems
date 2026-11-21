@@ -7,8 +7,8 @@ import { typesForLocation } from "~/lib/notifications";
 // The switch is pure CSS (lg:), so there is no user-agent sniffing and the hidden navigation is display:none.
 // Loads the events once and shares the selected one with every admin page through useAdminContext().
 // The shop has nothing to do with events, so its pages do not show the event picker: Shop products, and the "shop" tab of Payments and Email.
-const SHOP_PAGES = ["/admin/products"];
-const HUB_PAGES = ["/admin/payments", "/admin/emails"];
+const SHOP_PAGES = ["/admin/products", "/admin/orders"];
+const HUB_PAGES = ["/admin/emails"];
 
 const { profile, signOut } = useAuth();
 const route = useRoute();
@@ -48,7 +48,9 @@ watch(() => route.path, (p) => {
   requestAnimationFrame(() => window.scrollTo(0, y));
 });
 
-function select(id) { adminEventId.value = id; try { localStorage.setItem("admin_event", id); } catch { /* ignore */ } }
+const select = selectAdminEvent;
+// The Payments page has its own picker beside the title (like the design), so the bar is hidden there.
+const ownPicker = computed(() => route.path === "/admin/payments");
 </script>
 
 <template>
@@ -57,7 +59,7 @@ function select(id) { adminEventId.value = id; try { localStorage.setItem("admin
     <AdminSidebar :email="profile?.email" :pending="adminPending" :notes="notes" @sign-out="signOut" />
     <div class="min-w-0 flex-1">
       <AdminTopBar :notes="notes" />
-      <section v-if="!onShopPage" aria-label="Event selection" class="flex flex-wrap items-center gap-2 border-b border-brand-sky bg-white/60 px-4 py-3">
+      <section v-if="!onShopPage && !ownPicker" aria-label="Event selection" class="flex flex-wrap items-center gap-2 border-b border-brand-sky bg-white/60 px-4 py-3">
         <label for="event-select" class="text-sm font-semibold">Event</label>
         <select id="event-select" class="input max-w-md" :value="event?.id || ''" :disabled="!adminEvents?.length" @change="select(($event.target as HTMLInputElement).value)">
           <option v-for="e in adminEvents" :key="e.id" :value="e.id">{{ e.title }}</option>

@@ -3,6 +3,7 @@ import { IconMail, IconUserPlus } from "~/lib/icons";
 import { rememberDestination } from "~/lib/destination";
 
 definePageMeta({ layout: "blank" });
+const decor = useAuthDecor();
 const { signUp, signInWithGoogle } = useAuth();
 const route = useRoute();
 const from = computed(() => (typeof route.query.from === "string" && route.query.from.startsWith("/") ? route.query.from : "/"));
@@ -37,10 +38,10 @@ async function onSubmit() {
 </script>
 
 <template>
-  <AuthShell v-if="done" :icon="IconMail" title="Check your email">
+  <AuthShell v-if="done" :icon="IconMail" title="Check your email" :decor="decor">
     <p role="status" class="text-center">We sent a verification link to <strong>{{ form.email }}</strong>. Open it to activate your account, then <NuxtLink :to="loginTo">sign in</NuxtLink>.</p>
   </AuthShell>
-  <AuthShell v-else :icon="IconUserPlus" title="Create an account" subtitle="One account lets you register and keep your tickets.">
+  <AuthShell v-else :icon="IconUserPlus" title="Create an account" subtitle="One account lets you register and keep your tickets." :decor="decor">
     <form class="space-y-4" novalidate @submit.prevent="onSubmit">
       <ErrorSummary :errors="errors" :focus-signal="focusSignal" :extra="error" :labels="{ fullName: 'Full name', email: 'Email', password: 'Password', confirm: 'Confirm password' }" />
       <Field id="fullName" v-slot="a" label="Full name" required :error="errors.fullName"><input v-bind="a" v-model="form.fullName" autocomplete="name" class="input"></Field>

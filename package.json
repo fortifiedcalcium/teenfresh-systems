@@ -1,7 +1,7 @@
 {
   "name": "event-registration",
   "private": true,
-  "version": "2.11.1",
+  "version": "2.12.0",
   "type": "module",
   "scripts": {
     "dev": "nuxt dev --port 5199",
@@ -13,6 +13,7 @@
     "lighthouse": "lhci collect && lhci assert",
     "test": "vitest run",
     "deploy": "npm run build && wrangler pages deploy dist --project-name teenfresh --branch main",
+    "deploy:staging": "set -a && . ./.env.development && set +a && npm run build && wrangler pages deploy dist --project-name teenfresh --branch staging --commit-dirty=true",
     "postinstall": "nuxt prepare",
     "pretest:e2e": "VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_ANON_KEY=test-anon-key npm run build:csp",
     "build:csp": "NUXT_BUILD_DIR=.nuxt-csp NUXT_OUTPUT_DIR=dist-csp nuxt build",

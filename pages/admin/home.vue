@@ -70,6 +70,7 @@ async function save() {
 <template>
   <div class="space-y-4">
     <h1 class="flex items-center gap-2 text-2xl"><IconImage />Home page</h1>
+    <AdminSwitch group="events" />
     <p class="text-sm text-ink-muted">The banner at the top of the home page: its picture, its text and the event shown there. Changes show up straight away; no redeploy is needed. Without a picture the page keeps its plain cream background.</p>
     <Loading v-if="!loaded" label="Loading settings…" />
     <form v-else class="card space-y-5 p-4" novalidate aria-labelledby="banner-h" @submit.prevent="save">

@@ -6,7 +6,7 @@ export interface HomeSettings { banner_path: string | null; banner_alt: string |
 export const BANNER_ALT_MAX = 200;
 export const HERO_HEADLINE_MAX = 120;
 export const HERO_DESCRIPTION_MAX = 300;
-export const DEFAULT_HERO_DESCRIPTION = "Pick an event and reserve your slot. Pay by GCash and your ticket arrives by email once the payment is checked.";
+export const DEFAULT_HERO_DESCRIPTION = "Pick an event and reserve your slot. Pay by GCash and your ticket is ready in your account once the payment is checked.";
 export const NO_HOME_SETTINGS: HomeSettings = { banner_path: null, banner_alt: null, banner_decorative: false, featured_event_id: null };
 
 /** Public URL of the banner picture, or null when there is none. */

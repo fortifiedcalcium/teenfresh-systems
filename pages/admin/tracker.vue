@@ -72,6 +72,7 @@ const FILTERS = [["", "Everyone"], ["in", "Checked in"], ["out", "Not yet arrive
       <div class="flex flex-wrap items-center gap-2"><h1 class="flex items-center gap-2 text-2xl"><IconChecklist />Attendance</h1><span class="badge badge-ok">Live updates</span></div>
       <TopBarAction v-if="tab === 'list'" btn-class="btn-primary" :icon="IconDownload" label="Export Excel" short="Export" :disabled="!shown.length" @click="exportExcel" />
     </div>
+    <AdminSwitch group="attendees" />
     <div class="grid grid-cols-3 gap-2 text-center md:gap-3">
       <div class="card p-3"><p class="text-2xl font-extrabold">{{ counts.total }}</p><p class="text-xs text-ink-muted">Registered</p></div>
       <div class="card p-3"><p class="text-2xl font-extrabold text-success">{{ counts.in }}</p><p class="text-xs text-ink-muted">Checked in</p></div>

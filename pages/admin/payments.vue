@@ -1,15 +1,8 @@
 <script setup lang="ts">
-import { SHOP_ENABLED } from "~/lib/features";
-
-// Event payments and shop orders on one admin page, so the menu stays short.
-const TABS = [{ key: "event", label: "Event payments" }, ...(SHOP_ENABLED ? [{ key: "shop", label: "Shop orders" }] : [])];
-const [active, select] = useHubTab(TABS);
+// Event payments. Shop orders moved to Shop > Orders, so an old ?tab=shop link is sent there.
+if (useRoute().query.tab === "shop") await navigateTo("/admin/orders", { replace: true });
 </script>
 
 <template>
-  <EventPayments v-if="TABS.length === 1" />
-  <AdminTabs v-else id="pay" label="Payments" :tabs="TABS" :active="active" @change="select">
-    <ShopOrders v-if="active === 'shop'" />
-    <EventPayments v-else />
-  </AdminTabs>
+  <EventPayments />
 </template>

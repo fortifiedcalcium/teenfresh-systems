@@ -7,7 +7,7 @@ import { MEDIA } from "~/lib/breakpoints";
 // `caption` names the table for screen readers (required). Sort buttons use aria-sort; the pagination is a labelled nav.
 const props = defineProps({
   caption: { type: String, required: true }, columns: { type: Array as PropType<any[]> as PropType<any[]>, required: true }, rows: { type: Array as PropType<any[]> as PropType<any[]>, default: () => [] }, rowKey: { type: String, default: "id" },
-  loading: Boolean, cards: Boolean, empty: { type: String, default: "Nothing to show." }, pageSize: { type: Number, default: 25 }, initialSort: Object as PropType<Record<string, any>>,
+  loading: Boolean, cards: Boolean, rowClass: { type: Function, default: undefined }, empty: { type: String, default: "Nothing to show." }, pageSize: { type: Number, default: 25 }, initialSort: Object as PropType<Record<string, any>>,
 });
 const sort = ref(props.initialSort || null); // { key, dir }
 const page = ref(0);
@@ -92,7 +92,7 @@ const liveText = computed(() => `${sorted.value.length} ${sorted.value.length ==
             </tr>
           </thead>
           <tbody class="divide-y divide-brand-sky">
-            <tr v-for="r in slice" :key="r[rowKey]" class="hover:bg-brand-ivory">
+            <tr v-for="r in slice" :key="r[rowKey]" :class="['hover:bg-brand-ivory', rowClass ? rowClass(r) : '']">
               <template v-for="(c, i) in viewCols" :key="c.key">
                 <th v-if="i === 0" scope="row" :class="['td text-left font-semibold', c.className || '']"><slot :name="`cell-${c.key}`" :row="r">{{ r[c.key] }}</slot></th>
                 <td v-else :class="['td', c.className || '']"><slot :name="`cell-${c.key}`" :row="r">{{ r[c.key] }}</slot></td>

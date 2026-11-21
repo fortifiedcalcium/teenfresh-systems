@@ -66,6 +66,7 @@ const current = computed(() => (form.value?.id ? events.value.find((e) => e.id =
 <template>
   <div class="space-y-4">
     <div class="flex items-center justify-between"><h1 class="flex items-center gap-2 text-2xl"><IconCalendar />Events</h1><button type="button" class="btn-primary" @click="open(null)"><IconPlus />New event</button></div>
+    <AdminSwitch group="events" />
     <Empty v-if="events.length === 0">No events yet.</Empty>
     <ul v-else class="space-y-3">
       <li v-for="e in events" :key="e.id" class="card flex flex-wrap items-center justify-between gap-3 p-4">

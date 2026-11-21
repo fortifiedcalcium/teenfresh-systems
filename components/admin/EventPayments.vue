@@ -6,12 +6,12 @@ import { peso } from "~/lib/payment";
 import { fmtDateTime } from "~/lib/availability";
 import { exportReport } from "~/lib/excel";
 import { MEDIA } from "~/lib/breakpoints";
-import { PAY_TONE as TONE, PAY_LABEL as LABEL, expectedOf } from "~/lib/payments";
+import { PAY_LABEL as LABEL, activeForms, expectedOf } from "~/lib/payments";
 
 const toast = useToast();
-const { event } = useAdminContext();
+const { events, event } = useAdminContext();
 const rows = ref(null);
-const status = ref("pending");
+const status = ref("review");   // review (pending + short) | all | verified
 const q = ref("");
 const sel = ref(null);
 const split = useMediaQuery(MEDIA.fromTablet);   // 768 and up: list on the left (40%), review on the right (60%)
@@ -21,7 +21,7 @@ async function load() {
   const ev = event.value;
   if (!ev) return;
   const data = await fetchAll(() => supabase.from("payments")
-    .select("*, sender_profile:profiles!payments_user_id_fkey(email,full_name), registrations(id,name,x_username,facebook_url,status,ticket_number,kit_name,kit_quantity,total_amount)")
+    .select("*, sender_profile:profiles!payments_user_id_fkey(email,full_name), registrations(id,name,x_username,facebook_url,status,ticket_number,kit_name,kit_quantity,total_amount,checked_in_at)")
     .eq("event_id", ev.id).order("created_at").order("id"));
   if (event.value?.id !== ev.id) return;
   rows.value = data;
@@ -36,48 +36,76 @@ watch(() => event.value?.id, (id) => {
 }, { immediate: true });
 onBeforeUnmount(() => { if (channel) supabase.removeChannel(channel); });
 
-const shown = computed(() => (rows.value || []).filter((p) => (!status.value || p.status === status.value)
+const shown = computed(() => (rows.value || []).filter((p) => (status.value === "all" || (status.value === "review" ? (p.status === "pending" || p.status === "underpaid") : p.status === status.value))
   && (!q.value || `${p.sender_name} ${p.reference_number} ${(p.registrations || []).map((r) => `${r.name} ${r.x_username}`).join(" ")}`.toLowerCase().includes(q.value.toLowerCase()))));
 const counts = computed(() => Object.fromEntries(["pending", "underpaid", "verified", "rejected"].map((s) => [s, (rows.value || []).filter((p) => p.status === s).length])));
-const changed = () => { sel.value = null; load(); };
+const taken = computed(() => (rows.value || []).filter((p) => p.status !== "rejected").reduce((n, p) => n + activeForms(p).length, 0));
+const checkedIn = computed(() => (rows.value || []).reduce((n, p) => n + (p.registrations || []).filter((r) => r.checked_in_at).length, 0));
+const shortBy = (p) => Number(p.amount_due) || Math.max(expectedOf(p) - Number(p.amount_paid), 0);
+// The list always has one row open beside it on a tablet or laptop, so the review panel is never empty.
+watch([shown, split], () => {
+  if (!split.value) return;
+  if (!shown.value.some((p) => p.id === sel.value?.id)) sel.value = shown.value[0] || null;
+}, { immediate: true });
+const changed = () => { if (!split.value) sel.value = null; load(); };   // the modal closes after a decision; beside the list the next row opens
 const exportExcel = () => exportReport(toast, `payments-${event.value.ticket_prefix}.xlsx`, ["Sender", "Email", "Amount paid", "Reference", "Status", "Forms", "Submitted"], shown.value.map((p) => [p.sender_name, p.sender_profile?.email, p.amount_paid, p.reference_number, p.status, (p.registrations || []).map((r) => `${r.name} (@${r.x_username})`).join("; "), fmtDateTime(p.created_at)]));
 const cols = [
   { key: "sender_name", label: "Sender" },
   { key: "amount_paid", label: "Paid / expected", sortValue: (p) => Number(p.amount_paid) },
   { key: "reference_number", label: "Reference", className: "font-mono" },
-  { key: "forms", label: "Forms", sortValue: (p) => (p.registrations || []).length },
-  { key: "created_at", label: "Submitted", className: "whitespace-nowrap" },
   { key: "status", label: "Status" },
   { key: "act", label: "", sortable: false },
 ];
+const TABS = [{ key: "review", label: "To review" }, { key: "all", label: "All" }, { key: "verified", label: "Verified" }];
+const statusClass = (p) => (p.status === "verified" ? "ok" : p.status === "rejected" ? "bad" : p.status === "underpaid" ? "short" : "review");
+const statusText = (p) => (p.status === "pending" ? "To review" : p.status === "underpaid" ? (shortBy(p) > 0 ? `Short ${peso(shortBy(p))}` : "Short") : LABEL[p.status]);
+
 </script>
 
 <template>
   <Empty v-if="!event">Create an event first.</Empty>
-  <div v-else class="space-y-4">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <h1 class="flex items-center gap-2 text-2xl"><IconWallet />Payments</h1>
-      <TopBarAction :icon="IconDownload" label="Export Excel" short="Export" :disabled="!shown.length" @click="exportExcel" />
-    </div>
-    <FilterBar :active-count="status !== 'pending' ? 1 : 0">
-      <template #search><input v-model="q" class="input w-full md:w-72" placeholder="Search sender, reference, name" aria-label="Search payments"></template>
-      <select v-model="status" class="input max-w-[14rem]" aria-label="Payment status">
-        <option value="pending">Pending ({{ counts.pending }})</option><option value="underpaid">Underpaid ({{ counts.underpaid }})</option><option value="verified">Verified ({{ counts.verified }})</option><option value="rejected">Rejected ({{ counts.rejected }})</option><option value="">All</option>
-      </select>
-    </FilterBar>
-    <p role="status" class="text-sm font-semibold">{{ rows ? `${shown.length} payment${shown.length === 1 ? "" : "s"} found` : "Loading payments…" }}</p>
-    <div :class="split && sel ? 'grid items-start gap-4 md:grid-cols-5' : ''">
-      <div class="min-w-0 md:col-span-2">
-        <DataTable caption="Payments" :columns="cols" :rows="shown" :loading="rows === null" :cards="split && !!sel" :empty="status === 'pending' ? 'No payments are waiting for review.' : 'No payments match.'" :initial-sort="{ key: 'created_at', dir: 'asc' }">
-          <template #cell-sender_name="{ row }">{{ row.sender_name }}<br><span class="text-xs font-normal text-ink-muted">{{ row.sender_profile?.email }}</span></template>
-          <template #cell-amount_paid="{ row }"><span :class="Number(row.amount_paid) < expectedOf(row) ? 'font-bold text-danger' : ''">{{ peso(row.amount_paid) }} / {{ peso(expectedOf(row)) }}{{ Number(row.amount_paid) < expectedOf(row) ? " (short)" : "" }}</span></template>
-          <template #cell-forms="{ row }"><ul><li v-for="r in row.registrations || []" :key="r.id">{{ r.name }} <span class="text-ink-muted">@{{ r.x_username }}</span></li></ul></template>
-          <template #cell-created_at="{ row }">{{ fmtDateTime(row.created_at) }}</template>
-          <template #cell-status="{ row }"><Badge :tone="TONE[row.status]">{{ LABEL[row.status] }}</Badge></template>
-          <template #cell-act="{ row }"><button type="button" class="btn-primary" @click="sel = row"><IconEye />{{ row.status === "pending" || row.status === "underpaid" ? "Review" : "View" }} <span class="sr-only">payment of {{ row.sender_name }}</span></button></template>
-        </DataTable>
+  <div v-else class="space-y-5">
+    <div class="pay-head">
+      <div>
+        <h1 class="pay-title">Payments</h1>
+        <p class="pay-sub">Check receipts and verify tickets.</p>
       </div>
-      <div v-if="sel && split" class="min-w-0 md:sticky md:top-4 md:col-span-3"><PaymentReview :key="sel.id" inline :payment="sel" @close="sel = null" @changed="changed" /></div>
+      <div class="pay-event">
+        <TopBarAction :icon="IconDownload" label="Export Excel" short="Export" :disabled="!shown.length" @click="exportExcel" />
+        <label for="event-select">Event</label>
+        <select id="event-select" class="input" :value="event?.id || ''" :disabled="!events?.length" @change="selectAdminEvent(($event.target as HTMLInputElement).value)">
+          <option v-for="e in events" :key="e.id" :value="e.id">{{ e.title }}</option>
+        </select>
+      </div>
+    </div>
+
+    <ul class="pay-chips" aria-label="Summary">
+      <li class="pay-chip pay-chip--slots">{{ taken }} of {{ event.capacity }} slots taken</li>
+      <li class="pay-chip pay-chip--wait">{{ counts.pending }} waiting for review</li>
+      <li class="pay-chip pay-chip--short">{{ counts.underpaid }} payment{{ counts.underpaid === 1 ? "" : "s" }} short</li>
+      <li class="pay-chip pay-chip--in">{{ checkedIn }} checked in</li>
+    </ul>
+
+    <div :class="['pay-grid', split && sel ? 'pay-grid--split' : '']">
+      <section class="pay-list" aria-label="Payments list">
+        <div class="pay-tools">
+          <div class="pay-seg" role="group" aria-label="Payment status">
+            <button v-for="t in TABS" :key="t.key" type="button" :aria-pressed="status === t.key" @click="status = t.key">{{ t.label }}</button>
+          </div>
+          <input v-model="q" class="input pay-search" placeholder="Search sender or reference" aria-label="Search payments">
+        </div>
+        <p role="status" class="sr-only">{{ rows ? `${shown.length} payment${shown.length === 1 ? "" : "s"} found` : "Loading payments…" }}</p>
+        <DataTable caption="Payments" :columns="cols" :rows="shown" :loading="rows === null" :row-class="(r) => (r.id === sel?.id ? 'pay-row--sel' : '')" :empty="status === 'review' ? 'No payments are waiting for review.' : 'No payments match.'" :initial-sort="{ key: 'created_at', dir: 'asc' }">
+          <template #cell-sender_name="{ row }">{{ row.sender_name }}</template>
+          <template #cell-amount_paid="{ row }">{{ peso(row.amount_paid) }} / {{ peso(expectedOf(row)) }}</template>
+          <template #cell-status="{ row }"><span :class="['pay-status', `pay-status--${statusClass(row)}`]">{{ statusText(row) }}</span></template>
+          <template #cell-act="{ row }">
+            <button v-if="row.status === 'pending' || row.status === 'underpaid'" type="button" :class="['pay-btn pay-btn--sm', row.id === sel?.id ? 'pay-btn--accent' : 'pay-btn--ghost']" @click="sel = row">Review <span class="sr-only">payment of {{ row.sender_name }}</span></button>
+            <button v-else type="button" class="pay-view" @click="sel = row">View <span class="sr-only">payment of {{ row.sender_name }}</span></button>
+          </template>
+        </DataTable>
+      </section>
+      <div v-if="sel && split" class="min-w-0 md:sticky md:top-4"><PaymentReview :key="sel.id" inline :payment="sel" @close="sel = null" @changed="changed" /></div>
     </div>
     <PaymentReview v-if="sel && !split" :payment="sel" @close="sel = null" @changed="changed" />
   </div>

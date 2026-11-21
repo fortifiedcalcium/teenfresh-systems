@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { supabase } from "~/lib/supabaseClient";
-import { eventStatus } from "~/lib/availability";
+import { eventStatus, fmtDate } from "~/lib/availability";
+import { imageUrl } from "~/lib/eventImages";
 import { SHOP_ENABLED } from "~/lib/features";
 import { productImageUrl } from "~/lib/products";
 import { peso } from "~/lib/payment";
-import { productPath } from "~/lib/slug";
+import { eventPath, productPath } from "~/lib/slug";
 import { badgeFor, cardCategories, priceFor, priceText, stockLabel } from "~/lib/productBadge";
 import { preorderNotice } from "~/lib/preorder";
 import { groupVariations } from "~/lib/variations";
@@ -84,6 +85,11 @@ onMounted(async () => {
 const featured = computed(() => pickFeatured(events.value || [], home.value.featured_event_id, (e) => eventStatus(e, counts.value[e.id] ?? 0).canRegister));
 const heroImage = computed(() => bannerUrl(home.value));
 const others = computed(() => (events.value || []).filter((e) => e.id !== featured.value?.id));
+// An event stays in the upcoming list until it is over (its end time, else its start), even when registration is closed or sold out:
+// people still come to see it, and the ticket says "Registration closed". Only events that are over become the quiet list, newest first.
+const isOver = (e: EventRow) => new Date(e.ends_at || e.event_date).getTime() <= Date.now();
+const moreOpen = computed(() => others.value.filter((e) => !isOver(e)));
+const past = computed(() => others.value.filter(isOver).sort((a, b) => b.event_date.localeCompare(a.event_date)));
 const headline = computed(() => heroHeadline(home.value, featured.value));
 const description = computed(() => heroDescription(home.value));
 const optsOf = (p: ProductRow) => dropVersions.value[p.id] || [];
@@ -98,27 +104,56 @@ onBeforeUnmount(() => { alive = false; if (channel) supabase.removeChannel(chann
         <img :src="heroImage" :alt="bannerAlt(home)" class="home-hero__bg" fetchpriority="high" decoding="async">
         <div class="home-hero__overlay" aria-hidden="true" />
       </template>
-      <div class="space-y-5">
-        <p class="text-sm font-extrabold uppercase tracking-widest text-ink-muted">Teenfresh Events</p>
-        <h1 id="home-h" class="home-hero__title">{{ headline }}</h1>
-        <p class="home-hero__lead max-w-prose text-ink-muted">{{ description }}</p>
-        <div class="flex flex-wrap gap-3">
-          <BaseButton :to="others.length ? '#events' : '#featured-event'" variant="accent"><IconCalendar />See events</BaseButton>
-          <BaseButton v-if="SHOP_ENABLED" to="/shop" variant="secondary"><IconBag />Browse shop</BaseButton>
+      <HomeHero v-if="featured" :event="featured" :registered="counts[featured.id] ?? 0" :banner="banners[featured.id]" :kits="kits[featured.id] || []" :headline="headline" :description="description" :shop="SHOP_ENABLED" />
+      <template v-else>
+        <div class="space-y-5">
+          <h1 id="home-h" class="home-hero__title">{{ headline }}</h1>
+          <p class="home-hero__lead max-w-prose text-ink-muted">{{ description }}</p>
         </div>
-      </div>
-      <div id="featured-event" class="mx-auto w-full max-w-md lg:ml-auto">
-        <Loading v-if="events === null" label="Loading events…" class="p-12" logo />
-        <EventCard v-else-if="featured" :event="featured" :registered="counts[featured.id] ?? 0" :banner-image="banners[featured.id]" :kits="kits[featured.id] || []" :band="0" priority />
-        <Empty v-else>No events yet. Check back soon!</Empty>
-      </div>
+        <div id="featured-event" class="mx-auto w-full max-w-md lg:ml-auto">
+          <Loading v-if="events === null" label="Loading events…" class="p-12" logo />
+          <Empty v-else>No events yet. Check back soon!</Empty>
+        </div>
+      </template>
     </section>
     <Alert v-if="error" tone="bad">{{ error }}</Alert>
 
-    <section v-if="others.length" id="events" class="scroll-mt-24" aria-labelledby="events-h">
-      <h2 id="events-h" class="mb-5 flex items-center gap-2 text-2xl"><IconCalendar />More events</h2>
+    <section v-if="moreOpen.length" id="events" class="scroll-mt-24" aria-labelledby="events-h">
+      <h2 id="events-h" class="mb-5 flex items-center gap-2 text-2xl"><IconCalendar />Upcoming events</h2>
       <ul class="grid grid-cols-1 auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <li v-for="(e, i) in others" :key="e.id" class="flex"><div class="flex w-full flex-col"><EventCard :event="e" :registered="counts[e.id] ?? 0" :banner-image="banners[e.id]" :kits="kits[e.id] || []" :band="i + 1" /></div></li>
+        <li v-for="(e, i) in moreOpen" :key="e.id" class="flex"><div class="flex w-full flex-col"><EventCard :event="e" :registered="counts[e.id] ?? 0" :banner-image="banners[e.id]" :kits="kits[e.id] || []" :band="i + 1" /></div></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="how-h">
+      <h2 id="how-h" class="mb-5 text-2xl">How it works</h2>
+      <div class="card-soft grid gap-6 p-6 sm:grid-cols-3 sm:gap-0 sm:divide-x-2 sm:divide-dashed sm:divide-brand-sky sm:p-7">
+        <div class="flex gap-4 sm:px-7 sm:first:pl-0 sm:last:pr-0">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-ink bg-brand-mint font-black">1</span>
+          <div><h3 class="text-lg font-black">Fill in the form</h3><p class="mt-1 text-ink-muted">Your details and your kit, in a few short steps.</p></div>
+        </div>
+        <div class="flex gap-4 sm:px-7 sm:first:pl-0 sm:last:pr-0">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-ink bg-brand-sky font-black">2</span>
+          <div><h3 class="text-lg font-black">Pay by GCash</h3><p class="mt-1 text-ink-muted">Upload your receipt. We check it for you.</p></div>
+        </div>
+        <div class="flex gap-4 sm:px-7 sm:first:pl-0 sm:last:pr-0">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-ink bg-brand-cream font-black">3</span>
+          <div><h3 class="text-lg font-black">Get your QR ticket</h3><p class="mt-1 text-ink-muted">View your QR ticket on your account once your payment is checked. We'll also email you updates.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="past.length" :id="moreOpen.length ? undefined : 'events'" class="scroll-mt-24" aria-labelledby="past-h">
+      <h2 id="past-h" class="mb-3 text-xl">Past events</h2>
+      <ul class="space-y-3">
+        <li v-for="(e, i) in past" :key="e.id" class="card-soft flex flex-wrap items-center gap-4 p-3.5">
+          <div class="photocard shrink-0" style="width: 4.5rem; padding: 0.3125rem; border-radius: 1rem" :style="{ '--tilt': i % 2 ? '3deg' : '-3deg' }">
+            <img v-if="imageUrl(banners[e.id])" :src="imageUrl(banners[e.id])" alt="" class="photocard__img" style="border-radius: 0.6875rem">
+            <div v-else class="photocard__img photocard__img--empty" style="font-size: 0.625rem"><span>{{ e.title }}</span></div>
+          </div>
+          <div class="min-w-0 flex-1"><p class="font-black">{{ e.title }}</p><p class="text-sm text-ink-muted">{{ fmtDate(e.event_date) }}</p><Badge tone="bad" class="mt-1.5">{{ eventStatus(e, counts[e.id] ?? 0).label }}</Badge></div>
+          <BaseButton :to="eventPath(e)" variant="ghost" small :aria-label="`View ${e.title}`">View event</BaseButton>
+        </li>
       </ul>
     </section>
 

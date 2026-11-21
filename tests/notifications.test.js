@@ -21,7 +21,7 @@ describe("notifications", () => {
     expect(arrivals({ event_payments: 3 }, { event_payments: 2 })).toEqual([]);                  // fewer is not news
   });
   it("every kind has a label and a place to go", () => {
-    for (const t of NOTE_TYPES) { expect(t.label).toBeTruthy(); expect(t.to).toMatch(/^\/admin\/payments/); }
+    for (const t of NOTE_TYPES) { expect(t.label).toBeTruthy(); expect(t.to).toMatch(/^\/admin\/(payments|orders)/); }
   });
 
   it("unread is what came since the admin last looked, and only for what people send", () => {
@@ -38,7 +38,7 @@ describe("notifications", () => {
   });
   it("viewing the page a notification leads to counts as reading it", () => {
     expect(typesForLocation("/admin/payments", "")).toEqual(["event_payments"]);
-    expect(typesForLocation("/admin/payments", "?tab=shop").sort()).toEqual(["extra_payments", "order_payments", "shipping_payments"]);
+    expect(typesForLocation("/admin/orders", "").sort()).toEqual(["extra_payments", "order_payments", "shipping_payments"]);
     expect(typesForLocation("/admin/payments", "?tab=event")).toEqual([]);
     expect(typesForLocation("/admin/users", "")).toEqual([]);
   });

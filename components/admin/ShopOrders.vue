@@ -63,6 +63,7 @@ const changed = () => { openId.value = null; load(); };
       <h1 class="flex items-center gap-2 text-2xl"><IconBag />Shop orders</h1>
       <TopBarAction :icon="IconDownload" :label="exporting ? 'Preparing…' : 'Export all orders to Excel'" short="Export" :disabled="exporting || !orders?.length" @click="exportAll" />
     </div>
+    <AdminSwitch group="shop" />
     <ShopSettingsCard />
     <CourierManager />
     <div class="flex flex-wrap gap-2" role="group" aria-label="Filter orders">

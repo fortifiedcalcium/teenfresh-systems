@@ -69,16 +69,177 @@ fieldset.card-soft > legend + * { clear: both; }
   min-height: clamp(22rem, 12rem + 28vw, 38rem);
   padding: clamp(1.25rem, 0.5rem + 3.4vw, 3.5rem);
   border-radius: clamp(1.5rem, 1rem + 1.5vw, 2rem);
-  background-color: var(--cream);
+  background-color: var(--brand-cream);
   background-size: cover; background-position: center;
 }
 .home-hero > * { min-width: 0; }
 .home-hero__title { font-size: clamp(2rem, 1.2rem + 3.4vw, 3.75rem); line-height: 1.12; overflow-wrap: anywhere; }
 .home-hero__lead { font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem); }
-@media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-.home-hero__bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+/* Side by side, the text starts at the top so Register stays in the first screen however tall the ticket is. */
+@media (min-width: 1024px) { .home-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+/* The picture is usually a tall photo with the subject low in the frame, so the crop sits low: a centred crop of a portrait photo is mostly empty sky. */
+.home-hero__bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 50% 78%; }
 /* A cream veil between the picture and the content: the dark text keeps 4.5:1 on any picture, even a black one (checked in scripts/contrast.js). */
 .home-hero__overlay { position: absolute; inset: 0; z-index: -1; background-color: color-mix(in srgb, var(--brand-cream) calc(var(--hero-overlay-alpha) * 100%), transparent); }
 
 /* The label across the bottom of a product thumbnail (for example "Pre-order period ended"): ink on white, so it reads on any photo. */
 .pcard__notice { position: absolute; inset-inline: 0.5rem; bottom: 0.5rem; padding: 0.35rem 0.6rem; border-radius: 0.75rem; background: var(--white); color: var(--ink); font-size: 0.8125rem; font-weight: 800; text-align: center; box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 20%, transparent); }
+
+/* Home hero, keepsake style: big black title, tilted sticker facts, the poster as a photocard. Colours from tokens only. */
+.hero2 { display: grid; gap: clamp(1.5rem, 1rem + 3vw, 3.5rem); align-items: center; grid-column: 1 / -1; }
+.hero2 > * { min-width: 0; }
+.hero2__text { display: flex; flex-direction: column; align-items: flex-start; gap: 1.25rem; }
+.hero2__title { font-size: clamp(2.25rem, 1.1rem + 4.6vw, 4.75rem); line-height: 1.02; letter-spacing: -0.02em; text-wrap: balance; overflow-wrap: anywhere; }
+.hero2__lead { font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem); text-wrap: pretty; }
+.hero2__stickers { display: flex; flex-wrap: wrap; gap: 0.625rem 0.75rem; margin: 0; padding: 0.25rem 0; list-style: none; }
+.sticker { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0.375rem 0.875rem; border: 2px solid var(--ink); border-radius: 9999px; color: var(--ink); font-size: 0.9375rem; font-weight: 800; box-shadow: 0 3px 8px color-mix(in srgb, var(--ink) 14%, transparent); }
+.sticker > svg { flex: none; width: 1.1em; height: 1.1em; }
+.hero2__stickers li:nth-child(odd) { rotate: -1.5deg; }
+.hero2__stickers li:nth-child(even) { rotate: 1.25deg; }
+
+.hero2__card { display: grid; justify-items: center; }
+@media (max-width: 1023px) { .hero2__card { order: -1; } }   /* on a phone or tablet the poster comes first, then the event's details */
+.photocard { position: relative; width: min(100%, 22rem); padding: 0.625rem; background: var(--white); border-radius: 1.5rem; rotate: var(--tilt, 2deg); box-shadow: 0 18px 36px -10px color-mix(in srgb, var(--ink) 38%, transparent), 0 4px 10px color-mix(in srgb, var(--ink) 14%, transparent); overflow: hidden; }
+.photocard__img { display: block; width: 100%; height: auto; max-height: min(34rem, 70vh); object-fit: contain; border-radius: 1.0625rem; background: var(--brand-ivory); }
+.photocard__img--empty { display: grid; place-items: center; aspect-ratio: 4 / 5; padding: 1.5rem; text-align: center; font-weight: 900; font-size: 1.5rem; }
+/* a soft sheen that sweeps over the card on hover, like a holographic photocard */
+.photocard::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(115deg, transparent 35%, color-mix(in srgb, var(--white) 55%, transparent) 50%, transparent 65%); background-size: 250% 100%; background-position: 130% 0; opacity: 0; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .photocard { transition: rotate .5s cubic-bezier(.16, 1, .3, 1), translate .5s cubic-bezier(.16, 1, .3, 1); }
+  .photocard:hover { rotate: 0deg; translate: 0 -6px; }
+  .photocard:hover::after { opacity: 1; background-position: -30% 0; transition: background-position 1.1s cubic-bezier(.16, 1, .3, 1), opacity .2s; }
+}
+@media (min-width: 1024px) { .hero2 { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } .hero2__card { justify-items: end; } .photocard { margin-right: clamp(0rem, 2vw, 2rem); } }
+@media (max-width: 480px) { .hero2__stickers li:nth-child(n) { rotate: 0deg; } .hero2__stickers { gap: 0.5rem; } .sticker { min-height: 2.25rem; padding: 0.25rem 0.75rem; font-size: 0.875rem; } }
+
+/* Event card: a pastel stage with a small photocard, then the title, stickers and the action. Cards in a row share a height. */
+.kcard { @apply flex h-full w-full flex-col overflow-hidden bg-white; border-radius: 1.5rem; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
+.kcard__media { position: relative; aspect-ratio: 4 / 5; background: var(--brand-sky); }
+.kcard__img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.kcard__img--empty { display: grid; place-items: center; padding: 1.5rem; text-align: center; font-weight: 900; font-size: 1.125rem; }
+.kcard__body { display: flex; flex: 1; flex-direction: column; gap: 0.875rem; padding: 1.25rem; }
+.sticker--sm { min-height: 2.25rem; padding: 0.25rem 0.75rem; font-size: 0.8125rem; gap: 0.375rem; box-shadow: none; }
+.kcard .hero2__stickers { gap: 0.5rem; padding: 0; }
+
+/* Event header: same keepsake stickers as the home hero, a soft panel for the rest of the facts. Used on the event page and the register page. */
+.evt-head__title { font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.75rem); line-height: 1.06; letter-spacing: -0.01em; text-wrap: balance; overflow-wrap: anywhere; }
+.evt-head__lead { margin-top: 0.25rem; font-size: 1.0625rem; color: var(--ink-muted); }
+.evt-head .hero2__stickers { margin-top: 0.875rem; }
+.evt-head__panel { margin-top: 1rem; padding: 1.25rem 1.5rem; }
+
+/* Event page: the poster as a tilted photocard with a pastel backdrop behind it and a slots badge on top, like the prototype.
+   The badge is positioned against `.evt-poster-frame`, a wrapper that hugs the photocard's own rendered box, not against the
+   wider stage: the picture inside is a portrait, so at a height-driven size its frame can render narrower than the stage
+   around it (object-contain doesn't stretch it to fill), and a badge pinned to the stage's edge would then float well past
+   the frame's real corner instead of sitting on it. The stage's top padding is tall enough for the whole badge, and the
+   badge translates up by its own height, so it floats fully above the frame with no overlap — rather than partly sitting on
+   the card, which (since the card and the circular badge are tilted at different angles) looked like a rendering glitch. */
+.evt-poster-stage { position: relative; padding: 3.5rem 1.75rem 1.5rem; }
+.evt-poster-stage::before { content: ""; position: absolute; inset: 1rem 0.75rem 2.5rem 1.25rem; background: var(--brand-cream); border-radius: 2rem; rotate: -2.5deg; z-index: -1; }
+.evt-poster-frame { position: relative; width: min(100%, 24rem); margin: 0 auto; }
+.evt-poster { width: 100%; }
+.evt-slots-badge { position: absolute; right: 0; top: 0; translate: 25% -35%; z-index: 2; width: clamp(5.5rem, 4.5rem + 5vw, 6.5rem); height: clamp(5.5rem, 4.5rem + 5vw, 6.5rem); border-radius: 9999px; background: var(--accent); color: var(--white); border: 3px solid var(--white); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; text-align: center; rotate: 10deg; box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 30%, transparent); }
+.evt-slots-badge strong { display: block; font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem); font-weight: 900; line-height: 0.9; }
+.evt-slots-badge span { display: block; font-size: 0.75rem; font-weight: 800; line-height: 1.1; }
+.evt-layout { display: grid; gap: 1.75rem; align-items: start; }
+/* From 1024px the poster grows to the full height of the facts column beside it, down to the Register button, instead of
+   stopping at its own natural size: a visitor sees the whole poster at the biggest size the layout allows. The frame (and
+   so the badge pinned to it) shrinks to whatever width that height produces, and sits centered in the stage. */
+@media (min-width: 1024px) {
+  .evt-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: stretch; }
+  .evt-poster-stage { display: flex; justify-content: center; }
+  .evt-poster-frame { width: auto; margin: 0; height: 100%; }
+  .evt-poster { display: flex; width: auto; height: 100%; margin: 0; }
+  .evt-poster > * { height: 100%; }
+}
+
+/* A dashed divider inside a soft panel, for a facts strip that reads like a ticket (register page, kit summary). */
+.panel-perf { margin: 0 1.25rem; border-top: 2px dashed var(--brand-sky); }
+
+/* Registration progress drawn as a ticket strip, with a perforation under the row of steps. */
+.reg-steps { padding: 1rem 1.5rem; }
+.reg-steps ol { display: grid; gap: 0.75rem 1rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin: 0; padding: 0; list-style: none; }
+.reg-steps li { display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; }
+.reg-steps .reg-steps__num { flex: none; width: 2.25rem; height: 2.25rem; border-radius: 9999px; display: grid; place-items: center; font-weight: 900; border: 2px solid var(--link); background: var(--white); }
+.reg-steps li[aria-current="step"] .reg-steps__num { border-color: var(--ink); background: var(--ink); color: var(--brand-ivory); }
+.reg-steps li.is-done .reg-steps__num { border-color: var(--success); background: var(--brand-mint); color: var(--success); }
+
+/* The sticky "your ticket" summary beside the registration form: a stub with a photocard thumbnail and a running total. */
+.reg-ticket { position: sticky; top: 1.5rem; }
+.reg-ticket__head { display: flex; gap: 1rem; align-items: center; padding: 1.25rem 1.25rem 1.5rem; }
+.reg-ticket__total { margin: 0.75rem 1.5rem 1.5rem; padding-top: 1rem; border-top: 2px solid var(--ink); display: flex; justify-content: space-between; align-items: baseline; }
+.reg-ticket__total strong:last-child { font-size: 1.5rem; font-weight: 900; }
+
+/* Admin sidebar: the ink fill used as a dark surface, the one approved exception to "brand colours are surfaces, never text" —
+   ivory text on it, same as the active state every nav-link already uses. The logo keeps its own colours on a small cream chip,
+   same as the public nav; everything else (icons, links, the collapse/notification buttons) already uses currentColor or its
+   own ivory/ink fill, so it reads correctly without touching those components. */
+.admin-side { background: var(--ink); color: var(--brand-ivory); border: 0; }
+.admin-side .nav-link { color: var(--brand-ivory); }
+.admin-side .nav-link:hover { background: color-mix(in srgb, var(--brand-ivory) 16%, transparent); }
+.admin-side .nav-link[aria-current="page"] { background: var(--brand-ivory); color: var(--ink); }
+.admin-side .nav-link[aria-current="page"]:hover { background: var(--brand-ivory); }
+.admin-side__logo { display: inline-flex; padding: 0.375rem 0.625rem; border-radius: 0.75rem; background: var(--brand-ivory); }
+.admin-side__rule { border-color: color-mix(in srgb, var(--brand-ivory) 24%, transparent); }
+.admin-side__muted { color: color-mix(in srgb, var(--brand-ivory) 72%, transparent); }
+
+/* Admin Payments, from the design: a big title with a subtitle and the event picker beside it, a row of summary chips, a white list card
+   (status switch + search + table) and the review panel beside it. Colours from tokens only. */
+.pay-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.pay-title { font-size: clamp(1.875rem, 1.4rem + 1.6vw, 2.5rem); font-weight: 900; line-height: 1.1; color: var(--ink); }
+.pay-sub { margin-top: 0.25rem; font-size: 1.125rem; color: var(--ink-muted); }
+.pay-event { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.pay-event label { font-weight: 800; }
+.pay-event select { width: auto; min-width: 14rem; max-width: 24rem; min-height: 3.25rem; border: 2px solid var(--link); border-radius: 9999px; padding-inline: 1.25rem; background-color: var(--white); font-size: 1.0625rem; }
+.pay-chips { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+.pay-chip { display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0.25rem 1rem; border: 2px solid currentColor; border-radius: 9999px; font-size: 0.9375rem; font-weight: 800; }
+.pay-chip--slots { color: var(--ink); }
+.pay-chip--wait { color: var(--warning-ink); }
+.pay-chip--short { color: var(--danger); }
+.pay-chip--in { color: var(--success); }
+.pay-grid { display: grid; gap: 1.25rem; align-items: start; }
+@media (min-width: 768px) { .pay-grid--split { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
+.pay-list { background: var(--white); border-radius: 1.75rem; padding: 1.5rem; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
+.pay-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.25rem; }
+.pay-seg { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pay-seg button { min-height: 3.25rem; padding: 0 1.5rem; border: 2px solid var(--link); border-radius: 9999px; background: var(--brand-cream); color: var(--ink); font-weight: 800; }
+.pay-seg button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--white); }
+.pay-search { flex: 1 1 14rem; max-width: 24rem; min-height: 3.25rem; border: 2px solid var(--link); border-radius: 9999px; padding-inline: 1.25rem; }
+.pay-list [role="region"] { border: 0; border-radius: 0; box-shadow: none; }
+.pay-list thead { background: transparent; }
+.pay-list tbody tr { border-top: 1px solid var(--brand-sky); }
+.pay-list tbody tr.pay-row--sel { background: var(--brand-ivory); }
+.pay-status { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border: 2px solid currentColor; border-radius: 9999px; font-size: 0.875rem; font-weight: 800; line-height: 1.25; }
+.pay-status--review { color: var(--warning-ink); }
+.pay-status--short, .pay-status--bad { color: var(--danger); }
+.pay-status--ok { color: var(--success); }
+.pay-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; min-height: 3.5rem; padding: 0 1.25rem; border: 2px solid var(--ink); border-radius: 9999px; font-size: 1.0625rem; font-weight: 800; cursor: pointer; }
+.pay-btn svg { flex: none; width: 1.125rem; height: 1.125rem; }
+.pay-btn--sm { width: auto; min-height: 2.75rem; padding: 0 1.25rem; font-size: 0.9375rem; }
+.pay-btn--accent { border-color: var(--accent); background: var(--accent); color: var(--white); }
+.pay-btn--ghost { background: var(--brand-cream); color: var(--ink); }
+.pay-btn--danger { border-color: var(--danger); background: var(--brand-cream); color: var(--danger); }
+.pay-btn:hover { background: var(--ink); border-color: var(--ink); color: var(--white); }
+.pay-view { min-height: 2.75rem; padding: 0 1rem; font-weight: 700; color: var(--ink); }
+.pay-review { background: var(--white); border-radius: 1.75rem; padding: 1.5rem; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
+.pay-review__title { font-size: 1.5rem; font-weight: 900; line-height: 1.2; color: var(--ink); }
+.pay-review__sub { margin: 0.25rem 0 1.25rem; color: var(--ink-muted); }
+.pay-receipt { border: 2px dashed var(--link); border-radius: 1.25rem; background: color-mix(in srgb, var(--brand-sky) 40%, var(--white)); padding: 1rem; text-align: center; }
+.pay-receipt__hint { margin-top: 0.25rem; font-size: 0.9375rem; color: var(--ink-muted); }
+.pay-sums { display: grid; gap: 0.5rem; margin: 0; }
+.pay-sums > div { display: flex; justify-content: space-between; gap: 1rem; font-size: 1.125rem; }
+.pay-sums dt { color: var(--ink-muted); }
+.pay-sums dd { margin: 0; font-weight: 900; }
+.pay-more summary { min-height: 2.75rem; padding-block: 0.5rem; font-weight: 700; cursor: pointer; }
+/* the Payments page uses the whole width, like the design (the other admin pages keep their narrower column) */
+@media (min-width: 1024px) { .admin-main > .admin-page:has(.pay-head) { max-width: 1600px; } }
+
+/* The pages of one admin group as a pill switch under the page title (Events | Home page, Products | Orders, ...). Same look as the Payments status switch. */
+.admin-switch { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.admin-main .admin-switch a, .admin-switch a { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 1.25rem; border: 2px solid var(--link); border-radius: 9999px; background: var(--brand-cream); color: var(--ink); font-weight: 800; text-decoration: none; }
+.admin-switch a:hover { background: var(--brand-sky); }
+.admin-switch a[aria-current="page"] { border-color: var(--ink); background: var(--ink); color: var(--white); }
+
+/* The fee note ("exclusive of food and drinks") after a price sticker: lighter and smaller, and the sticker may wrap onto a second line. */
+.sticker:has(.sticker__note) { flex-wrap: wrap; row-gap: 0; }
+.sticker__note { font-size: 0.8125em; font-weight: 700; }

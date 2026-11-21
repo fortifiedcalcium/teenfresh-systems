@@ -190,6 +190,7 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
       <h1 class="flex items-center gap-2 text-2xl"><IconBag />Shop products</h1>
       <button type="button" class="btn-primary" @click="open(null)"><IconPlus />Add a product</button>
     </div>
+    <AdminSwitch group="shop" />
     <p class="text-sm text-ink-muted">These appear on the public Shop page. Prices are in Philippine pesos. A hidden product stays here but is not shown to visitors.</p>
 
     <Loading v-if="rows === null" label="Loading products…" />
