@@ -168,15 +168,14 @@ fieldset.card-soft > legend + * { clear: both; }
 .reg-ticket__total strong:last-child { font-size: 1.5rem; font-weight: 900; }
 
 /* Admin sidebar: the ink fill used as a dark surface, the one approved exception to "brand colours are surfaces, never text" —
-   ivory text on it, same as the active state every nav-link already uses. The logo keeps its own colours on a small cream chip,
-   same as the public nav; everything else (icons, links, the collapse/notification buttons) already uses currentColor or its
+   ivory text on it, same as the active state every nav-link already uses.
+   Everything else (icons, links, the collapse/notification buttons) already uses currentColor or its
    own ivory/ink fill, so it reads correctly without touching those components. */
 .admin-side { background: var(--ink); color: var(--brand-ivory); border: 0; }
 .admin-side .nav-link { color: var(--brand-ivory); }
 .admin-side .nav-link:hover { background: color-mix(in srgb, var(--brand-ivory) 16%, transparent); }
 .admin-side .nav-link[aria-current="page"] { background: var(--brand-ivory); color: var(--ink); }
 .admin-side .nav-link[aria-current="page"]:hover { background: var(--brand-ivory); }
-.admin-side__logo { display: inline-flex; padding: 0.375rem 0.625rem; border-radius: 0.75rem; background: var(--brand-ivory); }
 .admin-side__rule { border-color: color-mix(in srgb, var(--brand-ivory) 24%, transparent); }
 .admin-side__muted { color: color-mix(in srgb, var(--brand-ivory) 72%, transparent); }
 
