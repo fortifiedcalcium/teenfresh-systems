@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { PropType } from "vue";
 import { SIDEBAR_GROUPS, isGroupActive } from "~/lib/adminNav";
-import logo from "~/assets/logo/teenfresh-logo.png";
 
 // Desktop navigation (1024px and up): 240px (260px at 1536+), collapsible to an icon rail. Hidden below 1024px
 // with display:none, so it is not in the accessibility tree while the bottom bar is. `notes` is { counts, unread, onRead, onReadAll }.
@@ -21,7 +20,7 @@ function toggle() { collapsed.value = !collapsed.value; try { localStorage.setIt
     <div class="sticky top-4 flex max-h-[calc(100dvh-2rem)] flex-col overflow-y-auto">
       <div class="mb-3 flex items-center justify-between gap-1 px-1">
         <span v-if="collapsed" class="sr-only">Admin</span>
-        <div v-else class="flex items-center gap-2.5"><span class="admin-side__logo"><img :src="logo" alt="Teenfresh" width="141" height="30" class="h-[30px] w-auto"></span><p class="text-sm font-extrabold">Admin</p></div>
+        <p v-else class="px-2 text-sm font-extrabold">Admin</p>
         <button type="button" class="btn-secondary min-w-target px-2" :aria-expanded="!collapsed" aria-controls="admin-nav-list" @click="toggle">
           <IconChevronRight v-if="collapsed" /><IconChevronLeft v-else /><span class="sr-only">{{ collapsed ? "Expand sidebar" : "Collapse sidebar" }}</span>
         </button>
