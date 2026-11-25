@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { supabase } from "~/lib/supabaseClient";
-import { VARIATIONS_MAX, CATEGORY_MAX, INFO_IMAGES_MAX, INFO_MAX, INFO_SECTIONS, productImageUrl, productRow, removeProductImage, uploadProductImage, validateCategoryName, validateProduct } from "~/lib/products";
+import { VARIATIONS_MAX, CATEGORY_MAX, INFO_IMAGES_MAX, INFO_SECTIONS, infoMax, productImageUrl, productRow, removeProductImage, uploadProductImage, validateCategoryName, validateProduct } from "~/lib/products";
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, validateImageFile } from "~/lib/eventImages";
 import { peso } from "~/lib/payment";
 import { COMBOS_MAX, LAYERS_MAX, LAYER_VALUES_MAX, buildCombos, finalVariations, groupVariations, normalizeLayers, validateLayers } from "~/lib/variations";
@@ -372,10 +372,10 @@ const removeLayer = (l) => { form.value.layers = form.value.layers.filter((x) =>
             </ul>
             <input id="p-desc-images" type="file" multiple :accept="ACCEPT" class="file-input sr-only" aria-describedby="p-desc-images-hint" @change="onDescImages">
             <label for="p-desc-images" class="btn-secondary cursor-pointer"><IconUpload />Add images</label>
-            <p id="p-desc-images-hint" class="hint">Shown at the top of the Description, in the order added. Each image keeps its own proportions and is scaled down to fit the page width, never cropped. Up to {{ INFO_IMAGES_MAX }} images; they upload when you save.</p>
+            <p id="p-desc-images-hint" class="hint">Shown at the top of the Product Description, in the order added. Each image keeps its own proportions and is scaled down to fit the page width, never cropped. Up to {{ INFO_IMAGES_MAX }} images; they upload when you save.</p>
           </div>
           <Field v-for="[k, label] in INFO_SECTIONS" :id="`p-${k}`" :key="k" v-slot="a" :label="label" :error="errors[k]" hint="Leave empty to hide this section. Select text and press the B button (or Ctrl/Cmd+B) to make it bold. Line breaks are kept.">
-            <BoldTextarea v-bind="a" v-model="form[k]" :rows="4" :max-length="INFO_MAX" />
+            <BoldTextarea v-bind="a" v-model="form[k]" :rows="4" :max-length="infoMax(k)" />
           </Field>
         </fieldset>
 

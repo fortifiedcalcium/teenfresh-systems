@@ -4,6 +4,15 @@ All notable changes to the Teenfresh event registration and attendance system.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is [SemVer](https://semver.org/):
 `1.0.0` is the first release and covers everything from the initial commit up to commit `5024be1`. `1.1.0` adds Excel reports and fixes typing in dialogs. `1.2.0` makes underpayments top-ups. `1.2.1` tidies the public footer. `1.3.0` makes one form equal one kit. `1.4.0` lets people type the reference number freely. `1.4.1` shows My registrations as event-style cards and recolours the mobile admin bar. `2.0.0` moves to Vue 3 + Nuxt 3 and Cloudflare Pages. `2.1.0` is the pastel ticket-stub redesign, slugs, server rendering and SEO, and TypeScript + Pinia. `2.2.0` finishes the design: slim nav and account menu, home hero, new ticket card, Shop the drop. `2.3.0` adds editable web addresses and a home page headline, and loads the home photo sooner. `2.4.0` adds an editable home banner, stock on every product, the lowest in-stock price and the pre-order period. `2.5.0` makes the banner headline and description editable. `2.6.0` shrinks admin pictures when they are uploaded. `2.6.1` makes that work in Safari. `2.7.0` prices products by their variations and locks the quantity until one is picked. `2.8.0` refuses oversized uploads and stops visitors saving pictures. `2.9.0` compresses every uploaded picture with the Squoosh encoder. `2.10.0` shows a product's categories on its shop card. `2.11.0` adds stock to the card, pre-orders included. `2.11.1` shows stock on the product page too, beside the price, and on every card.
 
+## [2.14.0] - 2026-11-25
+
+**Run migration `038_shipping_info_unlimited.sql`** in the Supabase SQL Editor (dev and live).
+
+### Changed
+- **New names for three product sections**, on the product page and in the product form: "Shipping" is now "Production, Shipping & Exchange", "Other notes" is now "Other Information", and "Description" is now "Product Description".
+- **The line "Kits and merch for the events." under the shop heading is removed.**
+- **"Production, Shipping & Exchange" has no character limit** (it was 4000). The other sections keep their limit.
+
 ## [2.13.4] - 2026-11-22
 
 No migration.

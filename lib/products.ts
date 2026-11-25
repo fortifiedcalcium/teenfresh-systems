@@ -19,12 +19,15 @@ export function validateCategoryName(name, existing = []) {
 
 /** The accordion sections on the product page: [column, heading]. A section with no text is not shown. */
 export const INFO_SECTIONS = [
-  ["info_description", "Description"],
+  ["info_description", "Product Description"],
   ["info_specs", "Specifications"],
-  ["info_shipping", "Shipping"],
-  ["info_notes", "Other notes"],
+  ["info_shipping", "Production, Shipping & Exchange"],
+  ["info_notes", "Other Information"],
 ];
 export const INFO_MAX = 4000;
+/** The sections with no length limit (the database has none for them either: migration 038). */
+export const INFO_UNLIMITED = ["info_shipping"];
+export const infoMax = (key: string): number | undefined => (INFO_UNLIMITED.includes(key) ? undefined : INFO_MAX);
 export const INFO_IMAGES_MAX = 10;
 
 export const productMatches = (p, chip) => chip === "All" || (chip === "Pre-Order" ? p.pre_order : (p.categories || []).includes(chip));
@@ -71,7 +74,7 @@ export function validateProduct(f) {
   if (vmsg) e.variations = vmsg;
   if (finalVariations(f).length === 0) { const s = validateStock(f.stock, "this product"); if (s) e.stock = s; }
   if (f.pre_order) { const m = validatePreorderDates(String(f.pre_order_starts_on || ""), String(f.pre_order_ends_on || "")); if (m) e.pre_order_dates = m; }
-  for (const [k, label] of INFO_SECTIONS) if ((f[k] || "").length > INFO_MAX) e[k] = `${label} can be ${INFO_MAX} characters at most`;
+  for (const [k, label] of INFO_SECTIONS) if (infoMax(k) && (f[k] || "").length > INFO_MAX) e[k] = `${label} can be ${INFO_MAX} characters at most`;
   return e;
 }
 
